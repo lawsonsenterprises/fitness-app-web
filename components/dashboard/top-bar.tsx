@@ -5,7 +5,7 @@ import { Bell, Search, Menu, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/contexts/auth-context'
 
 interface TopBarProps {
   title?: string
