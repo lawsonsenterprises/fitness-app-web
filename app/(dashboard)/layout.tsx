@@ -7,11 +7,11 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      {/* Sidebar - Desktop */}
+      {/* Sidebar - Desktop only, mobile uses bottom nav */}
       <Sidebar />
 
-      {/* Main content */}
-      <main className="min-h-screen transition-all duration-300 lg:pl-64">
+      {/* Main content - with padding for mobile bottom nav */}
+      <main className="min-h-screen pb-20 transition-all duration-300 lg:pb-0 lg:pl-64">
         {children}
       </main>
     </div>

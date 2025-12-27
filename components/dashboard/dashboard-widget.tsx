@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { LucideIcon } from 'lucide-react'
 
@@ -10,6 +11,7 @@ interface DashboardWidgetProps {
     value: number
     isPositive: boolean
   }
+  href?: string
   className?: string
 }
 
@@ -19,15 +21,17 @@ export function DashboardWidget({
   subtitle,
   icon: Icon,
   trend,
+  href,
   className,
 }: DashboardWidgetProps) {
-  return (
-    <div
-      className={cn(
-        'group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:border-foreground/10 hover:shadow-lg',
-        className
-      )}
-    >
+  const widgetClassName = cn(
+    'group relative block overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:border-foreground/10 hover:shadow-lg',
+    href && 'cursor-pointer',
+    className
+  )
+
+  const content = (
+    <>
       {/* Background decoration */}
       <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-amber-500/5 transition-transform duration-500 group-hover:scale-150" />
 
@@ -56,8 +60,18 @@ export function DashboardWidget({
           <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
         )}
       </div>
-    </div>
+    </>
   )
+
+  if (href) {
+    return (
+      <Link href={href} className={widgetClassName}>
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className={widgetClassName}>{content}</div>
 }
 
 interface WidgetGridProps {
