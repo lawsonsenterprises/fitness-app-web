@@ -9,6 +9,7 @@ import { Loader2, ArrowRight, ArrowLeft, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Form,
   FormControl,
@@ -16,12 +17,12 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/contexts/auth-context'
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
 
 export function PasswordResetForm() {
-  const { resetPassword } = useAuth()
+  const { resetPassword, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -33,14 +34,16 @@ export function PasswordResetForm() {
     },
   })
 
+  const formLoading = isLoading || authLoading
+
   async function onSubmit(data: ResetPasswordFormData) {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await resetPassword(data.email)
+    const { error: resetError } = await resetPassword(data.email)
 
-    if (error) {
-      setError('Unable to send reset email. Please try again.')
+    if (resetError) {
+      setError(resetError.message || 'Unable to send reset email. Please try again.')
       setIsLoading(false)
       return
     }
@@ -119,9 +122,9 @@ export function PasswordResetForm() {
 
       {/* Error message */}
       {error && (
-        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <Form {...form}>
@@ -139,7 +142,7 @@ export function PasswordResetForm() {
                     type="email"
                     placeholder="you@example.com"
                     autoComplete="email"
-                    disabled={isLoading}
+                    disabled={formLoading}
                     className={cn(
                       'h-12 rounded-lg border-border bg-background px-4',
                       'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
@@ -154,13 +157,13 @@ export function PasswordResetForm() {
           {/* Submit button */}
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={formLoading}
             className={cn(
               'group relative h-12 w-full overflow-hidden rounded-lg bg-foreground font-medium text-background',
               'transition-all hover:bg-foreground/90'
             )}
           >
-            {isLoading ? (
+            {formLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>

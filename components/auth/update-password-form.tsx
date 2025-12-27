@@ -1,10 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, ArrowRight, Eye, EyeOff, Check, Mail } from 'lucide-react'
+import { Loader2, ArrowRight, Eye, EyeOff, Check, ShieldCheck } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,22 +17,19 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { useAuth } from '@/contexts/auth-context'
-import { registerSchema, type RegisterFormData } from '@/lib/validations'
+import { newPasswordSchema, type NewPasswordFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
 
-export function RegisterForm() {
-  const { signUp, isLoading: authLoading } = useAuth()
+export function UpdatePasswordForm() {
+  const { updatePassword, isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  const form = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const form = useForm<NewPasswordFormData>({
+    resolver: zodResolver(newPasswordSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
       password: '',
       confirmPassword: '',
     },
@@ -49,77 +45,50 @@ export function RegisterForm() {
     number: /\d/.test(password),
   }
 
-  async function onSubmit(data: RegisterFormData) {
+  const formLoading = isLoading || authLoading
+
+  async function onSubmit(data: NewPasswordFormData) {
     setIsLoading(true)
     setError(null)
 
-    const { error: signUpError, needsConfirmation } = await signUp(
-      data.email,
-      data.password,
-      {
-        firstName: data.firstName,
-        lastName: data.lastName,
-      }
-    )
+    const { error: updateError } = await updatePassword(data.password)
 
-    if (signUpError) {
-      setError(signUpError.message || 'An error occurred. Please try again.')
+    if (updateError) {
+      setError(updateError.message || 'Unable to update password. Please try again.')
       setIsLoading(false)
       return
     }
 
-    if (needsConfirmation) {
-      setSuccess(true)
-    }
-
+    setSuccess(true)
     setIsLoading(false)
   }
-
-  const formLoading = isLoading || authLoading
 
   if (success) {
     return (
       <div className="text-center">
-        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10">
-          <Mail className="h-8 w-8 text-amber-500" />
+        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+          <ShieldCheck className="h-8 w-8 text-emerald-500" />
         </div>
-        <h2 className="mb-2 text-xl font-semibold">Check your email</h2>
+        <h2 className="mb-2 text-xl font-semibold">Password updated</h2>
         <p className="mb-6 text-sm text-muted-foreground">
-          We&apos;ve sent a confirmation link to{' '}
-          <span className="font-medium text-foreground">
-            {form.getValues('email')}
-          </span>
+          Your password has been successfully updated. You&apos;ll be redirected
+          to the dashboard shortly.
         </p>
-        <p className="mb-6 text-xs text-muted-foreground">
-          Click the link in your email to verify your account and get started.
-        </p>
-        <div className="space-y-3">
-          <button
-            type="button"
-            onClick={() => {
-              setSuccess(false)
-              setError(null)
-            }}
-            className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            Use a different email
-          </button>
-          <div className="text-xs text-muted-foreground">
-            Already verified?{' '}
-            <Link
-              href="/login"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
       </div>
     )
   }
 
   return (
     <div className="w-full">
+      <div className="mb-8 text-center">
+        <h1 className="mb-2 text-2xl font-semibold tracking-tight">
+          Create new password
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Enter your new password below to complete the reset process.
+        </p>
+      </div>
+
       {/* Error message */}
       {error && (
         <Alert variant="destructive" className="mb-6">
@@ -129,86 +98,13 @@ export function RegisterForm() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          {/* Name fields */}
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <Label className="text-sm font-medium">First name</Label>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="James"
-                      autoComplete="given-name"
-                      disabled={formLoading}
-                      className={cn(
-                        'h-12 rounded-lg border-border bg-background px-4',
-                        'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <Label className="text-sm font-medium">Last name</Label>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Smith"
-                      autoComplete="family-name"
-                      disabled={formLoading}
-                      className={cn(
-                        'h-12 rounded-lg border-border bg-background px-4',
-                        'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
-                      )}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Email field */}
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <Label className="text-sm font-medium">Email address</Label>
-                <FormControl>
-                  <Input
-                    {...field}
-                    type="email"
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    disabled={formLoading}
-                    className={cn(
-                      'h-12 rounded-lg border-border bg-background px-4',
-                      'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
-                    )}
-                  />
-                </FormControl>
-                <FormMessage className="text-xs" />
-              </FormItem>
-            )}
-          />
-
           {/* Password field */}
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
               <FormItem>
-                <Label className="text-sm font-medium">Password</Label>
+                <Label className="text-sm font-medium">New password</Label>
                 <FormControl>
                   <div className="relative">
                     <Input
@@ -288,25 +184,6 @@ export function RegisterForm() {
             )}
           />
 
-          {/* Terms */}
-          <p className="text-xs text-muted-foreground">
-            By creating an account, you agree to our{' '}
-            <Link
-              href="/terms"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Terms of Service
-            </Link>{' '}
-            and{' '}
-            <Link
-              href="/privacy"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Privacy Policy
-            </Link>
-            .
-          </p>
-
           {/* Submit button */}
           <Button
             type="submit"
@@ -320,7 +197,7 @@ export function RegisterForm() {
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <span>Create account</span>
+                <span>Update password</span>
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </>
             )}
@@ -328,29 +205,6 @@ export function RegisterForm() {
           </Button>
         </form>
       </Form>
-
-      {/* Divider */}
-      <div className="relative my-8">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-card px-4 text-muted-foreground">
-            Already have an account?
-          </span>
-        </div>
-      </div>
-
-      {/* Login link */}
-      <Link
-        href="/login"
-        className={cn(
-          'flex h-12 w-full items-center justify-center rounded-lg border border-border font-medium',
-          'transition-all hover:border-foreground/20 hover:bg-muted'
-        )}
-      >
-        Sign in
-      </Link>
     </div>
   )
 }

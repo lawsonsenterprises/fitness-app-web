@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
@@ -9,6 +10,7 @@ import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Form,
   FormControl,
@@ -16,15 +18,19 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/contexts/auth-context'
 import { loginSchema, type LoginFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
 
 export function LoginForm() {
-  const { signIn } = useAuth()
+  const { signIn, isLoading: authLoading } = useAuth()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Check for callback errors
+  const callbackError = searchParams.get('error')
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -38,21 +44,34 @@ export function LoginForm() {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await signIn(data.email, data.password)
+    const { error: signInError } = await signIn(data.email, data.password)
 
-    if (error) {
-      setError('Invalid email or password. Please try again.')
+    if (signInError) {
+      setError(signInError.message || 'Invalid email or password. Please try again.')
       setIsLoading(false)
     }
   }
 
+  const formLoading = isLoading || authLoading
+
   return (
     <div className="w-full">
+      {/* Callback error message */}
+      {callbackError && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>
+            {callbackError === 'auth_callback_error'
+              ? 'There was an error verifying your email. Please try again.'
+              : 'An authentication error occurred.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Error message */}
       {error && (
-        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-          <p className="text-sm text-destructive">{error}</p>
-        </div>
+        <Alert variant="destructive" className="mb-6">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       <Form {...form}>
@@ -76,7 +95,7 @@ export function LoginForm() {
                     type="email"
                     placeholder="you@example.com"
                     autoComplete="email"
-                    disabled={isLoading}
+                    disabled={formLoading}
                     className={cn(
                       'h-12 rounded-lg border-border bg-background px-4 transition-all',
                       'placeholder:text-muted-foreground/60',
@@ -118,7 +137,7 @@ export function LoginForm() {
                       type={showPassword ? 'text' : 'password'}
                       placeholder="Enter your password"
                       autoComplete="current-password"
-                      disabled={isLoading}
+                      disabled={formLoading}
                       className={cn(
                         'h-12 rounded-lg border-border bg-background px-4 pr-12 transition-all',
                         'placeholder:text-muted-foreground/60',
@@ -148,14 +167,14 @@ export function LoginForm() {
           {/* Submit button */}
           <Button
             type="submit"
-            disabled={isLoading}
+            disabled={formLoading}
             className={cn(
               'group relative h-12 w-full overflow-hidden rounded-lg bg-foreground font-medium text-background',
               'transition-all hover:bg-foreground/90',
               'disabled:opacity-50'
             )}
           >
-            {isLoading ? (
+            {formLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
@@ -175,7 +194,7 @@ export function LoginForm() {
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-background px-4 text-muted-foreground">
+          <span className="bg-card px-4 text-muted-foreground">
             New to Synced Momentum?
           </span>
         </div>
