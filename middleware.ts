@@ -16,16 +16,6 @@ const protectedRoutes = [
 const authRoutes = ['/login', '/register', '/reset-password']
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Debug logging for auth-related routes
-  const isAuthRelated = pathname.includes('login') || pathname.includes('auth') || pathname.includes('dashboard')
-  if (isAuthRelated) {
-    console.log('=== MIDDLEWARE DEBUG ===')
-    console.log('Pathname:', pathname)
-    console.log('Cookies:', request.cookies.getAll().map(c => c.name))
-  }
-
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -41,9 +31,6 @@ export async function middleware(request: NextRequest) {
         setAll(
           cookiesToSet: { name: string; value: string; options: CookieOptions }[]
         ) {
-          if (isAuthRelated) {
-            console.log('Setting cookies:', cookiesToSet.map(c => c.name))
-          }
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
@@ -63,9 +50,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (isAuthRelated) {
-    console.log('User from getUser:', user ? `${user.id} (${user.email})` : 'null')
-  }
+  const { pathname } = request.nextUrl
 
   // Check if current route is protected
   const isProtectedRoute = protectedRoutes.some(
@@ -77,15 +62,8 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
 
-  if (isAuthRelated) {
-    console.log('isProtectedRoute:', isProtectedRoute, 'isAuthRoute:', isAuthRoute)
-  }
-
   // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !user) {
-    if (isAuthRelated) {
-      console.log('Redirecting to login - no user for protected route')
-    }
     const redirectUrl = new URL(ROUTES.LOGIN, request.url)
     redirectUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(redirectUrl)
@@ -93,14 +71,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users from auth routes to dashboard
   if (isAuthRoute && user) {
-    if (isAuthRelated) {
-      console.log('Redirecting to dashboard - user exists on auth route')
-    }
     return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
-  }
-
-  if (isAuthRelated) {
-    console.log('Middleware completed, returning response')
   }
 
   return supabaseResponse
