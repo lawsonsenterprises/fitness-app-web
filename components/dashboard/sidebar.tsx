@@ -132,9 +132,16 @@ export function Sidebar() {
 
         {/* User section */}
         <div className="border-t border-border p-3">
+          {/* Debug: Show roles count */}
+          {!collapsed && (
+            <div className="mb-3 p-2 bg-red-500 text-white text-xs rounded">
+              DEBUG: {roles.length} roles - {roles.join(', ')}
+            </div>
+          )}
+
           {/* Role Switcher - always show */}
           {!collapsed && (
-            <div className="mb-3 border border-amber-500 rounded-lg">
+            <div className="mb-3 border-2 border-amber-500 rounded-lg p-1">
               <RoleSwitcher />
             </div>
           )}
