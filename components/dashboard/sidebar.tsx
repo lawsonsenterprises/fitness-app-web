@@ -69,6 +69,13 @@ export function Sidebar() {
           </Link>
         </div>
 
+        {/* Role Switcher */}
+        {!collapsed && (
+          <div className="border-b border-border p-3">
+            <RoleSwitcher />
+          </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto p-3">
           <ul className="space-y-1">
@@ -132,13 +139,6 @@ export function Sidebar() {
 
         {/* User section */}
         <div className="border-t border-border p-3">
-          {/* Role Switcher */}
-          {!collapsed && (
-            <div className="mb-3">
-              <RoleSwitcher />
-            </div>
-          )}
-
           {/* User info */}
           {!collapsed && (
             <div className="mb-3 rounded-lg bg-muted/50 px-3 py-2">
