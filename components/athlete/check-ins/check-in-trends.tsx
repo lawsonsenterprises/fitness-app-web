@@ -70,14 +70,17 @@ function MetricToggle({
   onClick,
   value,
   change,
+  unitOverride,
 }: {
   metric: MetricType
   isActive: boolean
   onClick: () => void
   value?: number
   change?: number
+  unitOverride?: string
 }) {
   const config = metricConfig[metric]
+  const unit = unitOverride || config.unit
   const Icon = config.icon
 
   const getTrendIcon = (change?: number) => {
@@ -114,7 +117,7 @@ function MetricToggle({
           <p className="text-xl font-bold">
             {metric === 'steps' ? value.toLocaleString() : value}
             <span className="ml-1 text-sm font-normal text-muted-foreground">
-              {config.unit}
+              {unit}
             </span>
           </p>
           {trend && (
@@ -131,8 +134,17 @@ function MetricToggle({
   )
 }
 
-export function CheckInTrends({ data, weightUnit: _weightUnit = 'kg' }: CheckInTrendsProps) {
+export function CheckInTrends({ data, weightUnit = 'kg' }: CheckInTrendsProps) {
   const [activeMetric, setActiveMetric] = useState<MetricType>('weight')
+
+  // Override weight unit in config
+  const activeConfig = {
+    ...metricConfig,
+    weight: {
+      ...metricConfig.weight,
+      unit: weightUnit,
+    },
+  }
 
   // Prepare chart data
   const chartData = useMemo(() => {
@@ -169,7 +181,7 @@ export function CheckInTrends({ data, weightUnit: _weightUnit = 'kg' }: CheckInT
     }
   }, [data])
 
-  const config = metricConfig[activeMetric]
+  const config = activeConfig[activeMetric]
   const metricValues = chartData.map(d => d[activeMetric]).filter(v => v !== undefined) as number[]
   const yDomain = config.domain(metricValues)
 
@@ -195,6 +207,7 @@ export function CheckInTrends({ data, weightUnit: _weightUnit = 'kg' }: CheckInT
           onClick={() => setActiveMetric('weight')}
           value={stats.weight.avg}
           change={stats.weight.change}
+          unitOverride={weightUnit}
         />
         <MetricToggle
           metric="steps"

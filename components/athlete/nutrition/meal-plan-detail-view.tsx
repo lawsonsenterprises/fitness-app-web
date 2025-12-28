@@ -140,13 +140,16 @@ function MealCard({ meal }: { meal: Meal }) {
   )
 }
 
-function DayPlanSection({ plan, title: _title, isActive }: { plan: DayPlan; title: string; isActive: boolean }) {
+function DayPlanSection({ plan, title, isActive }: { plan: DayPlan; title: string; isActive: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className={cn('space-y-4', !isActive && 'hidden')}
     >
+      {/* Day heading */}
+      <h3 className="text-lg font-semibold">{title}</h3>
+
       {/* Day summary */}
       <div className="grid grid-cols-4 gap-3">
         <div className="rounded-xl bg-orange-500/10 p-4 text-center">

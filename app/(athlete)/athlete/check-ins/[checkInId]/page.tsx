@@ -13,7 +13,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Image,
+  ImageIcon,
   Calendar,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
@@ -355,7 +355,7 @@ export default function CheckInDetailPage({
             className="rounded-xl border border-border bg-card p-6"
           >
             <div className="flex items-center gap-2 mb-4">
-              <Image className="h-5 w-5" />
+              <ImageIcon className="h-5 w-5" />
               <h3 className="font-semibold">Progress Photos</h3>
             </div>
             <div className="grid grid-cols-3 gap-2">
