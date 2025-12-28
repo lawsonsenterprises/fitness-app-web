@@ -21,11 +21,6 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
   const { roles, activeRole, setActiveRole } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
 
-  // Don't render if user only has one role
-  if (roles.length <= 1) {
-    return null
-  }
-
   const ActiveIcon = ROLE_ICONS[activeRole]
 
   return (

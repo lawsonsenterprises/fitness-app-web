@@ -74,8 +74,8 @@ export function AthleteSidebar() {
           </Link>
         </div>
 
-        {/* Role Switcher (if multi-role) */}
-        {roles.length > 1 && !collapsed && (
+        {/* Role Switcher */}
+        {!collapsed && (
           <div className="border-b border-border p-3">
             <RoleSwitcher />
           </div>
