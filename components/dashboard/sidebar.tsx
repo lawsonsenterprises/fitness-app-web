@@ -132,9 +132,9 @@ export function Sidebar() {
 
         {/* User section */}
         <div className="border-t border-border p-3">
-          {/* Role Switcher */}
+          {/* Role Switcher - always show */}
           {!collapsed && (
-            <div className="mb-3">
+            <div className="mb-3 border border-amber-500 rounded-lg">
               <RoleSwitcher />
             </div>
           )}
