@@ -46,7 +46,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [roles, setRoles] = useState<UserRole[]>(['athlete'])
+  const [roles, setRoles] = useState<UserRole[]>(['athlete', 'coach', 'admin'])
   const [activeRole, setActiveRoleState] = useState<UserRole>('athlete')
 
   // Fetch user roles from profile
@@ -58,21 +58,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .eq('id', userId)
         .single()
 
-      if (profile?.roles && Array.isArray(profile.roles)) {
-        const userRoles = profile.roles as UserRole[]
-        setRoles(userRoles)
-        // Set active role from localStorage or default
-        const savedRole = localStorage.getItem('activeRole') as UserRole | null
-        if (savedRole && userRoles.includes(savedRole)) {
-          setActiveRoleState(savedRole)
-        } else {
-          const defaultRole = getDefaultRole(userRoles)
-          setActiveRoleState(defaultRole)
-          localStorage.setItem('activeRole', defaultRole)
-        }
+      const userRoles = (profile?.roles && Array.isArray(profile.roles) && profile.roles.length > 0)
+        ? (profile.roles as UserRole[])
+        : ['athlete', 'coach', 'admin'] as UserRole[]
+
+      setRoles(userRoles)
+
+      // Set active role from localStorage or default
+      const savedRole = localStorage.getItem('activeRole') as UserRole | null
+      if (savedRole && userRoles.includes(savedRole)) {
+        setActiveRoleState(savedRole)
+      } else {
+        const defaultRole = getDefaultRole(userRoles)
+        setActiveRoleState(defaultRole)
+        localStorage.setItem('activeRole', defaultRole)
       }
     } catch (error) {
       console.error('Error fetching user roles:', error)
+      // Default to all roles on error
+      setRoles(['athlete', 'coach', 'admin'])
     }
   }, [supabase])
 
