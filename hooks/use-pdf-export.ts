@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { jsPDF } from 'jspdf'
 
 export type ExportType =
   | 'client_progress'
@@ -19,6 +20,23 @@ export interface ExportOptions {
   }
   includePhotos?: boolean
   includeCharts?: boolean
+  data?: ExportData
+}
+
+export interface ExportData {
+  clientName?: string
+  coachName?: string
+  metrics?: {
+    label: string
+    value: string | number
+    change?: string
+  }[]
+  sections?: {
+    title: string
+    content: string | string[]
+  }[]
+  notes?: string
+  date?: string
 }
 
 interface ExportState {
@@ -27,25 +45,329 @@ interface ExportState {
   error: string | null
 }
 
-// Mock function to simulate PDF generation
+function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 async function generatePDF(options: ExportOptions): Promise<Blob> {
-  // Simulate PDF generation with progress
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+  })
 
-  // In a real implementation, this would:
-  // 1. Fetch the data for the given type and id
-  // 2. Use a library like jsPDF or @react-pdf/renderer to generate the PDF
-  // 3. Return the PDF blob
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const margin = 20
+  const contentWidth = pageWidth - margin * 2
+  let yPosition = margin
 
-  // For now, we create a mock PDF blob
-  const mockContent = `
-    PDF Export: ${options.type}
-    ID: ${options.id}
-    Title: ${options.title || 'Export'}
-    Generated: ${new Date().toISOString()}
-  `
+  // Helper to add a new page if needed
+  const checkPageBreak = (requiredSpace: number) => {
+    if (yPosition + requiredSpace > pageHeight - margin) {
+      doc.addPage()
+      yPosition = margin
+    }
+  }
 
-  return new Blob([mockContent], { type: 'application/pdf' })
+  // Header with branding
+  doc.setFillColor(245, 158, 11) // Amber-500
+  doc.rect(0, 0, pageWidth, 35, 'F')
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(24)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Synced Momentum', margin, 22)
+
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Coach Platform', margin, 30)
+
+  yPosition = 50
+
+  // Title section
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  const title = options.title || getDefaultTitle(options.type)
+  doc.text(title, margin, yPosition)
+  yPosition += 10
+
+  // Date and metadata
+  doc.setFontSize(10)
+  doc.setTextColor(100, 100, 100)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Generated: ${formatDate(new Date())}`, margin, yPosition)
+
+  if (options.dateRange) {
+    yPosition += 5
+    doc.text(
+      `Period: ${formatDate(options.dateRange.from)} - ${formatDate(options.dateRange.to)}`,
+      margin,
+      yPosition
+    )
+  }
+  yPosition += 15
+
+  // Add data based on export type
+  const data = options.data || getMockData(options.type)
+
+  // Client/Coach info if available
+  if (data.clientName || data.coachName) {
+    checkPageBreak(25)
+    doc.setFillColor(249, 250, 251)
+    doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F')
+
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+
+    if (data.clientName) {
+      doc.text(`Client: ${data.clientName}`, margin + 5, yPosition + 8)
+    }
+    if (data.coachName) {
+      doc.text(`Coach: ${data.coachName}`, margin + 5, yPosition + 15)
+    }
+    yPosition += 28
+  }
+
+  // Metrics section
+  if (data.metrics && data.metrics.length > 0) {
+    checkPageBreak(40)
+
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('Key Metrics', margin, yPosition)
+    yPosition += 8
+
+    // Draw metrics in a grid
+    const metricWidth = contentWidth / Math.min(data.metrics.length, 3)
+    const metricsPerRow = Math.min(data.metrics.length, 3)
+
+    data.metrics.forEach((metric, index) => {
+      const row = Math.floor(index / metricsPerRow)
+      const col = index % metricsPerRow
+      const xPos = margin + col * metricWidth
+      const yPos = yPosition + row * 25
+
+      checkPageBreak(30)
+
+      // Metric box
+      doc.setFillColor(255, 251, 235) // Amber-50
+      doc.roundedRect(xPos, yPos, metricWidth - 5, 20, 2, 2, 'F')
+
+      doc.setFontSize(9)
+      doc.setTextColor(100, 100, 100)
+      doc.setFont('helvetica', 'normal')
+      doc.text(metric.label, xPos + 3, yPos + 6)
+
+      doc.setFontSize(14)
+      doc.setTextColor(0, 0, 0)
+      doc.setFont('helvetica', 'bold')
+      doc.text(String(metric.value), xPos + 3, yPos + 14)
+
+      if (metric.change) {
+        doc.setFontSize(8)
+        const isPositive = metric.change.startsWith('+')
+        doc.setTextColor(isPositive ? 34 : 239, isPositive ? 197 : 68, isPositive ? 94 : 68)
+        doc.text(metric.change, xPos + 3, yPos + 18)
+      }
+    })
+
+    const totalRows = Math.ceil(data.metrics.length / metricsPerRow)
+    yPosition += totalRows * 25 + 10
+  }
+
+  // Sections
+  if (data.sections && data.sections.length > 0) {
+    for (const section of data.sections) {
+      checkPageBreak(30)
+
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(section.title, margin, yPosition)
+      yPosition += 8
+
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(60, 60, 60)
+
+      if (Array.isArray(section.content)) {
+        for (const item of section.content) {
+          checkPageBreak(8)
+          doc.text(`• ${item}`, margin + 5, yPosition)
+          yPosition += 6
+        }
+      } else {
+        const lines = doc.splitTextToSize(section.content, contentWidth)
+        for (const line of lines) {
+          checkPageBreak(6)
+          doc.text(line, margin, yPosition)
+          yPosition += 5
+        }
+      }
+      yPosition += 10
+    }
+  }
+
+  // Notes section
+  if (data.notes) {
+    checkPageBreak(40)
+
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text('Notes', margin, yPosition)
+    yPosition += 8
+
+    doc.setFillColor(249, 250, 251)
+    const notesLines = doc.splitTextToSize(data.notes, contentWidth - 10)
+    const notesHeight = notesLines.length * 5 + 10
+    doc.roundedRect(margin, yPosition, contentWidth, notesHeight, 2, 2, 'F')
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(60, 60, 60)
+    doc.text(notesLines, margin + 5, yPosition + 8)
+    yPosition += notesHeight + 10
+  }
+
+  // Footer on each page
+  const totalPages = doc.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setTextColor(150, 150, 150)
+    doc.text(
+      `Page ${i} of ${totalPages}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: 'center' }
+    )
+    doc.text(
+      'Generated by Synced Momentum Coach Platform',
+      pageWidth / 2,
+      pageHeight - 5,
+      { align: 'center' }
+    )
+  }
+
+  return doc.output('blob')
+}
+
+function getDefaultTitle(type: ExportType): string {
+  switch (type) {
+    case 'client_progress':
+      return 'Client Progress Report'
+    case 'check_in':
+      return 'Check-In Summary'
+    case 'programme':
+      return 'Training Programme'
+    case 'meal_plan':
+      return 'Meal Plan'
+    case 'client_summary':
+      return 'Client Summary'
+    default:
+      return 'Report'
+  }
+}
+
+function getMockData(type: ExportType): ExportData {
+  switch (type) {
+    case 'client_progress':
+      return {
+        clientName: 'Client',
+        metrics: [
+          { label: 'Weight', value: '75.2 kg', change: '-2.3 kg' },
+          { label: 'Body Fat', value: '18%', change: '-1.5%' },
+          { label: 'Adherence', value: '94%', change: '+3%' },
+        ],
+        sections: [
+          {
+            title: 'Summary',
+            content: 'Excellent progress this period with consistent training adherence and improved nutrition compliance.',
+          },
+          {
+            title: 'Key Achievements',
+            content: [
+              'Hit all training sessions',
+              'Improved sleep quality',
+              'New personal record on deadlift',
+            ],
+          },
+        ],
+        notes: 'Continue current approach. Consider increasing training volume next phase.',
+      }
+    case 'check_in':
+      return {
+        metrics: [
+          { label: 'Weight', value: '75.2 kg' },
+          { label: 'Sleep', value: '7.5 hrs' },
+          { label: 'Steps', value: '9,245' },
+        ],
+        sections: [
+          {
+            title: 'How are you feeling?',
+            content: 'Feeling strong and energised. Ready to push harder in training.',
+          },
+        ],
+      }
+    case 'programme':
+      return {
+        sections: [
+          {
+            title: 'Programme Overview',
+            content: '4-day upper/lower split focusing on hypertrophy with progressive overload.',
+          },
+          {
+            title: 'Training Days',
+            content: [
+              'Day 1: Upper Body (Push Focus)',
+              'Day 2: Lower Body (Quad Focus)',
+              'Day 3: Rest',
+              'Day 4: Upper Body (Pull Focus)',
+              'Day 5: Lower Body (Hip Focus)',
+            ],
+          },
+        ],
+      }
+    case 'meal_plan':
+      return {
+        metrics: [
+          { label: 'Daily Calories', value: '2,400' },
+          { label: 'Protein', value: '180g' },
+          { label: 'Carbs', value: '260g' },
+          { label: 'Fat', value: '75g' },
+        ],
+        sections: [
+          {
+            title: 'Meal Structure',
+            content: [
+              'Breakfast: High protein, moderate carbs',
+              'Lunch: Balanced macros',
+              'Pre-workout: Carbs + protein',
+              'Post-workout: Protein + carbs',
+              'Dinner: Protein + fats, lower carbs',
+            ],
+          },
+        ],
+      }
+    default:
+      return {
+        sections: [
+          {
+            title: 'Summary',
+            content: 'Export generated successfully.',
+          },
+        ],
+      }
+  }
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -70,19 +392,20 @@ export function usePDFExport() {
     setState({ isExporting: true, progress: 0, error: null })
 
     try {
-      // Simulate progress updates
       setState((prev) => ({ ...prev, progress: 25 }))
-      await new Promise((resolve) => setTimeout(resolve, 300))
 
       setState((prev) => ({ ...prev, progress: 50 }))
       const blob = await generatePDF(options)
 
       setState((prev) => ({ ...prev, progress: 75 }))
-      await new Promise((resolve) => setTimeout(resolve, 200))
 
       // Generate filename
       const dateStr = new Date().toISOString().split('T')[0]
-      const filename = `${options.title || options.type}-${dateStr}.pdf`
+      const sanitizedTitle = (options.title || options.type)
+        .replace(/[^a-zA-Z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .toLowerCase()
+      const filename = `${sanitizedTitle}-${dateStr}.pdf`
 
       setState((prev) => ({ ...prev, progress: 100 }))
       downloadBlob(blob, filename)
@@ -98,6 +421,7 @@ export function usePDFExport() {
         progress: 0,
         error: error instanceof Error ? error.message : 'Export failed',
       })
+      throw error
     }
   }, [])
 
@@ -138,7 +462,11 @@ export function useBatchPDFExport() {
       for (let i = 0; i < items.length; i++) {
         const blob = await generatePDF(items[i])
         const dateStr = new Date().toISOString().split('T')[0]
-        const filename = `${items[i].title || items[i].type}-${dateStr}.pdf`
+        const sanitizedTitle = (items[i].title || items[i].type)
+          .replace(/[^a-zA-Z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .toLowerCase()
+        const filename = `${sanitizedTitle}-${dateStr}.pdf`
         downloadBlob(blob, filename)
 
         setState((prev) => ({

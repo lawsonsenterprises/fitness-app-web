@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save, Loader2, Mail, Bell, MessageSquare, ClipboardCheck, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
 
 interface NotificationSetting {
@@ -17,7 +19,7 @@ interface NotificationSetting {
   inApp: boolean
 }
 
-const initialSettings: NotificationSetting[] = [
+const defaultSettings: NotificationSetting[] = [
   {
     id: 'check_ins',
     title: 'Check-in Submissions',
@@ -90,9 +92,74 @@ function Toggle({
 }
 
 export default function NotificationSettingsPage() {
-  const [settings, setSettings] = useState(initialSettings)
+  const { user } = useAuth()
+  const [settings, setSettings] = useState(defaultSettings)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [emailDigest, setEmailDigest] = useState<'realtime' | 'daily' | 'weekly'>('realtime')
+  const supabase = createClient()
+
+  // Fetch existing preferences on mount
+  useEffect(() => {
+    async function fetchPreferences() {
+      if (!user?.id) return
+
+      try {
+        const { data } = await supabase
+          .from('notification_preferences')
+          .select('*')
+          .eq('user_id', user.id)
+          .single()
+
+        if (data) {
+          setEmailDigest(data.email_digest || 'realtime')
+          setSettings((prev) =>
+            prev.map((setting) => {
+              switch (setting.id) {
+                case 'check_ins':
+                  return {
+                    ...setting,
+                    email: data.check_ins_email ?? true,
+                    push: data.check_ins_push ?? true,
+                    inApp: data.check_ins_in_app ?? true,
+                  }
+                case 'messages':
+                  return {
+                    ...setting,
+                    email: data.messages_email ?? true,
+                    push: data.messages_push ?? true,
+                    inApp: data.messages_in_app ?? true,
+                  }
+                case 'client_activity':
+                  return {
+                    ...setting,
+                    email: data.client_activity_email ?? true,
+                    push: data.client_activity_push ?? false,
+                    inApp: data.client_activity_in_app ?? true,
+                  }
+                case 'reminders':
+                  return {
+                    ...setting,
+                    email: data.reminders_email ?? true,
+                    push: data.reminders_push ?? false,
+                    inApp: data.reminders_in_app ?? true,
+                  }
+                default:
+                  return setting
+              }
+            })
+          )
+        }
+      } catch (error) {
+        // No preferences exist yet, use defaults
+        console.log('No notification preferences found, using defaults')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPreferences()
+  }, [user?.id, supabase])
 
   const updateSetting = (
     id: string,
@@ -107,15 +174,51 @@ export default function NotificationSettingsPage() {
   }
 
   const handleSave = async () => {
+    if (!user?.id) return
+
     setIsSubmitting(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const checkIns = settings.find((s) => s.id === 'check_ins')
+      const messages = settings.find((s) => s.id === 'messages')
+      const clientActivity = settings.find((s) => s.id === 'client_activity')
+      const reminders = settings.find((s) => s.id === 'reminders')
+
+      const { error } = await supabase
+        .from('notification_preferences')
+        .upsert({
+          user_id: user.id,
+          email_digest: emailDigest,
+          check_ins_email: checkIns?.email ?? true,
+          check_ins_push: checkIns?.push ?? true,
+          check_ins_in_app: checkIns?.inApp ?? true,
+          messages_email: messages?.email ?? true,
+          messages_push: messages?.push ?? true,
+          messages_in_app: messages?.inApp ?? true,
+          client_activity_email: clientActivity?.email ?? true,
+          client_activity_push: clientActivity?.push ?? false,
+          client_activity_in_app: clientActivity?.inApp ?? true,
+          reminders_email: reminders?.email ?? true,
+          reminders_push: reminders?.push ?? false,
+          reminders_in_app: reminders?.inApp ?? true,
+        })
+
+      if (error) throw error
+
       toast.success('Notification preferences saved')
-    } catch {
+    } catch (error) {
+      console.error('Error saving notification preferences:', error)
       toast.error('Failed to save preferences')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (

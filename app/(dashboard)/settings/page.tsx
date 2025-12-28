@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Camera, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
@@ -10,6 +10,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const profileSchema = z.object({
@@ -28,17 +29,20 @@ type ProfileFormData = z.infer<typeof profileSchema>
 export default function ProfileSettingsPage() {
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const supabase = createClient()
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isDirty },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: user?.user_metadata?.first_name || '',
-      lastName: user?.user_metadata?.last_name || '',
-      email: user?.email || '',
+      firstName: '',
+      lastName: '',
+      email: '',
       businessName: '',
       bio: '',
       credentials: '',
@@ -47,16 +51,93 @@ export default function ProfileSettingsPage() {
     },
   })
 
+  // Fetch profile data on mount
+  useEffect(() => {
+    async function fetchProfile() {
+      if (!user?.id) return
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          reset({
+            firstName: profile.first_name || user?.user_metadata?.first_name || '',
+            lastName: profile.last_name || user?.user_metadata?.last_name || '',
+            email: user?.email || '',
+            businessName: profile.business_name || '',
+            bio: profile.bio || '',
+            credentials: profile.qualifications?.join(', ') || '',
+            websiteUrl: profile.website_url || '',
+            instagramHandle: profile.social_links?.instagram || '',
+          })
+        } else {
+          // Use user metadata if no profile exists
+          reset({
+            firstName: user?.user_metadata?.first_name || '',
+            lastName: user?.user_metadata?.last_name || '',
+            email: user?.email || '',
+            businessName: '',
+            bio: '',
+            credentials: '',
+            websiteUrl: '',
+            instagramHandle: '',
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [user?.id, user?.email, user?.user_metadata, supabase, reset])
+
   const onSubmit = handleSubmit(async (data) => {
+    if (!user?.id) return
+
     setIsSubmitting(true)
     try {
-      // TODO: Replace with actual API call to update profile
-      console.log('Updating profile with:', data)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Update Supabase Auth user metadata
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          first_name: data.firstName,
+          last_name: data.lastName,
+          full_name: `${data.firstName} ${data.lastName}`,
+        },
+      })
+
+      if (authError) throw authError
+
+      // Update profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email,
+          business_name: data.businessName || null,
+          bio: data.bio || null,
+          qualifications: data.credentials ? data.credentials.split(',').map(q => q.trim()) : [],
+          website_url: data.websiteUrl || null,
+          social_links: {
+            instagram: data.instagramHandle || null,
+          },
+          updated_at: new Date().toISOString(),
+        })
+
+      if (profileError) throw profileError
+
       toast.success('Profile updated', {
         description: 'Your changes have been saved.',
       })
-    } catch {
+    } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile', {
         description: 'Please try again.',
       })
@@ -68,6 +149,14 @@ export default function ProfileSettingsPage() {
   const initials =
     (user?.user_metadata?.first_name?.[0] || '') +
     (user?.user_metadata?.last_name?.[0] || '')
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">

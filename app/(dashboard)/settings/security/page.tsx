@@ -9,6 +9,7 @@ import { z } from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
 const passwordSchema = z
@@ -29,34 +30,11 @@ const passwordSchema = z
 
 type PasswordFormData = z.infer<typeof passwordSchema>
 
-// Mock session data
-const recentSessions = [
-  {
-    id: '1',
-    device: 'Chrome on macOS',
-    location: 'London, UK',
-    lastActive: '2024-12-27T10:30:00Z',
-    isCurrent: true,
-  },
-  {
-    id: '2',
-    device: 'Safari on iPhone',
-    location: 'London, UK',
-    lastActive: '2024-12-26T18:15:00Z',
-    isCurrent: false,
-  },
-  {
-    id: '3',
-    device: 'Firefox on Windows',
-    location: 'Manchester, UK',
-    lastActive: '2024-12-24T09:00:00Z',
-    isCurrent: false,
-  },
-]
-
 export default function SecuritySettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [isRevokingSession, setIsRevokingSession] = useState<string | null>(null)
+  const supabase = createClient()
 
   const {
     register,
@@ -70,28 +48,58 @@ export default function SecuritySettingsPage() {
   const onSubmit = handleSubmit(async (formData) => {
     setIsSubmitting(true)
     try {
-      // TODO: Replace with actual password update API call
-      console.log('Updating password:', formData.newPassword ? '[provided]' : '[empty]')
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Verify current password by attempting to sign in
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) {
+        throw new Error('User not found')
+      }
+
+      // First verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: formData.currentPassword,
+      })
+
+      if (signInError) {
+        toast.error('Current password is incorrect')
+        setIsSubmitting(false)
+        return
+      }
+
+      // Update to new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.newPassword,
+      })
+
+      if (updateError) throw updateError
+
       toast.success('Password updated successfully')
       reset()
-    } catch {
-      toast.error('Failed to update password')
+    } catch (error) {
+      console.error('Password update error:', error)
+      toast.error('Failed to update password', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
     } finally {
       setIsSubmitting(false)
     }
   })
 
   const handleRevokeSession = async (sessionId: string) => {
+    setIsRevokingSession(sessionId)
     try {
-      // TODO: Replace with actual session revocation API call
-      console.log('Revoking session:', sessionId)
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      toast.success('Session revoked')
-    } catch {
+      // Sign out from other sessions by signing out globally then signing back in
+      // Note: Supabase doesn't have per-session revocation, so we sign out all other sessions
+      await supabase.auth.signOut({ scope: 'others' })
+      toast.success('Other sessions have been signed out')
+    } catch (error) {
+      console.error('Session revocation error:', error)
       toast.error('Failed to revoke session')
+    } finally {
+      setIsRevokingSession(null)
     }
   }
+
 
   return (
     <div className="space-y-8">
@@ -225,57 +233,55 @@ export default function SecuritySettingsPage() {
       {/* Active sessions */}
       <div className="rounded-xl border border-border bg-card">
         <div className="border-b border-border p-6">
-          <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
-              <Clock className="h-5 w-5 text-blue-600" />
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                <Clock className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Active Sessions</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Manage devices where you&apos;re logged in
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">Active Sessions</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Manage devices where you&apos;re logged in
-              </p>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleRevokeSession('others')}
+              disabled={isRevokingSession !== null}
+              className="text-amber-600 hover:bg-amber-500/10 hover:text-amber-600"
+            >
+              {isRevokingSession ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing out...
+                </>
+              ) : (
+                'Sign out other sessions'
+              )}
+            </Button>
           </div>
         </div>
 
-        <div className="divide-y divide-border">
-          {recentSessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center justify-between p-4"
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{session.device}</p>
-                  {session.isCurrent && (
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                      Current
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {session.location} •{' '}
-                  {new Date(session.lastActive).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-medium">Current Session</p>
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-600">
+                  Active
+                </span>
               </div>
-
-              {!session.isCurrent && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleRevokeSession(session.id)}
-                  className="text-red-600 hover:bg-red-500/10 hover:text-red-600"
-                >
-                  Revoke
-                </Button>
-              )}
+              <p className="text-sm text-muted-foreground">
+                This device • {new Date().toLocaleDateString('en-GB', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </p>
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
