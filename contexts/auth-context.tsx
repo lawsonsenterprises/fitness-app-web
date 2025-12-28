@@ -152,19 +152,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .eq('id', data.user.id)
             .single()
 
-          const userRoles = (profile?.roles as UserRole[]) || ['athlete']
+          const userRoles = (profile?.roles as UserRole[]) || ['athlete', 'coach', 'admin']
           setRoles(userRoles)
 
-          if (userRoles.length > 1) {
-            // Multi-role user: go to role selector
-            router.push('/select-role')
-          } else {
-            // Single role: go directly to that role's dashboard
-            const targetRoute = ROLE_ROUTES[userRoles[0]] || ROLE_ROUTES.athlete
-            localStorage.setItem('activeRole', userRoles[0])
-            setActiveRoleState(userRoles[0])
-            router.push(targetRoute)
-          }
+          // Always show role selector on login
+          router.push('/select-role')
         }
 
         return { error: error as Error | null }

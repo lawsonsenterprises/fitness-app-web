@@ -44,12 +44,7 @@ export default function SelectRolePage() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
-  // If user only has one role, redirect immediately
-  useEffect(() => {
-    if (!isLoading && roles.length === 1) {
-      router.push(ROLE_ROUTES[roles[0]])
-    }
-  }, [roles, isLoading, router])
+  // No longer auto-redirect for single role - always show selector
 
   // If not authenticated, redirect to login
   useEffect(() => {
@@ -68,7 +63,7 @@ export default function SelectRolePage() {
     setActiveRole(role)
   }
 
-  if (isLoading || roles.length <= 1) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
