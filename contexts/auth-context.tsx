@@ -139,13 +139,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
     async (email: string, password: string) => {
       setIsLoading(true)
       try {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
 
-        if (!error) {
-          router.push(ROUTES.DASHBOARD)
+        if (!error && data.user) {
+          // Fetch user roles to determine redirect
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('roles')
+            .eq('id', data.user.id)
+            .single()
+
+          const userRoles = (profile?.roles as UserRole[]) || ['athlete']
+          setRoles(userRoles)
+
+          if (userRoles.length > 1) {
+            // Multi-role user: go to role selector
+            router.push('/select-role')
+          } else {
+            // Single role: go directly to that role's dashboard
+            const targetRoute = ROLE_ROUTES[userRoles[0]] || ROLE_ROUTES.athlete
+            localStorage.setItem('activeRole', userRoles[0])
+            setActiveRoleState(userRoles[0])
+            router.push(targetRoute)
+          }
         }
 
         return { error: error as Error | null }
@@ -153,7 +172,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth, router]
+    [supabase.auth, supabase, router]
   )
 
   const signUp = useCallback(

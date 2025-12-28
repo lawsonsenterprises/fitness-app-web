@@ -19,6 +19,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { ROUTES } from '@/lib/constants'
+import { RoleSwitcher } from '@/components/auth/role-switcher'
 
 const navigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard },
@@ -34,7 +35,7 @@ const secondaryNavigation = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const { signOut, user } = useAuth()
+  const { signOut, user, roles } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Coach'
@@ -131,6 +132,13 @@ export function Sidebar() {
 
         {/* User section */}
         <div className="border-t border-border p-3">
+          {/* Role Switcher (if multi-role) */}
+          {roles.length > 1 && !collapsed && (
+            <div className="mb-3">
+              <RoleSwitcher />
+            </div>
+          )}
+
           {/* User info */}
           {!collapsed && (
             <div className="mb-3 rounded-lg bg-muted/50 px-3 py-2">
