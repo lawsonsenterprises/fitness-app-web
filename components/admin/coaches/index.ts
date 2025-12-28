@@ -1,0 +1,6 @@
+export { CoachesTable, type Coach, type CoachesTableProps } from './coaches-table'
+export { CoachRowActions, type CoachRowActionsProps } from './coach-row-actions'
+export { SuspendCoachModal, type SuspendCoachModalProps } from './suspend-coach-modal'
+export { CoachDetail, type CoachDetailData, type CoachDetailProps } from './coach-detail'
+export { CoachClientsTable, type Client, type CoachClientsTableProps } from './coach-clients-table'
+export { CoachActivityLog, type ActivityItem, type ActivityType, type CoachActivityLogProps } from './coach-activity-log'
