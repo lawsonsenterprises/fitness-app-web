@@ -16,12 +16,17 @@ ADD CONSTRAINT valid_roles CHECK (
     roles <@ ARRAY['athlete', 'coach', 'admin']::TEXT[]
 );
 
--- Update existing coaches to have coach role
-UPDATE profiles
-SET roles = ARRAY['coach']::TEXT[]
-WHERE id IN (
-    SELECT DISTINCT coach_id FROM clients WHERE coach_id IS NOT NULL
-);
+-- Update existing coaches to have coach role (if clients table exists)
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'clients') THEN
+        UPDATE profiles
+        SET roles = ARRAY['coach']::TEXT[]
+        WHERE id IN (
+            SELECT DISTINCT coach_id FROM clients WHERE coach_id IS NOT NULL
+        );
+    END IF;
+END $$;
 
 -- Add comment
 COMMENT ON COLUMN profiles.roles IS 'Array of user roles: athlete, coach, admin. Users can have multiple roles.';
