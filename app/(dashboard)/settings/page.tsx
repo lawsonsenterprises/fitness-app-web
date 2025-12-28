@@ -54,7 +54,10 @@ export default function ProfileSettingsPage() {
   // Fetch profile data on mount
   useEffect(() => {
     async function fetchProfile() {
-      if (!user?.id) return
+      if (!user?.id) {
+        setIsLoading(false)
+        return
+      }
 
       try {
         const { data: profile } = await supabase
