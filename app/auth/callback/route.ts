@@ -2,12 +2,29 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { ROUTES } from '@/lib/constants'
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const error = searchParams.get('error')
-  const errorDescription = searchParams.get('error_description')
-  const next = searchParams.get('next') ?? ROUTES.DASHBOARD
+async function handleCallback(request: Request) {
+  const { origin } = new URL(request.url)
+
+  // Handle both GET (query params) and POST (form data) requests
+  let code: string | null = null
+  let error: string | null = null
+  let errorDescription: string | null = null
+  let next: string = ROUTES.DASHBOARD
+
+  if (request.method === 'POST') {
+    // Apple sends callback as POST with form data
+    const formData = await request.formData()
+    code = formData.get('code') as string | null
+    error = formData.get('error') as string | null
+    errorDescription = formData.get('error_description') as string | null
+  } else {
+    // Standard OAuth callback via GET
+    const { searchParams } = new URL(request.url)
+    code = searchParams.get('code')
+    error = searchParams.get('error')
+    errorDescription = searchParams.get('error_description')
+    next = searchParams.get('next') ?? ROUTES.DASHBOARD
+  }
 
   // Handle OAuth errors (e.g., user cancelled Apple sign in)
   if (error) {
@@ -29,4 +46,12 @@ export async function GET(request: Request) {
 
   // Return the user to an error page with instructions
   return NextResponse.redirect(`${origin}/login?error=auth_callback_error`)
+}
+
+export async function GET(request: Request) {
+  return handleCallback(request)
+}
+
+export async function POST(request: Request) {
+  return handleCallback(request)
 }
