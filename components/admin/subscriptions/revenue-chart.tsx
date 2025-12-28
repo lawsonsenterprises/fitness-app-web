@@ -70,14 +70,16 @@ export function RevenueChart({
   const mrrChange = previousMrr > 0 ? ((currentMrr - previousMrr) / previousMrr) * 100 : 0
   const isPositive = mrrChange >= 0
 
-  const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `${currency}${(value / 1000000).toFixed(1)}M`
+  const formatCurrency = (value: number, forAxis = false) => {
+    if (forAxis) {
+      if (value >= 1000000) {
+        return `${currency}${(value / 1000000).toFixed(1)}M`
+      }
+      if (value >= 1000) {
+        return `${currency}${(value / 1000).toFixed(1)}k`
+      }
     }
-    if (value >= 1000) {
-      return `${currency}${(value / 1000).toFixed(1)}k`
-    }
-    return `${currency}${value.toFixed(0)}`
+    return `${currency}${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   return (
@@ -89,7 +91,7 @@ export function RevenueChart({
             <p className="text-sm text-muted-foreground">Monthly Recurring Revenue</p>
             <div className="flex items-baseline gap-3 mt-1">
               <h2 className="text-3xl font-bold">
-                {currency}{currentMrr.toLocaleString()}
+                {formatCurrency(currentMrr)}
               </h2>
               <div
                 className={cn(
@@ -108,7 +110,7 @@ export function RevenueChart({
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              vs {currency}{previousMrr.toLocaleString()} last month
+              vs {formatCurrency(previousMrr)} last month
             </p>
           </div>
 
@@ -175,7 +177,7 @@ export function RevenueChart({
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  tickFormatter={(value) => formatCurrency(value)}
+                  tickFormatter={(value) => formatCurrency(value, true)}
                 />
                 <Tooltip
                   contentStyle={{
@@ -184,7 +186,7 @@ export function RevenueChart({
                     borderRadius: '8px',
                   }}
                   formatter={(value: number | undefined) => [
-                    `${currency}${(value ?? 0).toLocaleString()}`,
+                    formatCurrency(value ?? 0),
                     'MRR',
                   ]}
                 />
@@ -211,7 +213,7 @@ export function RevenueChart({
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  tickFormatter={(value) => formatCurrency(value)}
+                  tickFormatter={(value) => formatCurrency(value, true)}
                 />
                 <Tooltip
                   contentStyle={{
@@ -220,7 +222,7 @@ export function RevenueChart({
                     borderRadius: '8px',
                   }}
                   formatter={(value: number | undefined, name: string | undefined) => [
-                    `${currency}${(value ?? 0).toLocaleString()}`,
+                    formatCurrency(value ?? 0),
                     name === 'newRevenue'
                       ? 'New'
                       : name === 'churnedRevenue'

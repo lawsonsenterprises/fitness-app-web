@@ -7,7 +7,7 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  DollarSign,
+  PoundSterling,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -120,9 +120,9 @@ export default function AdminDashboardPage() {
           color="green"
         />
         <StatCard
-          icon={DollarSign}
+          icon={PoundSterling}
           label="Monthly Revenue"
-          value={`£${mockStats.monthlyRevenue.toLocaleString()}`}
+          value={`£${mockStats.monthlyRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           change={mockStats.revenueChange}
           changeLabel="vs last month"
           color="purple"
@@ -165,7 +165,7 @@ export default function AdminDashboardPage() {
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value) => [`£${Number(value).toLocaleString()}`, 'Revenue']}
+                  formatter={(value) => [`£${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
                 />
                 <Area
                   type="monotone"
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
                   {activity.type === 'coach_signup' && <Users className="h-4 w-4 text-amber-500" />}
                   {activity.type === 'athlete_signup' && <UserCircle className="h-4 w-4 text-blue-500" />}
                   {activity.type === 'subscription' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                  {activity.type === 'payment' && <DollarSign className="h-4 w-4 text-purple-500" />}
+                  {activity.type === 'payment' && <PoundSterling className="h-4 w-4 text-purple-500" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{activity.name}</p>

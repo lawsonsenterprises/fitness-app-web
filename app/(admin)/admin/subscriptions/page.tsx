@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   CreditCard,
   Search,
-  DollarSign,
+  PoundSterling,
   TrendingUp,
   CheckCircle2,
   XCircle,
@@ -107,10 +107,10 @@ export default function SubscriptionsPage() {
       <div className="grid gap-4 md:grid-cols-4 mb-6">
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <DollarSign className="h-4 w-4" />
+            <PoundSterling className="h-4 w-4" />
             <span className="text-xs font-medium uppercase tracking-wider">MRR</span>
           </div>
-          <p className="text-2xl font-bold">£{totalMRR.toLocaleString()}</p>
+          <p className="text-2xl font-bold">£{totalMRR.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">

@@ -41,8 +41,8 @@ export function StatCard({
         return new Intl.NumberFormat('en-GB', {
           style: 'currency',
           currency: 'GBP',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         }).format(val)
       case 'percentage':
         return `${val.toFixed(1)}%`
