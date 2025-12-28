@@ -13,12 +13,16 @@ import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ROUTES } from '@/lib/constants'
+import { type UserRole, getDefaultRole, ROLE_ROUTES } from '@/lib/roles'
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
+  roles: UserRole[]
+  activeRole: UserRole
+  setActiveRole: (role: UserRole) => void
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (
     email: string,
@@ -42,6 +46,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [roles, setRoles] = useState<UserRole[]>(['athlete'])
+  const [activeRole, setActiveRoleState] = useState<UserRole>('athlete')
+
+  // Fetch user roles from profile
+  const fetchRoles = useCallback(async (userId: string) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('roles')
+        .eq('id', userId)
+        .single()
+
+      if (profile?.roles && Array.isArray(profile.roles)) {
+        const userRoles = profile.roles as UserRole[]
+        setRoles(userRoles)
+        // Set active role from localStorage or default
+        const savedRole = localStorage.getItem('activeRole') as UserRole | null
+        if (savedRole && userRoles.includes(savedRole)) {
+          setActiveRoleState(savedRole)
+        } else {
+          const defaultRole = getDefaultRole(userRoles)
+          setActiveRoleState(defaultRole)
+          localStorage.setItem('activeRole', defaultRole)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user roles:', error)
+    }
+  }, [supabase])
+
+  const setActiveRole = useCallback((role: UserRole) => {
+    if (roles.includes(role)) {
+      setActiveRoleState(role)
+      localStorage.setItem('activeRole', role)
+      router.push(ROLE_ROUTES[role])
+    }
+  }, [roles, router])
 
   useEffect(() => {
     // Get initial session
@@ -52,6 +93,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } = await supabase.auth.getSession()
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
+        if (currentSession?.user?.id) {
+          await fetchRoles(currentSession.user.id)
+        }
       } catch (error) {
         console.error('Error fetching session:', error)
       } finally {
@@ -71,8 +115,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Handle specific auth events
       if (event === 'SIGNED_IN') {
+        if (newSession?.user?.id) {
+          await fetchRoles(newSession.user.id)
+        }
         router.refresh()
       } else if (event === 'SIGNED_OUT') {
+        setRoles(['athlete'])
+        setActiveRoleState('athlete')
+        localStorage.removeItem('activeRole')
         router.push(ROUTES.LOGIN)
         router.refresh()
       } else if (event === 'PASSWORD_RECOVERY') {
@@ -83,7 +133,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase.auth, router])
+  }, [supabase.auth, router, fetchRoles])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -189,13 +239,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       session,
       isLoading,
       isAuthenticated: !!user,
+      roles,
+      activeRole,
+      setActiveRole,
       signIn,
       signUp,
       signOut,
       resetPassword,
       updatePassword,
     }),
-    [user, session, isLoading, signIn, signUp, signOut, resetPassword, updatePassword]
+    [user, session, isLoading, roles, activeRole, setActiveRole, signIn, signUp, signOut, resetPassword, updatePassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

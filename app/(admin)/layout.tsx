@@ -1,0 +1,19 @@
+import { AdminSidebar } from '@/components/admin/sidebar'
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Sidebar - Desktop only, mobile uses bottom nav */}
+      <AdminSidebar />
+
+      {/* Main content - with padding for mobile bottom nav */}
+      <main className="min-h-screen pb-20 transition-all duration-300 lg:pb-0 lg:pl-64">
+        {children}
+      </main>
+    </div>
+  )
+}
