@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { Bell, Search, Menu, X } from 'lucide-react'
+import { Search, Menu, X } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
+import { NotificationDropdown } from '@/components/notifications/notification-dropdown'
 import { useAuth } from '@/contexts/auth-context'
 
 interface TopBarProps {
@@ -70,11 +71,7 @@ export function TopBar({ title, onMenuClick, showMobileMenu }: TopBarProps) {
         </div>
 
         {/* Notifications */}
-        <button className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-          <Bell className="h-5 w-5" />
-          {/* Notification dot */}
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-amber-500" />
-        </button>
+        <NotificationDropdown />
 
         {/* User avatar */}
         <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-sm font-medium text-background transition-opacity hover:opacity-90">

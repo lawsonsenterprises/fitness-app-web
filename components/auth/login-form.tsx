@@ -18,6 +18,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
+import { AppleSignInButton, AuthDivider } from '@/components/auth/apple-sign-in-button'
 import { useAuth } from '@/contexts/auth-context'
 import { loginSchema, type LoginFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
@@ -62,6 +63,10 @@ export function LoginForm() {
           <AlertDescription>
             {callbackError === 'auth_callback_error'
               ? 'There was an error verifying your email. Please try again.'
+              : callbackError === 'apple_auth_error'
+              ? 'Apple sign in failed. Please try again.'
+              : callbackError === 'auth_cancelled'
+              ? 'Sign in was cancelled.'
               : 'An authentication error occurred.'}
           </AlertDescription>
         </Alert>
@@ -73,6 +78,11 @@ export function LoginForm() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {/* Apple Sign In */}
+      <AppleSignInButton mode="signin" />
+
+      <AuthDivider text="or continue with email" />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

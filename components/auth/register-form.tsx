@@ -17,6 +17,7 @@ import {
   FormItem,
   FormMessage,
 } from '@/components/ui/form'
+import { AppleSignInButton, AuthDivider } from '@/components/auth/apple-sign-in-button'
 import { useAuth } from '@/contexts/auth-context'
 import { registerSchema, type RegisterFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
@@ -126,6 +127,11 @@ export function RegisterForm() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      {/* Apple Sign Up */}
+      <AppleSignInButton mode="signup" />
+
+      <AuthDivider text="or register with email" />
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
