@@ -309,8 +309,7 @@ interface StatCardProps {
   isPercentage?: boolean
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function StatCard({ icon: Icon, label, value, change, changeLabel: _changeLabel, color, isPercentage }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, change, changeLabel, color, isPercentage }: StatCardProps) {
   const colorClasses = {
     amber: 'bg-amber-500/10 text-amber-600',
     blue: 'bg-blue-500/10 text-blue-600',
@@ -340,6 +339,7 @@ function StatCard({ icon: Icon, label, value, change, changeLabel: _changeLabel,
       </div>
       <p className="text-2xl font-bold mt-4">{value}</p>
       <p className="text-sm text-muted-foreground mt-1">{label}</p>
+      <p className="text-xs text-muted-foreground/70 mt-0.5">{changeLabel}</p>
     </motion.div>
   )
 }
