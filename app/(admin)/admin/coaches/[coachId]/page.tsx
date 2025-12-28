@@ -7,13 +7,10 @@ import {
   ChevronRight,
   Mail,
   Phone,
-  Calendar,
   Users,
   CreditCard,
   Clock,
-  MoreVertical,
   Ban,
-  UserCheck,
   Eye,
   MessageSquare,
   TrendingUp,
@@ -86,7 +83,7 @@ export default function CoachDetailPage({
 }: {
   params: Promise<{ coachId: string }>
 }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
   const [activeTab, setActiveTab] = useState<'clients' | 'activity' | 'revenue'>('clients')
 
   const initials = mockCoach.name.split(' ').map(n => n[0]).join('').toUpperCase()

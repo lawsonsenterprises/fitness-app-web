@@ -4,11 +4,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
-  Upload,
-  FileText,
   Check,
   Loader2,
-  AlertTriangle,
   Droplets,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -50,7 +47,7 @@ export function UploadTestModal({ isOpen, onClose, onComplete }: UploadTestModal
   const [extractedMarkers, setExtractedMarkers] = useState<ExtractedMarker[]>([])
   const [isExtracting, setIsExtracting] = useState(false)
   const [extractionError, setExtractionError] = useState<string | null>(null)
-  const [metadata, setMetadata] = useState<TestMetadata | null>(null)
+  const [_metadata, setMetadata] = useState<TestMetadata | null>(null)
 
   const handleFileUpload = async (uploadedFile: File) => {
     setFile(uploadedFile)

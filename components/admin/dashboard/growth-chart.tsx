@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import { motion } from 'framer-motion'
 import { Users, UserPlus, UserMinus, TrendingUp } from 'lucide-react'
@@ -202,9 +201,9 @@ export function GrowthChart({
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
               }}
-              formatter={(value: number, name: string) => [
-                value.toLocaleString(),
-                lineConfig.find((l) => l.key === name)?.name || name,
+              formatter={(value: number | undefined, name: string | undefined) => [
+                (value ?? 0).toLocaleString(),
+                lineConfig.find((l) => l.key === name)?.name || name || '',
               ]}
             />
             {lineConfig.map((line) => (

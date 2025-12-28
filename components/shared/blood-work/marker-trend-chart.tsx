@@ -163,13 +163,13 @@ export function MarkerTrendChart({
               padding: '12px',
             }}
             labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 600, marginBottom: 8 }}
-            formatter={(value: number, name: string) => {
+            formatter={(value: number | undefined, name: string | undefined) => {
               const marker = markers.find((m) => m.id === name)
               return [
                 <span key={name}>
-                  {value} {marker?.unit}
+                  {value ?? 0} {marker?.unit}
                 </span>,
-                marker?.name || name,
+                marker?.name || name || '',
               ]
             }}
           />

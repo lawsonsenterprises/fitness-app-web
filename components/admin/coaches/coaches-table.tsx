@@ -2,17 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Search,
-  Filter,
   ChevronDown,
   ChevronUp,
   Users,
-  MoreHorizontal,
-  Eye,
-  UserCog,
-  Shield,
-  Mail,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -222,9 +217,11 @@ export function CoachesTable({
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     {coach.avatar ? (
-                      <img
+                      <Image
                         src={coach.avatar}
                         alt={coach.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (

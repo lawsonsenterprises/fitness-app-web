@@ -141,7 +141,7 @@ export function MarkerRow({
           <span className={cn('font-semibold', config.color)}>
             {marker.value} {marker.unit}
           </span>
-          {TrendIcon && (
+          {TrendIcon && trendInfo && (
             <TrendIcon className={cn('h-4 w-4', trendInfo.color)} />
           )}
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -206,7 +206,7 @@ export function MarkerRow({
       {/* Trend */}
       {showTrend && (
         <div className="col-span-2 flex items-center justify-between">
-          {trendInfo ? (
+          {trendInfo && TrendIcon ? (
             <div className="flex items-center gap-2">
               <TrendIcon className={cn('h-4 w-4', trendInfo.color)} />
               <div>

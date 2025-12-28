@@ -1,10 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -103,7 +100,6 @@ function MetricToggle({
       )}
       style={{
         backgroundColor: isActive ? `${config.color}10` : undefined,
-        ringColor: isActive ? config.color : undefined,
       }}
     >
       <div className="flex items-center gap-2 mb-1">
@@ -135,7 +131,7 @@ function MetricToggle({
   )
 }
 
-export function CheckInTrends({ data, weightUnit = 'kg' }: CheckInTrendsProps) {
+export function CheckInTrends({ data, weightUnit: _weightUnit = 'kg' }: CheckInTrendsProps) {
   const [activeMetric, setActiveMetric] = useState<MetricType>('weight')
 
   // Prepare chart data
@@ -247,11 +243,11 @@ export function CheckInTrends({ data, weightUnit = 'kg' }: CheckInTrendsProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [
+                formatter={(value: number | undefined, name: string | undefined) => [
                   activeMetric === 'steps'
-                    ? value.toLocaleString()
-                    : value,
-                  config.label,
+                    ? (value ?? 0).toLocaleString()
+                    : value ?? 0,
+                  name || config.label,
                 ]}
               />
               <Area

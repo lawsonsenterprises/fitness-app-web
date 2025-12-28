@@ -2,14 +2,13 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Search,
   ChevronDown,
   ChevronUp,
   Eye,
   Users,
-  Calendar,
-  Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -199,9 +198,11 @@ export function CoachClientsTable({
                 <td className="p-3">
                   <div className="flex items-center gap-2">
                     {client.avatar ? (
-                      <img
+                      <Image
                         src={client.avatar}
                         alt={client.name}
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (

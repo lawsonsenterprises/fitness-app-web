@@ -171,7 +171,7 @@ export function FeatureUsage({ features }: FeatureUsageProps) {
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
               }}
-              formatter={(value: number) => [`${value}%`, 'Usage']}
+              formatter={(value: number | undefined) => [`${value ?? 0}%`, 'Usage']}
             />
             <Bar dataKey="usage" radius={[0, 4, 4, 0]}>
               {chartData.map((entry, index) => (

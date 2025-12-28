@@ -5,18 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Send,
   Paperclip,
-  Image,
+  ImageIcon,
   Smile,
   Check,
   CheckCheck,
   Clock,
   ChevronDown,
-  MoreHorizontal,
   Phone,
   Video,
   Info,
 } from 'lucide-react'
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -149,12 +149,14 @@ export function MessageThread({
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-medium overflow-hidden">
                 {otherParticipant.avatar ? (
-                  <img
+                  <Image
                     src={otherParticipant.avatar}
                     alt={otherParticipant.name}
-                    className="w-full h-full rounded-full object-cover"
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
                   />
                 ) : (
                   otherParticipant.name
@@ -269,10 +271,12 @@ export function MessageThread({
                           {message.attachments.map((attachment) => (
                             <div key={attachment.id}>
                               {attachment.type === 'image' ? (
-                                <img
+                                <Image
                                   src={attachment.url}
                                   alt={attachment.name}
-                                  className="rounded-lg max-w-full"
+                                  width={300}
+                                  height={200}
+                                  className="rounded-lg max-w-full h-auto"
                                 />
                               ) : (
                                 <div className="flex items-center gap-2 p-2 rounded-lg bg-black/10">
@@ -368,7 +372,7 @@ export function MessageThread({
             <Paperclip className="h-5 w-5 text-muted-foreground" />
           </button>
           <button className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0">
-            <Image className="h-5 w-5 text-muted-foreground" />
+            <ImageIcon className="h-5 w-5 text-muted-foreground" />
           </button>
 
           <div className="flex-1 relative">

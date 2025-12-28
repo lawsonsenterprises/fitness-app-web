@@ -12,7 +12,6 @@ import {
   Legend,
   ReferenceLine,
 } from 'recharts'
-import { cn } from '@/lib/utils'
 
 interface MarkerTrendData {
   name: string
@@ -67,7 +66,7 @@ export function TrendChart({
     // Create data points for each date
     return sortedDates.map(dateTimestamp => {
       const date = new Date(dateTimestamp)
-      const point: Record<string, any> = {
+      const point: Record<string, string | number | null> = {
         date: dateTimestamp,
         dateStr: date.toLocaleDateString('en-GB', {
           day: 'numeric',
@@ -155,10 +154,10 @@ export function TrendChart({
                 fontSize: '12px',
               }}
               labelStyle={{ fontWeight: 600, marginBottom: '4px' }}
-              formatter={(value: number, name: string) => {
-                const marker = markers.find(m => m.name === name)
-                return [`${value} ${marker?.unit || ''}`, name]
-              }}
+              formatter={(value: number | undefined, name: string | undefined) => [
+                `${value ?? 0} ${markers.find(m => m.name === name)?.unit || ''}`,
+                name || '',
+              ]}
             />
 
             {showLegend && (

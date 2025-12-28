@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Camera,
   Scale,
-  Moon,
   Dumbbell,
   UtensilsCrossed,
   Heart,

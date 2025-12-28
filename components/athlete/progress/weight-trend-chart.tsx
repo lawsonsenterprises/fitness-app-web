@@ -235,7 +235,7 @@ export function WeightTrendChart({
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${value.toFixed(1)} ${unit}`, 'Weight']}
+                formatter={(value: number | undefined) => [`${(value ?? 0).toFixed(1)} ${unit}`, 'Weight']}
               />
 
               {/* Target line */}

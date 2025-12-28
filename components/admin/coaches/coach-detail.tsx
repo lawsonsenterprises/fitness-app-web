@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Mail,
   Phone,
@@ -11,7 +12,6 @@ import {
   Clock,
   Shield,
   ShieldOff,
-  ExternalLink,
   UserCog,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -60,7 +60,7 @@ export function CoachDetail({
   onSuspend,
   onActivate,
   onImpersonate,
-  onEmail,
+  onEmail: _onEmail,
 }: CoachDetailProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-GB', {
@@ -81,9 +81,11 @@ export function CoachDetail({
           {/* Avatar */}
           <div className="shrink-0">
             {coach.avatar ? (
-              <img
+              <Image
                 src={coach.avatar}
                 alt={coach.name}
+                width={96}
+                height={96}
                 className="h-24 w-24 rounded-xl object-cover"
               />
             ) : (

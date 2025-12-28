@@ -240,7 +240,7 @@ export function MarkerExtractionReview({
         <div className="flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2">
           <Info className="h-4 w-4 text-blue-500 shrink-0" />
           <p className="text-sm text-blue-600">
-            Click the edit icon to correct any values. Uncheck markers you don't want to save.
+            Click the edit icon to correct any values. Uncheck markers you don&apos;t want to save.
           </p>
         </div>
       </div>

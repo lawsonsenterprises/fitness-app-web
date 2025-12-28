@@ -8,7 +8,6 @@ import {
   TrendingDown,
   Minus,
   Calendar,
-  AlertTriangle,
   Check,
   Info,
 } from 'lucide-react'
@@ -20,7 +19,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
   ReferenceArea,
 } from 'recharts'
 import { cn } from '@/lib/utils'
@@ -255,7 +253,7 @@ export function MarkerTrendModal({
                         border: '1px solid hsl(var(--border))',
                         borderRadius: '8px',
                       }}
-                      formatter={(value: number) => [`${value} ${unit}`, markerName]}
+                      formatter={(value: number | undefined, name: string | undefined) => [`${value ?? 0} ${unit}`, name || markerName]}
                     />
                     <Line
                       type="monotone"

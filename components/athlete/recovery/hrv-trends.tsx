@@ -273,7 +273,7 @@ export function HRVTrends({
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${value}ms`, 'HRV']}
+                formatter={(value: number | undefined) => [`${value ?? 0}ms`, 'HRV']}
               />
               <Line
                 type="monotone"

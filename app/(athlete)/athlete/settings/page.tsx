@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   User,
   Bell,
-  Shield,
   Palette,
-  Scale,
   Target,
   Loader2,
   Save,
@@ -35,7 +33,7 @@ export default function AthleteSettingsPage() {
     fitnessGoals: '',
   })
 
-  const supabase = createClient()
+  const _supabase = createClient()
 
   useEffect(() => {
     if (user) {

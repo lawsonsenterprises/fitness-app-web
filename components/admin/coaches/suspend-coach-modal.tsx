@@ -104,7 +104,7 @@ export function SuspendCoachModal({
                   <div className="text-sm text-amber-600">
                     <p className="font-medium">This action will:</p>
                     <ul className="list-disc list-inside mt-1 space-y-0.5">
-                      <li>Immediately suspend {coach.name}'s account</li>
+                      <li>Immediately suspend {coach.name}&apos;s account</li>
                       <li>Prevent login and access to the platform</li>
                       {coach.clientCount > 0 && (
                         <li>Affect {coach.clientCount} client(s) currently assigned</li>

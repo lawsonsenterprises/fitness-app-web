@@ -9,10 +9,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { Users, TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface EngagementDataPoint {

@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Mail,
   Calendar,
@@ -71,9 +72,11 @@ export function AthleteDetail({
           {/* Avatar */}
           <div className="shrink-0">
             {athlete.avatar ? (
-              <img
+              <Image
                 src={athlete.avatar}
                 alt={athlete.name}
+                width={96}
+                height={96}
                 className="h-24 w-24 rounded-xl object-cover"
               />
             ) : (

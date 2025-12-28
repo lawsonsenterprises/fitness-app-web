@@ -2,13 +2,13 @@
 
 import { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import Image from 'next/image'
 import {
   ArrowDown,
   Loader2,
   MessageCircle,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { MessageBubble, type MessageBubbleProps } from './message-bubble'
+import { MessageBubble } from './message-bubble'
 import { MessageInput, type Attachment } from './message-input'
 import { format, isToday, isYesterday, isSameDay } from 'date-fns'
 
@@ -65,11 +65,14 @@ function TypingIndicator({ participant }: { participant: Participant }) {
       className="flex items-center gap-2 px-4"
     >
       {participant.avatar ? (
-        <img
-          src={participant.avatar}
-          alt={participant.name}
-          className="h-6 w-6 rounded-full object-cover"
-        />
+        <div className="relative h-6 w-6">
+          <Image
+            src={participant.avatar}
+            alt={participant.name}
+            fill
+            className="rounded-full object-cover"
+          />
+        </div>
       ) : (
         <div className="h-6 w-6 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center">
           <span className="text-[10px] font-semibold text-white">
@@ -184,11 +187,14 @@ export function MessageThread({
         <div className="flex items-center gap-3">
           <div className="relative">
             {participant.avatar ? (
-              <img
-                src={participant.avatar}
-                alt={participant.name}
-                className="h-10 w-10 rounded-full object-cover"
-              />
+              <div className="relative h-10 w-10">
+                <Image
+                  src={participant.avatar}
+                  alt={participant.name}
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
             ) : (
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center">
                 <span className="text-sm font-semibold text-white">
@@ -223,7 +229,7 @@ export function MessageThread({
         )}
 
         {/* Messages grouped by date */}
-        {groupedMessages.map((group, groupIndex) => (
+        {groupedMessages.map((group) => (
           <div key={group.date.toISOString()}>
             <DateDivider date={group.date} />
             <div className="space-y-2">

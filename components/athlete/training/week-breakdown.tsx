@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Dumbbell,
   Clock,
-  Flame,
   Check,
   Circle,
   Play,

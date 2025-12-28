@@ -5,9 +5,7 @@ import {
   BarChart3,
   TrendingUp,
   Users,
-  DollarSign,
   Activity,
-  Calendar,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {

@@ -7,8 +7,6 @@ import {
   Search,
   Camera,
   Barcode,
-  Clock,
-  Flame,
   Beef,
   Wheat,
   Droplets,

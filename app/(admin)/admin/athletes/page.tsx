@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import {
-  UserCircle,
   Search,
-  Filter,
   Eye,
   Mail,
   CheckCircle2,

@@ -161,7 +161,7 @@ export function MarkerDetailsSidebar({
                     <StatusIcon className="h-3 w-3" />
                     {config.label}
                   </span>
-                  {trendInfo && (
+                  {trendInfo && TrendIcon && (
                     <span className="flex items-center gap-1 text-xs">
                       <TrendIcon className={cn('h-3.5 w-3.5', trendInfo.color)} />
                       <span className={trendInfo.color}>

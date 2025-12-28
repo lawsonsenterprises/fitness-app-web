@@ -30,7 +30,7 @@ interface AreaChartProps {
   areas: AreaConfig[]
   xAxisKey: string
   yAxisFormatter?: (value: number) => string
-  tooltipFormatter?: (value: number, name: string) => [string, string]
+  tooltipFormatter?: (value: number | undefined, name: string | undefined) => [string, string]
   height?: number
   showGrid?: boolean
   showLegend?: boolean

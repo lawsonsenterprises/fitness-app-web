@@ -297,7 +297,6 @@ export function GaugeChart({
   size = 200,
 }: GaugeChartProps) {
   const percentage = Math.min(Math.max((value - min) / (max - min), 0), 1)
-  const angle = percentage * 180
 
   const getColor = () => {
     for (const { threshold, color } of colors) {

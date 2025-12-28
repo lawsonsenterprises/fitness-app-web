@@ -5,7 +5,6 @@ import Link from 'next/link'
 import {
   ChevronLeft,
   Bell,
-  Mail,
   Smartphone,
   Clock,
   Save,
@@ -16,6 +15,7 @@ import {
   UtensilsCrossed,
   Trophy,
   Calendar,
+  Mail,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'

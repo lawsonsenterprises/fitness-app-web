@@ -25,8 +25,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
-  ReferenceArea,
   Legend,
 } from 'recharts'
 

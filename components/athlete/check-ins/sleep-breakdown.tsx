@@ -178,7 +178,6 @@ export function SleepBreakdown({
         <p className="text-xs text-center text-muted-foreground">This week</p>
         <div className="flex items-end justify-center gap-1 h-20">
           {values.map((hours, i) => {
-            const quality = getSleepQuality(hours)
             return (
               <button
                 key={i}
@@ -195,7 +194,7 @@ export function SleepBreakdown({
           })}
         </div>
         <div className="flex justify-center gap-1">
-          {nightsLabels.map((night, i) => (
+          {nightsLabels.map((night) => (
             <div key={night} className="w-10 text-center text-[10px] text-muted-foreground">
               {night}
             </div>

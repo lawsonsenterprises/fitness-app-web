@@ -53,7 +53,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         await new Promise(resolve => setTimeout(resolve, 800))
 
         // Mock weather data based on time of day
-        const hour = new Date().getHours()
+        const _hour = new Date().getHours()
         const conditions: WeatherData['condition'][] = ['clear', 'partly_cloudy', 'cloudy', 'rain']
         const randomCondition = conditions[Math.floor(Math.random() * conditions.length)]
 

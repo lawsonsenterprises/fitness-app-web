@@ -6,7 +6,6 @@ import {
   CreditCard,
   Calendar,
   Clock,
-  User,
   ExternalLink,
   Receipt,
   AlertTriangle,

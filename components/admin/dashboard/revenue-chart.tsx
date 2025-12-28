@@ -9,10 +9,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { PoundSterling, TrendingUp, TrendingDown } from 'lucide-react'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface RevenueDataPoint {
@@ -177,7 +176,7 @@ export function RevenueChart({
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
               }}
-              formatter={(value: number) => [formatCurrency(value), 'MRR']}
+              formatter={(value: number | undefined) => [formatCurrency(value ?? 0), 'MRR']}
             />
             <Area
               type="monotone"

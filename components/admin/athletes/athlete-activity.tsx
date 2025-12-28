@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns'
+import { format, isToday, isYesterday } from 'date-fns'
 
 type AthleteActivityType =
   | 'check_in'

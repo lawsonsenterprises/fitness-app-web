@@ -17,6 +17,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion } from 'framer-motion'
 import {
   AreaChart,
@@ -82,7 +83,7 @@ export default function AthleteDetailPage({
 }: {
   params: Promise<{ athleteId: string }>
 }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
   const [activeTab, setActiveTab] = useState<'overview' | 'activity'>('overview')
 
   const initials = mockAthlete.name.split(' ').map(n => n[0]).join('').toUpperCase()

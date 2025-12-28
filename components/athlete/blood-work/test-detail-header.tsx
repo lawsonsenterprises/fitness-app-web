@@ -38,7 +38,7 @@ interface TestDetailHeaderProps {
 }
 
 export function TestDetailHeader({
-  testId,
+  testId: _testId,
   date,
   lab,
   tags,

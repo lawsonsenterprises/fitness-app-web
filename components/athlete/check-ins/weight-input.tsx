@@ -73,7 +73,7 @@ export function WeightInput({
             <Scale className="h-7 w-7 text-emerald-500" />
           </div>
         </div>
-        <h2 className="text-xl font-bold">What's your weight today?</h2>
+        <h2 className="text-xl font-bold">What&apos;s your weight today?</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Weigh yourself first thing in the morning for consistency
         </p>

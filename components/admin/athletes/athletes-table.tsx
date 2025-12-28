@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   Search,
   ChevronDown,
@@ -213,9 +214,11 @@ export function AthletesTable({
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     {athlete.avatar ? (
-                      <img
+                      <Image
                         src={athlete.avatar}
                         alt={athlete.name}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (

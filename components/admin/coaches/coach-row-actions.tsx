@@ -9,7 +9,6 @@ import {
   Shield,
   ShieldOff,
   Mail,
-  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

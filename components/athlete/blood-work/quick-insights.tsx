@@ -5,7 +5,6 @@ import {
   TrendingUp,
   TrendingDown,
   AlertTriangle,
-  Check,
   ChevronRight,
   Sparkles,
 } from 'lucide-react'

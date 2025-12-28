@@ -12,7 +12,6 @@ import {
   TrendingDown,
   Minus,
   FileText,
-  Calendar,
   Building2,
   MessageSquare,
 } from 'lucide-react'
@@ -234,7 +233,7 @@ const mockBloodWorkDetail = {
 }
 
 export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
   const [expandedMarker, setExpandedMarker] = useState<string | null>(null)
 
   const totalMarkers = mockBloodWorkDetail.categories.reduce((acc, cat) => acc + cat.markers.length, 0)

@@ -15,6 +15,7 @@ import {
   Download,
   Check,
 } from 'lucide-react'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
@@ -113,7 +114,7 @@ export default function ProgrammeDetailPage({
 }: {
   params: Promise<{ programmeId: string }>
 }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
   const [expandedWeeks, setExpandedWeeks] = useState<number[]>([1])
   const [expandedDays, setExpandedDays] = useState<string[]>(['1-1'])
   const [viewMode, setViewMode] = useState<'compact' | 'detailed'>('detailed')

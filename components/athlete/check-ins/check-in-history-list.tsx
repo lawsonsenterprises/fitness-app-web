@@ -1,7 +1,6 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { formatDistanceToNow } from 'date-fns'
 import {
   Calendar,
   Scale,

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
+import Image from 'next/image'
 import {
   MessageSquare,
   User,
@@ -71,11 +72,14 @@ export function CoachFeedbackDisplay({ feedback }: CoachFeedbackDisplayProps) {
       <div className={cn('flex items-center justify-between p-4', config.bgColor)}>
         <div className="flex items-center gap-3">
           {feedback.coachAvatar ? (
-            <img
-              src={feedback.coachAvatar}
-              alt={feedback.coachName}
-              className="h-10 w-10 rounded-full object-cover"
-            />
+            <div className="relative h-10 w-10">
+              <Image
+                src={feedback.coachAvatar}
+                alt={feedback.coachName}
+                fill
+                className="rounded-full object-cover"
+              />
+            </div>
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
               <User className="h-5 w-5 text-muted-foreground" />

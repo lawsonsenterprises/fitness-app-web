@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
-  Filter,
   MessageSquare,
   Users,
   Flag,
@@ -13,12 +12,10 @@ import {
   CheckCircle2,
   Eye,
   MoreHorizontal,
-  ChevronDown,
   X,
   User,
   Shield,
   ExternalLink,
-  ArrowUpRight,
   Ban,
   Mail,
 } from 'lucide-react'

@@ -57,7 +57,7 @@ export function SupplementComplianceForm({
 
         <div className="rounded-xl border border-dashed border-border bg-muted/10 p-8 text-center">
           <p className="text-muted-foreground">
-            Your coach hasn't assigned any supplements yet
+            Your coach hasn&apos;t assigned any supplements yet
           </p>
         </div>
       </div>

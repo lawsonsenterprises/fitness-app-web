@@ -104,7 +104,7 @@ export default function BloodWorkUploadPage() {
     }
   }
 
-  const processFile = async (file: File) => {
+  const processFile = async (_file: File) => {
     setIsProcessing(true)
     // Simulate PDF processing
     await new Promise(resolve => setTimeout(resolve, 2500))

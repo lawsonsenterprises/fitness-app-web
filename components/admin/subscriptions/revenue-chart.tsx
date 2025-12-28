@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
 import {
   AreaChart,
   Area,
@@ -16,9 +15,6 @@ import {
 import {
   TrendingUp,
   TrendingDown,
-  DollarSign,
-  Calendar,
-  ArrowUpRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -187,8 +183,8 @@ export function RevenueChart({
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [
-                    `${currency}${value.toLocaleString()}`,
+                  formatter={(value: number | undefined) => [
+                    `${currency}${(value ?? 0).toLocaleString()}`,
                     'MRR',
                   ]}
                 />
@@ -223,8 +219,8 @@ export function RevenueChart({
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number, name: string) => [
-                    `${currency}${value.toLocaleString()}`,
+                  formatter={(value: number | undefined, name: string | undefined) => [
+                    `${currency}${(value ?? 0).toLocaleString()}`,
                     name === 'newRevenue'
                       ? 'New'
                       : name === 'churnedRevenue'

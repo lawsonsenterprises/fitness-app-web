@@ -188,7 +188,7 @@ export default function NutritionPage() {
           animate={{ opacity: 1 }}
           className="space-y-4"
         >
-          {mockMealPlan.meals.map((meal, idx) => (
+          {mockMealPlan.meals.map((meal) => (
             <div
               key={meal.id}
               className={cn(

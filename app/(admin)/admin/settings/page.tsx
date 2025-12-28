@@ -4,12 +4,7 @@ import { useState } from 'react'
 import {
   Settings,
   Shield,
-  Bell,
-  Palette,
-  Database,
   Zap,
-  ToggleLeft,
-  ToggleRight,
   Save,
   Loader2,
   AlertTriangle,

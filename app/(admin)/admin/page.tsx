@@ -7,11 +7,7 @@ import {
   TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
-  Activity,
   DollarSign,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -313,7 +309,8 @@ interface StatCardProps {
   isPercentage?: boolean
 }
 
-function StatCard({ icon: Icon, label, value, change, changeLabel, color, isPercentage }: StatCardProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function StatCard({ icon: Icon, label, value, change, changeLabel: _changeLabel, color, isPercentage }: StatCardProps) {
   const colorClasses = {
     amber: 'bg-amber-500/10 text-amber-600',
     blue: 'bg-blue-500/10 text-blue-600',

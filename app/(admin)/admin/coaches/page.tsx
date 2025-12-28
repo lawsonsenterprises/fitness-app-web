@@ -4,17 +4,13 @@ import { useState } from 'react'
 import {
   Users,
   Search,
-  Filter,
-  MoreVertical,
   Mail,
-  Phone,
   Calendar,
   UserCircle,
   CheckCircle2,
   XCircle,
   Eye,
   Ban,
-  Trash2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import {
   User,
   Mail,
@@ -100,11 +101,14 @@ export function ProfileForm({ initialData, onSave }: ProfileFormProps) {
       <div className="flex flex-col items-center">
         <div className="relative group">
           {formData.avatar ? (
-            <img
-              src={formData.avatar}
-              alt="Profile"
-              className="h-24 w-24 rounded-full object-cover border-4 border-background shadow-lg"
-            />
+            <div className="relative h-24 w-24">
+              <Image
+                src={formData.avatar}
+                alt="Profile"
+                fill
+                className="rounded-full object-cover border-4 border-background shadow-lg"
+              />
+            </div>
           ) : (
             <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center border-4 border-background shadow-lg">
               <span className="text-2xl font-bold text-white">

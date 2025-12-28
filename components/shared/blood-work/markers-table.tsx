@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
-  Filter,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -69,10 +68,6 @@ export function MarkersTable({
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [selectedStatus, setSelectedStatus] = useState('All')
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Marker | 'status'
-    direction: 'asc' | 'desc'
-  } | null>(null)
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null)
 
   const getStatus = (marker: Marker): 'low' | 'normal' | 'high' | 'optimal' => {
@@ -126,39 +121,6 @@ export function MarkersTable({
     })
     return groups
   }, [filteredMarkers])
-
-  const handleSort = (key: keyof Marker | 'status') => {
-    setSortConfig((current) => {
-      if (current?.key === key) {
-        return current.direction === 'asc'
-          ? { key, direction: 'desc' }
-          : null
-      }
-      return { key, direction: 'asc' }
-    })
-  }
-
-  const sortedMarkers = useMemo(() => {
-    if (!sortConfig) return filteredMarkers
-
-    return [...filteredMarkers].sort((a, b) => {
-      let aValue: number | string
-      let bValue: number | string
-
-      if (sortConfig.key === 'status') {
-        const statusOrder = { low: 0, high: 1, normal: 2, optimal: 3 }
-        aValue = statusOrder[getStatus(a)]
-        bValue = statusOrder[getStatus(b)]
-      } else {
-        aValue = a[sortConfig.key] as string | number
-        bValue = b[sortConfig.key] as string | number
-      }
-
-      if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1
-      if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1
-      return 0
-    })
-  }, [filteredMarkers, sortConfig])
 
   const getStatusIcon = (status: 'low' | 'normal' | 'high' | 'optimal') => {
     switch (status) {

@@ -6,9 +6,7 @@ import {
   Upload,
   FileText,
   X,
-  Check,
   AlertTriangle,
-  File,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -58,10 +56,11 @@ export function PDFUploader({
     e.preventDefault()
     setIsDragging(false)
 
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      handleFile(file)
+    const droppedFile = e.dataTransfer.files[0]
+    if (droppedFile) {
+      handleFile(droppedFile)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {

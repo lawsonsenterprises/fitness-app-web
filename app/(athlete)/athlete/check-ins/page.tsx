@@ -2,14 +2,12 @@
 
 import Link from 'next/link'
 import {
-  ClipboardCheck,
   Plus,
   ChevronRight,
   CheckCircle2,
   Clock,
   MessageSquare,
   Calendar,
-  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -154,7 +152,7 @@ export default function CheckInsPage() {
         </div>
 
         <div className="divide-y divide-border">
-          {mockCheckIns.map((checkIn, idx) => (
+          {mockCheckIns.map((checkIn) => (
             <Link
               key={checkIn.id}
               href={`/athlete/check-ins/${checkIn.id}`}

@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import {
   Settings,
   Globe,
-  Mail,
   CreditCard,
   Bell,
   Save,

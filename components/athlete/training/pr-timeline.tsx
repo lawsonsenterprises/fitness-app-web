@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { Trophy, TrendingUp, Calendar, Flame } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 
 interface PersonalRecord {

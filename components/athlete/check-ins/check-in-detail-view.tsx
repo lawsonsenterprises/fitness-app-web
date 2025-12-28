@@ -1,7 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
+import Image from 'next/image'
 import {
   ChevronLeft,
   Calendar,
@@ -9,11 +9,9 @@ import {
   Footprints,
   Moon,
   Pill,
-  MessageSquare,
   TrendingUp,
   TrendingDown,
   Minus,
-  ImageIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -239,12 +237,13 @@ export function CheckInDetailView({
             {checkIn.photos.map((photo, i) => (
               <div
                 key={i}
-                className="aspect-square rounded-lg bg-muted overflow-hidden"
+                className="aspect-square rounded-lg bg-muted overflow-hidden relative"
               >
-                <img
+                <Image
                   src={photo}
                   alt={`Progress photo ${i + 1}`}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             ))}

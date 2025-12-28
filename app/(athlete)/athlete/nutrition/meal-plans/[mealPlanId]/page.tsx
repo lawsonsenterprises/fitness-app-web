@@ -12,7 +12,6 @@ import {
   Droplets,
   Clock,
   Printer,
-  Download,
   ShoppingCart,
   Dumbbell,
   Moon,
@@ -186,7 +185,7 @@ export default function MealPlanDetailPage({
 }: {
   params: Promise<{ mealPlanId: string }>
 }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
   const [selectedDay, setSelectedDay] = useState<'training' | 'non-training'>('training')
   const [expandedMeals, setExpandedMeals] = useState<string[]>(['Breakfast'])
 

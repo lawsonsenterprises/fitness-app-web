@@ -12,7 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
 
 interface Subscription {
   id: string

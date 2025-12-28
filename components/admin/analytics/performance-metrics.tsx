@@ -13,7 +13,6 @@ import {
 } from 'recharts'
 import {
   Zap,
-  Server,
   Database,
   AlertTriangle,
   Check,
@@ -195,9 +194,9 @@ export function PerformanceMetrics({
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number, name: string) => [
-                  `${value}ms`,
-                  name.replace('apiLatency', ''),
+                formatter={(value: number | undefined, name: string | undefined) => [
+                  `${value ?? 0}ms`,
+                  (name || '').replace('apiLatency', ''),
                 ]}
               />
               <Line

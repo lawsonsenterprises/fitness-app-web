@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import { Check, CheckCheck, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -54,11 +55,14 @@ export function MessageBubble({
       {showAvatar && !isOwn && (
         <div className="shrink-0">
           {senderAvatar ? (
-            <img
-              src={senderAvatar}
-              alt={senderName || 'User'}
-              className="h-8 w-8 rounded-full object-cover"
-            />
+            <div className="relative h-8 w-8">
+              <Image
+                src={senderAvatar}
+                alt={senderName || 'User'}
+                fill
+                className="rounded-full object-cover"
+              />
+            </div>
           ) : (
             <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-violet-500 flex items-center justify-center">
               <span className="text-xs font-semibold text-white">

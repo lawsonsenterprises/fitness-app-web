@@ -5,12 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Send,
   Paperclip,
-  Image,
   X,
-  Smile,
-  Mic,
   FileText,
 } from 'lucide-react'
+import NextImage from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface Attachment {
@@ -125,10 +123,11 @@ export function MessageInput({
               >
                 {attachment.type === 'image' && attachment.preview ? (
                   <div className="relative h-16 w-16 rounded-lg overflow-hidden">
-                    <img
+                    <NextImage
                       src={attachment.preview}
                       alt={attachment.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                 ) : (

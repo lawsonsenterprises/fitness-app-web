@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   BarChart,
   Bar,
@@ -54,7 +54,6 @@ function getQualityLabel(quality: number): keyof typeof qualityColors {
 }
 
 export function SleepAnalysis({ data, targetSleep = 8 }: SleepAnalysisProps) {
-  const [selectedNight, setSelectedNight] = useState<SleepData | null>(null)
 
   // Sort data by date
   const sortedData = useMemo(() => {
@@ -193,10 +192,10 @@ export function SleepAnalysis({ data, targetSleep = 8 }: SleepAnalysisProps) {
                   border: '1px solid hsl(var(--border))',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${value}h`, 'Sleep']}
+                formatter={(value: number | undefined) => [`${value ?? 0}h`, 'Sleep']}
               />
               {/* Target line */}
-              <Bar dataKey="duration" radius={[4, 4, 0, 0]} onClick={(data) => setSelectedNight(data)}>
+              <Bar dataKey="duration" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}

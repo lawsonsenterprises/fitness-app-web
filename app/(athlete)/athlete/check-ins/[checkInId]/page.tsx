@@ -13,7 +13,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  CheckCircle2,
   Image,
   Calendar,
 } from 'lucide-react'
@@ -31,7 +30,6 @@ import {
 } from 'recharts'
 
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 
 // Mock check-in data
 const mockCheckIn = {
@@ -99,7 +97,7 @@ export default function CheckInDetailPage({
 }: {
   params: Promise<{ checkInId: string }>
 }) {
-  const resolvedParams = use(params)
+  const _resolvedParams = use(params)
 
   return (
     <div className="p-6 lg:p-8">

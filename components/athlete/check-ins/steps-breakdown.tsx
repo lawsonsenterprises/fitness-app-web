@@ -170,7 +170,7 @@ export function StepsBreakdown({
           ))}
         </div>
         <div className="flex justify-center gap-1">
-          {daysLabels.map((day, i) => (
+          {daysLabels.map((day) => (
             <div key={day} className="w-10 text-center text-[10px] text-muted-foreground">
               {day}
             </div>

@@ -206,7 +206,7 @@ export function ReadinessDetail({
             <div className="flex items-start gap-3">
               <Info className="h-5 w-5 shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium">Today's Recommendation</p>
+                <p className="font-medium">Today&apos;s Recommendation</p>
                 <p className="text-sm mt-1 opacity-90">{recommendation}</p>
               </div>
             </div>

@@ -140,7 +140,7 @@ function MealCard({ meal }: { meal: Meal }) {
   )
 }
 
-function DayPlanSection({ plan, title, isActive }: { plan: DayPlan; title: string; isActive: boolean }) {
+function DayPlanSection({ plan, title: _title, isActive }: { plan: DayPlan; title: string; isActive: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}

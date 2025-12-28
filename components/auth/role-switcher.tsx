@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Dumbbell, ClipboardList, Shield, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { type UserRole, ROLE_LABELS, ROLE_ROUTES } from '@/lib/roles'
+import { ROLE_LABELS } from '@/lib/roles'
 import { useAuth } from '@/contexts/auth-context'
 
 const ROLE_ICONS = {

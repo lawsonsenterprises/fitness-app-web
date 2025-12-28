@@ -11,10 +11,8 @@ import {
   ChevronDown,
   ChevronRight,
   Plus,
-  Minus,
   Trash2,
   Search,
-  Filter,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

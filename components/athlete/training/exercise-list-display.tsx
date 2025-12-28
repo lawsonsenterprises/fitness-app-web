@@ -60,7 +60,7 @@ const muscleGroupColors: Record<string, string> = {
 
 function SetRow({
   set,
-  exerciseId,
+  exerciseId: _exerciseId,
   onComplete,
   readOnly,
 }: {
