@@ -2,15 +2,22 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { ROUTES } from '@/lib/constants'
 
-// Routes that require authentication
-const protectedRoutes = [
+// Routes that require authentication (coach routes)
+const coachRoutes = [
   '/dashboard',
   '/clients',
   '/check-ins',
   '/programmes',
   '/meal-plans',
   '/settings',
+  '/notifications',
 ]
+
+// Athlete routes
+const athleteRoutes = ['/athlete']
+
+// Admin routes
+const adminRoutes = ['/admin']
 
 // Routes only accessible when NOT authenticated
 const authRoutes = ['/login', '/register', '/reset-password']
@@ -52,15 +59,21 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  // Check if current route is protected
-  const isProtectedRoute = protectedRoutes.some(
+  // Check route types
+  const isCoachRoute = coachRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
-
-  // Check if current route is an auth route
+  const isAthleteRoute = athleteRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
+  const isAdminRoute = adminRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  )
   const isAuthRoute = authRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   )
+
+  const isProtectedRoute = isCoachRoute || isAthleteRoute || isAdminRoute
 
   // Redirect unauthenticated users from protected routes to login
   if (isProtectedRoute && !user) {
@@ -72,6 +85,37 @@ export async function middleware(request: NextRequest) {
   // Redirect authenticated users from auth routes to dashboard
   if (isAuthRoute && user) {
     return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
+  }
+
+  // Role-based access control for authenticated users
+  if (user && isProtectedRoute) {
+    // Fetch user roles from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('roles')
+      .eq('id', user.id)
+      .single()
+
+    const roles: string[] = profile?.roles || ['athlete']
+
+    // Protect admin routes - must have admin role
+    if (isAdminRoute && !roles.includes('admin')) {
+      // Redirect to coach dashboard if coach, else athlete
+      if (roles.includes('coach')) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+      return NextResponse.redirect(new URL('/athlete', request.url))
+    }
+
+    // Protect coach routes - must have coach or admin role
+    if (isCoachRoute && !roles.includes('coach') && !roles.includes('admin')) {
+      return NextResponse.redirect(new URL('/athlete', request.url))
+    }
+
+    // Athlete routes - accessible by athlete, coach (for preview), or admin
+    if (isAthleteRoute && !roles.includes('athlete') && !roles.includes('coach') && !roles.includes('admin')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
   }
 
   return supabaseResponse
