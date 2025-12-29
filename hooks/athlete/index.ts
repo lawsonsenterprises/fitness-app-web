@@ -70,8 +70,9 @@ export function useCheckIns(athleteId?: string) {
       const { data, error } = await supabase
         .from('check_ins')
         .select('*')
-        .eq('athlete_id', athleteId!)
-        .order('created_at', { ascending: false })
+        .eq('user_id', athleteId!)
+        .is('deleted_at', null)
+        .order('date', { ascending: false })
 
       if (error) throw error
       return data
@@ -146,8 +147,8 @@ export function useSessionHistory(athleteId?: string, limit = 20) {
       const { data, error } = await supabase
         .from('training_sessions')
         .select('*')
-        .eq('athlete_id', athleteId!)
-        .order('session_date', { ascending: false })
+        .eq('user_id', athleteId!)
+        .order('date', { ascending: false })
         .limit(limit)
 
       if (error) throw error
@@ -162,13 +163,20 @@ export function usePersonalRecords(athleteId?: string) {
     queryKey: ['personal-records', athleteId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('personal_records')
-        .select('*')
-        .eq('athlete_id', athleteId!)
+        .from('personal_bests')
+        .select('*, exercises(name)')
+        .eq('user_id', athleteId!)
+        .is('is_soft_deleted', false)
         .order('achieved_at', { ascending: false })
 
       if (error) throw error
-      return data
+      return (data || []).map(pb => ({
+        id: pb.id,
+        exercise_name: pb.exercises?.name || 'Unknown Exercise',
+        weight_kg: pb.weight,
+        reps: pb.reps,
+        achieved_at: pb.achieved_at,
+      }))
     },
     enabled: !!athleteId,
   })
@@ -239,9 +247,10 @@ export function useWeightTrends(athleteId?: string, days = 90) {
       const { data, error } = await supabase
         .from('weight_logs')
         .select('*')
-        .eq('athlete_id', athleteId!)
-        .gte('logged_date', startDate.toISOString().split('T')[0])
-        .order('logged_date', { ascending: true })
+        .eq('user_id', athleteId!)
+        .is('deleted_at', null)
+        .gte('day', startDate.toISOString().split('T')[0])
+        .order('day', { ascending: true })
 
       if (error) throw error
       return data
@@ -262,37 +271,33 @@ export function useReadinessScore(athleteId?: string) {
       const today = new Date().toISOString().split('T')[0]
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-      const [sleepData, hrvData] = await Promise.all([
+      const [sleepData] = await Promise.all([
         supabase
-          .from('sleep_logs')
+          .from('sleep_records')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('logged_date', weekAgo)
-          .lte('logged_date', today),
-        supabase
-          .from('hrv_logs')
-          .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('logged_date', weekAgo)
-          .lte('logged_date', today),
+          .eq('user_id', athleteId!)
+          .gte('date', weekAgo)
+          .lte('date', today),
       ])
 
-      // Calculate composite score (simplified)
-      const avgSleep = sleepData.data?.reduce((acc, log) => acc + (log.hours || 0), 0) || 0
-      const avgHrv = hrvData.data?.reduce((acc, log) => acc + (log.hrv || 0), 0) || 0
+      // Calculate composite score from sleep data (simplified)
+      const avgSleepMins = sleepData.data?.reduce((acc, log) => acc + (log.total_minutes || 0), 0) || 0
+      const avgSleepHours = avgSleepMins / 60 / (sleepData.data?.length || 1)
+      const avgSleepScore = sleepData.data?.reduce((acc, log) => acc + (log.sleep_score || 0), 0) || 0
 
-      const sleepScore = Math.min((avgSleep / 7 / 8) * 100, 100) * 0.3
-      const hrvScore = Math.min((avgHrv / 7 / 60) * 100, 100) * 0.3
-      const complianceScore = 75 * 0.2 // Mock
-      const strainScore = 70 * 0.2 // Mock
+      // Use sleep_score if available, otherwise derive from hours
+      const sleepScore = avgSleepScore > 0
+        ? avgSleepScore / (sleepData.data?.length || 1) * 0.5
+        : Math.min((avgSleepHours / 8) * 100, 100) * 0.5
+      const complianceScore = 75 * 0.25 // Placeholder
+      const strainScore = 70 * 0.25 // Placeholder
 
       return {
-        score: Math.round(sleepScore + hrvScore + complianceScore + strainScore),
+        score: Math.round(sleepScore + complianceScore + strainScore),
         breakdown: {
-          sleep: sleepScore / 0.3,
-          hrv: hrvScore / 0.3,
-          compliance: complianceScore / 0.2,
-          strain: strainScore / 0.2,
+          sleep: sleepScore / 0.5,
+          compliance: complianceScore / 0.25,
+          strain: strainScore / 0.25,
         },
       }
     },
@@ -357,130 +362,125 @@ export function useAthleteDashboard(athleteId?: string) {
   return useQuery({
     queryKey: ['athlete-dashboard', athleteId],
     queryFn: async () => {
-      // Fetch all dashboard data in parallel
+      // Fetch all dashboard data in parallel using correct table/column names
       const [
-        currentProgramme,
         recentSessions,
-        todayMeals,
-        weekMeals,
+        todayNutrition,
         recentCheckIns,
         weightLogs,
-        sleepLogs,
-        personalRecords,
+        sleepRecords,
+        personalBests,
       ] = await Promise.all([
-        // Current active programme
-        supabase
-          .from('client_programmes')
-          .select('*, programme_templates(*)')
-          .eq('client_id', athleteId!)
-          .eq('status', 'active')
-          .maybeSingle(),
         // Recent training sessions (last 7 days)
         supabase
           .from('training_sessions')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('session_date', weekAgo)
-          .order('session_date', { ascending: false }),
-        // Today's meals
+          .eq('user_id', athleteId!)
+          .gte('date', weekAgo)
+          .order('date', { ascending: false }),
+        // Today's nutrition summary
         supabase
-          .from('meal_logs')
+          .from('nutrition_daily_summaries')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .eq('logged_date', today),
-        // This week's meals (for calorie total)
-        supabase
-          .from('meal_logs')
-          .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('logged_date', weekAgo),
+          .eq('user_id', athleteId!)
+          .eq('date', today)
+          .maybeSingle(),
         // Recent check-ins
         supabase
           .from('check_ins')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .order('created_at', { ascending: false })
+          .eq('user_id', athleteId!)
+          .is('deleted_at', null)
+          .order('date', { ascending: false })
           .limit(5),
         // Weight logs (last 30 days)
         supabase
           .from('weight_logs')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('logged_date', monthAgo)
-          .order('logged_date', { ascending: false }),
-        // Sleep logs (last 7 days)
+          .eq('user_id', athleteId!)
+          .is('deleted_at', null)
+          .gte('day', monthAgo)
+          .order('day', { ascending: false }),
+        // Sleep records (last 7 days)
         supabase
-          .from('sleep_logs')
+          .from('sleep_records')
           .select('*')
-          .eq('athlete_id', athleteId!)
-          .gte('logged_date', weekAgo)
-          .order('logged_date', { ascending: false }),
-        // Personal records
+          .eq('user_id', athleteId!)
+          .gte('date', weekAgo)
+          .order('date', { ascending: false }),
+        // Personal bests
         supabase
-          .from('personal_records')
-          .select('*')
-          .eq('athlete_id', athleteId!)
+          .from('personal_bests')
+          .select('*, exercises(name)')
+          .eq('user_id', athleteId!)
+          .is('is_soft_deleted', false)
           .order('achieved_at', { ascending: false })
           .limit(3),
       ])
 
       // Calculate weekly stats
       const workoutsThisWeek = recentSessions.data?.length || 0
-      const totalCaloriesBurned = recentSessions.data?.reduce((sum, s) => sum + (s.calories_burned || 0), 0) || 0
-      const avgSleep = sleepLogs.data?.length
-        ? sleepLogs.data.reduce((sum, s) => sum + (s.hours || 0), 0) / sleepLogs.data.length
+
+      // Calculate avg sleep from sleep_records (total_minutes / 60)
+      const avgSleepHours = sleepRecords.data?.length
+        ? sleepRecords.data.reduce((sum, s) => sum + ((s.total_minutes || 0) / 60), 0) / sleepRecords.data.length
         : 0
 
-      // Calculate today's macros
-      const todayMacros = todayMeals.data?.reduce(
-        (acc, meal) => ({
-          calories: acc.calories + (meal.calories || 0),
-          protein: acc.protein + (meal.protein || 0),
-          carbs: acc.carbs + (meal.carbs || 0),
-          fat: acc.fat + (meal.fat || 0),
-        }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
-      ) || { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      // Get today's macros from nutrition_daily_summaries
+      const todayMacros = todayNutrition.data ? {
+        calories: todayNutrition.data.actual_calories || 0,
+        protein: todayNutrition.data.actual_protein || 0,
+        carbs: todayNutrition.data.actual_carbs || 0,
+        fat: todayNutrition.data.actual_fat || 0,
+        targetCalories: todayNutrition.data.target_calories || 0,
+        targetProtein: todayNutrition.data.target_protein || 0,
+      } : { calories: 0, protein: 0, carbs: 0, fat: 0, targetCalories: 0, targetProtein: 0 }
 
       // Get latest and oldest weight for progress
-      const latestWeight = weightLogs.data?.[0]?.weight_kg
-      const oldestWeight = weightLogs.data?.[weightLogs.data.length - 1]?.weight_kg
+      const latestWeight = weightLogs.data?.[0]?.value_kg
+      const oldestWeight = weightLogs.data?.length ? weightLogs.data[weightLogs.data.length - 1]?.value_kg : null
       const weightChange = latestWeight && oldestWeight ? latestWeight - oldestWeight : null
 
       // Get most recent check-in
       const lastCheckIn = recentCheckIns.data?.[0]
 
-      // Calculate readiness score (simplified)
-      const latestSleep = sleepLogs.data?.[0]?.hours || 0
-      const readinessScore = Math.min(Math.round((latestSleep / 8) * 100), 100)
+      // Calculate readiness score from sleep_score or sleep hours
+      const latestSleepScore = sleepRecords.data?.[0]?.sleep_score
+      const latestSleepHours = (sleepRecords.data?.[0]?.total_minutes || 0) / 60
+      const readinessScore = latestSleepScore || Math.min(Math.round((latestSleepHours / 8) * 100), 100)
 
       return {
         readinessScore,
-        currentProgramme: currentProgramme.data,
         weeklyStats: {
           workoutsCompleted: workoutsThisWeek,
-          workoutsPlanned: currentProgramme.data?.programme_templates?.sessions_per_week || 0,
-          caloriesBurned: totalCaloriesBurned,
-          averageSleep: Math.round(avgSleep * 10) / 10,
+          workoutsPlanned: 0, // Would need programme data
+          averageSleep: Math.round(avgSleepHours * 10) / 10,
         },
         todayMacros,
         lastCheckIn: lastCheckIn ? {
           id: lastCheckIn.id,
-          date: lastCheckIn.created_at,
-          status: lastCheckIn.status,
-          coachFeedback: lastCheckIn.coach_feedback,
+          date: lastCheckIn.date,
+          status: lastCheckIn.was_sent_to_coach ? 'submitted' : 'pending',
+          weight: lastCheckIn.weight,
+          sleepHours: lastCheckIn.sleep_hours,
         } : null,
         progressHighlights: {
           latestWeight,
           weightChange,
-          personalRecords: personalRecords.data || [],
+          personalBests: (personalBests.data || []).map(pb => ({
+            id: pb.id,
+            exerciseName: pb.exercises?.name || 'Unknown Exercise',
+            weight: pb.weight,
+            reps: pb.reps,
+            achievedAt: pb.achieved_at,
+          })),
         },
         hasData: {
-          programme: !!currentProgramme.data,
           sessions: (recentSessions.data?.length || 0) > 0,
-          meals: (todayMeals.data?.length || 0) > 0,
+          nutrition: !!todayNutrition.data,
           checkIns: (recentCheckIns.data?.length || 0) > 0,
           weight: (weightLogs.data?.length || 0) > 0,
+          sleep: (sleepRecords.data?.length || 0) > 0,
         },
       }
     },
@@ -505,14 +505,14 @@ export function useWeeklySchedule(athleteId?: string) {
       const startDate = startOfWeek.toISOString().split('T')[0]
       const endDate = endOfWeek.toISOString().split('T')[0]
 
-      // Get sessions for this week
+      // Get sessions for this week using correct column names
       const { data: sessions, error } = await supabase
         .from('training_sessions')
         .select('*')
-        .eq('athlete_id', athleteId!)
-        .gte('session_date', startDate)
-        .lte('session_date', endDate)
-        .order('session_date', { ascending: true })
+        .eq('user_id', athleteId!)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: true })
 
       if (error) throw error
 
@@ -525,11 +525,11 @@ export function useWeeklySchedule(athleteId?: string) {
         dayDate.setDate(startOfWeek.getDate() + index)
         const dateStr = dayDate.toISOString().split('T')[0]
 
-        const session = sessions?.find(s => s.session_date === dateStr)
+        const session = sessions?.find(s => s.date === dateStr)
 
         let status: 'completed' | 'current' | 'upcoming' | 'rest' = 'rest'
         if (session) {
-          if (session.completed) {
+          if (session.status === 'completed') {
             status = 'completed'
           } else if (index === todayIndex) {
             status = 'current'
@@ -542,12 +542,15 @@ export function useWeeklySchedule(athleteId?: string) {
           status = 'rest'
         }
 
+        // Calculate duration from duration_seconds
+        const durationMins = session?.duration_seconds ? Math.round(session.duration_seconds / 60) : null
+
         return {
           day,
           date: dateStr,
-          name: session?.name || 'Rest',
+          name: session?.notes || 'Rest', // training_sessions doesn't have a name field, using notes
           status,
-          duration: session?.duration_minutes ? `${session.duration_minutes} min` : '-',
+          duration: durationMins ? `${durationMins} min` : '-',
           session,
         }
       })

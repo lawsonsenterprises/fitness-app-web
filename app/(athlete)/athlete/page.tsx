@@ -25,16 +25,17 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { WeatherWidget } from '@/components/athlete/weather-widget'
-import { useAthleteDashboard } from '@/hooks/athlete'
+import { useAthleteDashboard, useCurrentProgramme } from '@/hooks/athlete'
 
 export default function AthleteDashboardPage() {
   const { user } = useAuth()
   const { data, isLoading, error } = useAthleteDashboard(user?.id)
+  const { data: currentProgramme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
 
   const firstName = user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
 
-  if (isLoading) {
+  if (isLoading || programmeLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -107,7 +108,7 @@ export default function AthleteDashboardPage() {
                 <h2 className="text-lg font-semibold">Current Programme</h2>
               </div>
 
-              {data?.currentProgramme ? (
+              {currentProgramme ? (
                 <>
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
@@ -115,12 +116,12 @@ export default function AthleteDashboardPage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium">
-                        {data.currentProgramme.programme_templates?.name || 'Active Programme'}
+                        {currentProgramme.programme_templates?.name || 'Active Programme'}
                       </h3>
                       <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
                         <span>
-                          Week {data.currentProgramme.current_week || 1} of{' '}
-                          {data.currentProgramme.programme_templates?.duration_weeks || '?'}
+                          Week {currentProgramme.current_week || 1} of{' '}
+                          {currentProgramme.programme_templates?.duration_weeks || '?'}
                         </span>
                       </div>
                     </div>
@@ -177,7 +178,7 @@ export default function AthleteDashboardPage() {
                   <span className="text-xs font-medium uppercase tracking-wider">Calories</span>
                 </div>
                 <p className="mt-2 text-2xl font-bold">
-                  {(data?.weeklyStats?.caloriesBurned || 0).toLocaleString()}
+                  {(data?.todayMacros?.calories || 0).toLocaleString()}
                 </p>
               </div>
 
@@ -218,7 +219,7 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
 
-            {data?.hasData?.meals ? (
+            {data?.hasData?.nutrition ? (
               <div className="grid gap-4 md:grid-cols-3">
                 <MetricProgress
                   icon={Flame}
@@ -271,7 +272,7 @@ export default function AthleteDashboardPage() {
               </Link>
             </div>
 
-            {data?.hasData?.weight || (data?.progressHighlights?.personalRecords?.length || 0) > 0 ? (
+            {data?.hasData?.weight || (data?.progressHighlights?.personalBests?.length || 0) > 0 ? (
               <div className="grid gap-4 md:grid-cols-3">
                 {data?.progressHighlights?.latestWeight && (
                   <div className="rounded-lg bg-muted/50 p-4">
@@ -296,20 +297,20 @@ export default function AthleteDashboardPage() {
                   </div>
                 )}
 
-                {data?.progressHighlights?.personalRecords?.slice(0, 2).map((pr: { id: string; exercise_name: string; weight_kg: number; achieved_at: string }, index: number) => (
+                {data?.progressHighlights?.personalBests?.slice(0, 2).map((pr: { id: string; exerciseName: string; weight: number; achievedAt: string }, index: number) => (
                   <div key={pr.id || index} className="rounded-lg bg-muted/50 p-4">
-                    <p className="text-sm text-muted-foreground">{pr.exercise_name} PR</p>
+                    <p className="text-sm text-muted-foreground">{pr.exerciseName} PR</p>
                     <div className="mt-1 flex items-baseline gap-2">
-                      <span className="text-2xl font-bold">{pr.weight_kg} kg</span>
+                      <span className="text-2xl font-bold">{pr.weight} kg</span>
                       <ArrowUpRight className="h-4 w-4 text-green-500" />
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(pr.achieved_at), { addSuffix: true })}
+                      {formatDistanceToNow(new Date(pr.achievedAt), { addSuffix: true })}
                     </p>
                   </div>
                 ))}
 
-                {!data?.progressHighlights?.latestWeight && (data?.progressHighlights?.personalRecords?.length || 0) === 0 && (
+                {!data?.progressHighlights?.latestWeight && (data?.progressHighlights?.personalBests?.length || 0) === 0 && (
                   <div className="col-span-full flex flex-col items-center justify-center py-4 text-center">
                     <p className="text-sm text-muted-foreground">No progress data yet</p>
                     <Button asChild variant="outline" size="sm" className="mt-2">
@@ -369,13 +370,6 @@ export default function AthleteDashboardPage() {
                   Submitted {formatDistanceToNow(new Date(data.lastCheckIn.date), { addSuffix: true })}
                 </p>
 
-                {data.lastCheckIn.coachFeedback && (
-                  <div className="mt-3 rounded-lg bg-amber-500/10 p-3 border border-amber-500/20">
-                    <p className="text-sm text-amber-600">
-                      &ldquo;{data.lastCheckIn.coachFeedback}&rdquo;
-                    </p>
-                  </div>
-                )}
 
                 <Button asChild variant="outline" className="w-full mt-4">
                   <Link href="/athlete/check-ins">View All Check-ins</Link>
