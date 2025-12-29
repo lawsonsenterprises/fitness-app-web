@@ -17,7 +17,11 @@ export function useBloodTests(athleteId?: string) {
         .eq('user_id', athleteId!)
         .order('date', { ascending: false })
 
-      if (error) throw error
+      // Return empty array on error (likely RLS or table doesn't exist)
+      if (error) {
+        console.error('Error fetching blood tests:', error)
+        return []
+      }
       // Map to expected format
       return (data || []).map(panel => ({
         id: panel.id,

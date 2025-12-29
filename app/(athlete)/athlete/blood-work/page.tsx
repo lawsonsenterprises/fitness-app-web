@@ -21,12 +21,23 @@ import { useBloodTests } from '@/hooks/athlete'
 
 export default function BloodWorkPage() {
   const { user } = useAuth()
-  const { data: bloodTests, isLoading } = useBloodTests(user?.id)
+  const { data: bloodTests, isLoading, error } = useBloodTests(user?.id)
 
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 mx-auto text-destructive mb-4" />
+          <p className="text-muted-foreground">Failed to load blood work data</p>
+        </div>
       </div>
     )
   }
