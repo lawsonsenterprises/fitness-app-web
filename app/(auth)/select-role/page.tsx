@@ -44,11 +44,15 @@ export default function SelectRolePage() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null)
   const [isTransitioning, setIsTransitioning] = useState(false)
 
-  // No longer auto-redirect for single role - always show selector
+  // Debug logging
+  useEffect(() => {
+    console.log('[SELECT-ROLE] Page loaded - isLoading:', isLoading, 'user:', user?.id, 'roles:', roles)
+  }, [isLoading, user, roles])
 
   // If not authenticated, redirect to login
   useEffect(() => {
     if (!isLoading && !user) {
+      console.log('[SELECT-ROLE] No user, redirecting to login')
       router.push('/login')
     }
   }, [user, isLoading, router])

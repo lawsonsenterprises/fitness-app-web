@@ -113,16 +113,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('[AUTH] onAuthStateChange:', event, newSession?.user?.id)
       setSession(newSession)
       setUser(newSession?.user ?? null)
       setIsLoading(false)
 
       // Handle specific auth events
       if (event === 'SIGNED_IN') {
+        console.log('[AUTH] SIGNED_IN event - NOT redirecting, letting signIn handle it')
         if (newSession?.user?.id) {
           await fetchRoles(newSession.user.id)
         }
-        router.refresh()
+        // Don't call router.refresh() here as it interferes with signIn redirect
       } else if (event === 'SIGNED_OUT') {
         setRoles(['athlete'])
         setActiveRoleState('athlete')
@@ -142,11 +144,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       setIsLoading(true)
+      console.log('[AUTH] signIn called')
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
+
+        console.log('[AUTH] signInWithPassword result:', { user: data.user?.id, error: error?.message })
 
         if (!error && data.user) {
           // Fetch user roles to determine redirect
@@ -157,9 +162,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .single()
 
           const userRoles = (profile?.roles as UserRole[]) || ['athlete', 'coach', 'admin']
+          console.log('[AUTH] User roles:', userRoles)
           setRoles(userRoles)
 
           // Always show role selector on login
+          console.log('[AUTH] Redirecting to /select-role')
           router.push('/select-role')
         }
 

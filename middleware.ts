@@ -22,6 +22,9 @@ const adminRoutes = ['/admin']
 // Routes only accessible when NOT authenticated
 const authRoutes = ['/login', '/register', '/reset-password']
 
+// Routes accessible when authenticated (but not redirected away from)
+const selectRoleRoute = '/select-role'
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -83,8 +86,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users from auth routes to dashboard
-  if (isAuthRoute && user) {
+  // But allow access to select-role page
+  if (isAuthRoute && user && pathname !== selectRoleRoute) {
     return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
+  }
+
+  // Require authentication for select-role page
+  if (pathname === selectRoleRoute && !user) {
+    return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url))
   }
 
   // Role-based access control for authenticated users
