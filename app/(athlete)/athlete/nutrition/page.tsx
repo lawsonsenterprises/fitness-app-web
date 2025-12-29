@@ -22,11 +22,12 @@ import { useAuth } from '@/contexts/auth-context'
 import { useAthleteDashboard, useCurrentMealPlan } from '@/hooks/athlete'
 
 export default function NutritionPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { data: dashboardData, isLoading: dashboardLoading } = useAthleteDashboard(user?.id)
   const { data: mealPlan, isLoading: mealPlanLoading } = useCurrentMealPlan(user?.id)
 
-  const isLoading = dashboardLoading || mealPlanLoading
+  // Include auth loading state to prevent accessing undefined data
+  const isLoading = authLoading || dashboardLoading || mealPlanLoading
 
   if (isLoading) {
     return (

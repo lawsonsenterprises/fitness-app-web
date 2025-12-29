@@ -20,10 +20,11 @@ import { useAuth } from '@/contexts/auth-context'
 import { useCheckIns } from '@/hooks/athlete'
 
 export default function CheckInsPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { data: checkIns, isLoading } = useCheckIns(user?.id)
 
-  if (isLoading) {
+  // Show loading while auth is loading OR query is loading
+  if (authLoading || isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -31,7 +32,8 @@ export default function CheckInsPage() {
     )
   }
 
-  const hasCheckIns = checkIns && checkIns.length > 0
+  // Safely check - checkIns could be undefined if query was disabled
+  const hasCheckIns = Array.isArray(checkIns) && checkIns.length > 0
 
   // Calculate stats from real data
   const totalCheckIns = checkIns?.length || 0

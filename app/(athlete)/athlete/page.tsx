@@ -28,14 +28,15 @@ import { WeatherWidget } from '@/components/athlete/weather-widget'
 import { useAthleteDashboard, useCurrentProgramme } from '@/hooks/athlete'
 
 export default function AthleteDashboardPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { data, isLoading, error } = useAthleteDashboard(user?.id)
   const { data: currentProgramme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
 
   const firstName = user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
 
-  if (isLoading || programmeLoading) {
+  // Show loading while auth is loading OR any query is loading
+  if (authLoading || isLoading || programmeLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

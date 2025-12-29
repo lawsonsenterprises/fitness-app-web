@@ -24,14 +24,15 @@ import { useAuth } from '@/contexts/auth-context'
 import { useCurrentProgramme, useWeeklySchedule, usePersonalRecords } from '@/hooks/athlete'
 
 export default function TrainingPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<'week' | 'prs'>('week')
 
   const { data: programme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
   const { data: weeklySchedule, isLoading: scheduleLoading } = useWeeklySchedule(user?.id)
   const { data: personalRecords, isLoading: prsLoading } = usePersonalRecords(user?.id)
 
-  const isLoading = programmeLoading || scheduleLoading || prsLoading
+  // Include auth loading state to prevent accessing undefined data
+  const isLoading = authLoading || programmeLoading || scheduleLoading || prsLoading
 
   if (isLoading) {
     return (

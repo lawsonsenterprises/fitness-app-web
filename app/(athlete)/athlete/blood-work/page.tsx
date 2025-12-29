@@ -20,10 +20,11 @@ import { useAuth } from '@/contexts/auth-context'
 import { useBloodTests } from '@/hooks/athlete'
 
 export default function BloodWorkPage() {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const { data: bloodTests, isLoading, error } = useBloodTests(user?.id)
 
-  if (isLoading) {
+  // Show loading while auth is loading OR query is loading
+  if (authLoading || isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -42,7 +43,8 @@ export default function BloodWorkPage() {
     )
   }
 
-  const hasBloodTests = bloodTests && bloodTests.length > 0
+  // Safely check for blood tests - bloodTests could be undefined if query is disabled
+  const hasBloodTests = Array.isArray(bloodTests) && bloodTests.length > 0
 
   return (
     <div className="p-6 lg:p-8">
