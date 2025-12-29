@@ -9,7 +9,6 @@ import {
   Trophy,
   Target,
   TrendingUp,
-  Play,
   CheckCircle2,
   Timer,
   Flame,
@@ -188,10 +187,10 @@ export default function TrainingPage() {
                   </div>
                 </div>
 
-                <Button className="gap-2 bg-green-600 hover:bg-green-700">
-                  <Play className="h-4 w-4" />
-                  Start Workout
-                </Button>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Log workout via</p>
+                  <p className="text-sm font-medium text-amber-600">iOS App</p>
+                </div>
               </div>
             </div>
 
@@ -313,9 +312,9 @@ export default function TrainingPage() {
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                   )}
                   {day.status === 'current' && (
-                    <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
-                      Start
-                    </Button>
+                    <span className="text-xs font-medium text-amber-600 px-2 py-1 bg-amber-500/10 rounded">
+                      Today
+                    </span>
                   )}
                   {day.status === 'upcoming' && (
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />

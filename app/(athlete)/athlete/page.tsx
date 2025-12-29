@@ -133,15 +133,12 @@ export default function AthleteDashboardPage() {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <Button asChild className="flex-1 bg-foreground text-background hover:bg-foreground/90">
+              <div className="mt-6">
+                <Button asChild variant="outline" className="w-full">
                   <Link href="/athlete/training">
-                    Start Workout
+                    View Training Programme
                     <ChevronRight className="ml-1 h-4 w-4" />
                   </Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link href="/athlete/training">View All</Link>
                 </Button>
               </div>
             </motion.div>
