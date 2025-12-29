@@ -12,13 +12,19 @@ export function useBloodTests(athleteId?: string) {
     queryKey: ['blood-tests', athleteId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('blood_tests')
+        .from('blood_panels')
         .select('*')
-        .eq('athlete_id', athleteId!)
-        .order('test_date', { ascending: false })
+        .eq('user_id', athleteId!)
+        .order('date', { ascending: false })
 
       if (error) throw error
-      return data
+      // Map to expected format
+      return (data || []).map(panel => ({
+        id: panel.id,
+        test_date: panel.date,
+        lab_name: panel.lab_name,
+        notes: panel.notes,
+      }))
     },
     enabled: !!athleteId,
   })
@@ -131,7 +137,7 @@ export function useCurrentProgramme(athleteId?: string) {
         .select('*, programme_templates(*)')
         .eq('client_id', athleteId!)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
 
       if (error) throw error
       return data
@@ -195,7 +201,7 @@ export function useCurrentMealPlan(athleteId?: string) {
         .select('*, meal_plans(*)')
         .eq('client_id', athleteId!)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
 
       if (error) throw error
       return data
