@@ -82,11 +82,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const setActiveRole = useCallback((role: UserRole) => {
     if (roles.includes(role)) {
+      console.log('[AUTH] setActiveRole:', role, '-> redirecting to', ROLE_ROUTES[role])
       setActiveRoleState(role)
       localStorage.setItem('activeRole', role)
-      router.push(ROLE_ROUTES[role])
+      // Use hard navigation to ensure proper route change
+      window.location.href = ROLE_ROUTES[role]
     }
-  }, [roles, router])
+  }, [roles])
 
   useEffect(() => {
     // Get initial session
