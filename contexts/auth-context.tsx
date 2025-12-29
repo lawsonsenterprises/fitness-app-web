@@ -208,11 +208,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signOut = useCallback(async () => {
     setIsLoading(true)
     try {
-      await supabase.auth.signOut()
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+      }
+      // Clear local state immediately
+      setUser(null)
+      setSession(null)
+      setRoles(['athlete'])
+      setActiveRoleState('athlete')
+      localStorage.removeItem('activeRole')
+      // Force redirect to login
+      router.push(ROUTES.LOGIN)
+    } catch (error) {
+      console.error('Sign out error:', error)
     } finally {
       setIsLoading(false)
     }
-  }, [supabase.auth])
+  }, [supabase.auth, router])
 
   const resetPassword = useCallback(
     async (email: string) => {
