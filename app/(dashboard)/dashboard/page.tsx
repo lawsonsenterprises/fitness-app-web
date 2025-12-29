@@ -83,14 +83,14 @@ export default function DashboardPage() {
           />
           <DashboardWidget
             title="Training Adherence"
-            value={isLoading ? '-' : `${analytics?.avgTrainingAdherence.toFixed(0)}%`}
+            value={isLoading ? '-' : `${Math.round(analytics?.avgTrainingAdherence ?? 0)}%`}
             subtitle="Average across all clients"
             icon={Dumbbell}
             trend={{ value: 5, isPositive: true }}
           />
           <DashboardWidget
             title="Check-in Rate"
-            value={isLoading ? '-' : `${analytics?.checkInSubmissionRate.toFixed(0)}%`}
+            value={isLoading ? '-' : `${Math.round(analytics?.checkInSubmissionRate ?? 0)}%`}
             subtitle="Submission this week"
             icon={TrendingUp}
             trend={{ value: 2, isPositive: true }}

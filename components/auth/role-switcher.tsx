@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Dumbbell, ClipboardList, Shield, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROLE_LABELS, type UserRole } from '@/lib/roles'
@@ -13,26 +12,19 @@ const ROLE_ICONS = {
   admin: Shield,
 } as const
 
-const ROLE_HOME_ROUTES: Record<UserRole, string> = {
-  athlete: '/athlete',
-  coach: '/dashboard',
-  admin: '/admin',
-}
-
 interface RoleSwitcherProps {
   className?: string
   variant?: 'default' | 'compact'
 }
 
 export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherProps) {
-  const router = useRouter()
   const { roles, activeRole, setActiveRole } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
 
   const handleRoleSwitch = (role: UserRole) => {
-    setActiveRole(role)
     setIsOpen(false)
-    router.push(ROLE_HOME_ROUTES[role])
+    // setActiveRole handles navigation via window.location.href in auth-context
+    setActiveRole(role)
   }
 
   const ActiveIcon = ROLE_ICONS[activeRole]
