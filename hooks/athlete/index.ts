@@ -436,10 +436,12 @@ export function useAthleteDashboard(athleteId?: string) {
         targetProtein: todayNutrition.data.target_protein || 0,
       } : { calories: 0, protein: 0, carbs: 0, fat: 0, targetCalories: 0, targetProtein: 0 }
 
-      // Get latest and oldest weight for progress
-      const latestWeight = weightLogs.data?.[0]?.value_kg
-      const oldestWeight = weightLogs.data?.length ? weightLogs.data[weightLogs.data.length - 1]?.value_kg : null
-      const weightChange = latestWeight && oldestWeight ? latestWeight - oldestWeight : null
+      // Get latest and oldest weight for progress (round to 1 decimal place)
+      const latestWeightRaw = weightLogs.data?.[0]?.value_kg
+      const oldestWeightRaw = weightLogs.data?.length ? weightLogs.data[weightLogs.data.length - 1]?.value_kg : null
+      const latestWeight = latestWeightRaw ? Math.round(latestWeightRaw * 10) / 10 : null
+      const oldestWeight = oldestWeightRaw ? Math.round(oldestWeightRaw * 10) / 10 : null
+      const weightChange = latestWeight && oldestWeight ? Math.round((latestWeight - oldestWeight) * 10) / 10 : null
 
       // Get most recent check-in
       const lastCheckIn = recentCheckIns.data?.[0]
