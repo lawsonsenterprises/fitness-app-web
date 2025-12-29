@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   Dumbbell,
   Calendar,
@@ -11,64 +12,34 @@ import {
   TrendingUp,
   CheckCircle2,
   Timer,
-  Flame,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { formatDistanceToNow } from 'date-fns'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-
-// Mock data
-const mockProgramme = {
-  name: 'Strength & Hypertrophy - Phase 2',
-  week: 4,
-  totalWeeks: 8,
-  startDate: '2024-12-01',
-  endDate: '2025-01-26',
-  goal: 'Build muscle mass while increasing strength on compound lifts',
-}
-
-const mockWeeklySchedule = [
-  { day: 'Monday', name: 'Upper - Push Focus', status: 'completed', duration: '55 min' },
-  { day: 'Tuesday', name: 'Lower - Quad Focus', status: 'completed', duration: '50 min' },
-  { day: 'Wednesday', name: 'Rest', status: 'rest', duration: '-' },
-  { day: 'Thursday', name: 'Upper - Pull Focus', status: 'completed', duration: '48 min' },
-  { day: 'Friday', name: 'Lower - Hip Focus', status: 'current', duration: '~50 min' },
-  { day: 'Saturday', name: 'Arms & Core', status: 'upcoming', duration: '~40 min' },
-  { day: 'Sunday', name: 'Rest', status: 'rest', duration: '-' },
-]
-
-const mockTodayWorkout = {
-  id: '1',
-  name: 'Lower - Hip Focus',
-  warmup: [
-    { name: '5 min cardio', sets: '-', reps: '-' },
-    { name: 'Hip circles', sets: '2', reps: '10 each' },
-    { name: 'Glute bridges', sets: '2', reps: '15' },
-  ],
-  exercises: [
-    { name: 'Romanian Deadlift', sets: '4', reps: '8-10', weight: '80kg', rest: '90s', notes: 'Focus on stretch' },
-    { name: 'Hip Thrust', sets: '4', reps: '10-12', weight: '100kg', rest: '90s', notes: 'Pause at top' },
-    { name: 'Bulgarian Split Squat', sets: '3', reps: '10 each', weight: '20kg DB', rest: '60s', notes: null },
-    { name: 'Leg Curl', sets: '3', reps: '12-15', weight: '45kg', rest: '60s', notes: 'Control the negative' },
-    { name: 'Calf Raises', sets: '4', reps: '15-20', weight: '60kg', rest: '45s', notes: 'Full ROM' },
-  ],
-  cooldown: [
-    { name: 'Hip flexor stretch', duration: '60s each' },
-    { name: 'Hamstring stretch', duration: '60s each' },
-    { name: 'Pigeon pose', duration: '90s each' },
-  ],
-}
-
-const mockPRs = [
-  { exercise: 'Deadlift', weight: '180kg', date: '2024-12-15', trend: 'up' },
-  { exercise: 'Squat', weight: '150kg', date: '2024-12-10', trend: 'up' },
-  { exercise: 'Bench Press', weight: '110kg', date: '2024-12-08', trend: 'same' },
-  { exercise: 'Hip Thrust', weight: '140kg', date: '2024-12-20', trend: 'up' },
-]
+import { useAuth } from '@/contexts/auth-context'
+import { useCurrentProgramme, useWeeklySchedule, usePersonalRecords } from '@/hooks/athlete'
 
 export default function TrainingPage() {
-  const [activeTab, setActiveTab] = useState<'today' | 'week' | 'prs'>('today')
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<'week' | 'prs'>('week')
+
+  const { data: programme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
+  const { data: weeklySchedule, isLoading: scheduleLoading } = useWeeklySchedule(user?.id)
+  const { data: personalRecords, isLoading: prsLoading } = usePersonalRecords(user?.id)
+
+  const isLoading = programmeLoading || scheduleLoading || prsLoading
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 lg:p-8">
@@ -81,63 +52,84 @@ export default function TrainingPage() {
       </div>
 
       {/* Programme Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border border-border bg-card p-6 mb-6"
-      >
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-              <Target className="h-6 w-6 text-amber-600" />
+      {programme ? (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-border bg-card p-6 mb-6"
+        >
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+                <Target className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">
+                  {programme.programme_templates?.name || 'Active Programme'}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {programme.programme_templates?.description || 'Your current training programme'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">{mockProgramme.name}</h2>
-              <p className="text-sm text-muted-foreground mt-1">{mockProgramme.goal}</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Week</p>
-              <p className="text-2xl font-bold">
-                {mockProgramme.week}
-                <span className="text-muted-foreground text-base font-normal">/{mockProgramme.totalWeeks}</span>
-              </p>
-            </div>
-            <div className="h-12 w-12 relative">
-              <svg className="w-12 h-12 -rotate-90">
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  className="text-muted/30"
-                />
-                <circle
-                  cx="24"
-                  cy="24"
-                  r="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  strokeDasharray={2 * Math.PI * 20}
-                  strokeDashoffset={2 * Math.PI * 20 * (1 - mockProgramme.week / mockProgramme.totalWeeks)}
-                  strokeLinecap="round"
-                  className="text-amber-500"
-                />
-              </svg>
+            <div className="flex items-center gap-6">
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Week</p>
+                <p className="text-2xl font-bold">
+                  {programme.current_week || 1}
+                  <span className="text-muted-foreground text-base font-normal">
+                    /{programme.programme_templates?.duration_weeks || '?'}
+                  </span>
+                </p>
+              </div>
+              <div className="h-12 w-12 relative">
+                <svg className="w-12 h-12 -rotate-90">
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    className="text-muted/30"
+                  />
+                  <circle
+                    cx="24"
+                    cy="24"
+                    r="20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeDasharray={2 * Math.PI * 20}
+                    strokeDashoffset={
+                      2 * Math.PI * 20 * (1 - (programme.current_week || 1) / (programme.programme_templates?.duration_weeks || 1))
+                    }
+                    strokeLinecap="round"
+                    className="text-amber-500"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-border bg-card p-8 mb-6 text-center"
+        >
+          <Dumbbell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">No Active Programme</h2>
+          <p className="text-sm text-muted-foreground">
+            Your coach will assign a training programme to you soon.
+          </p>
+        </motion.div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {[
-          { id: 'today', label: "Today's Workout", icon: Dumbbell },
           { id: 'week', label: 'This Week', icon: Calendar },
           { id: 'prs', label: 'Personal Records', icon: Trophy },
         ].map((tab) => (
@@ -158,171 +150,73 @@ export default function TrainingPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'today' && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          {/* Today's Workout Card */}
-          <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="p-6 border-b border-border">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-500/10">
-                    <Dumbbell className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold">{mockTodayWorkout.name}</h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        ~50 min
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Flame className="h-4 w-4" />
-                        ~320 kcal
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">Log workout via</p>
-                  <p className="text-sm font-medium text-amber-600">iOS App</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Warmup */}
-            <div className="p-6 border-b border-border bg-muted/30">
-              <h4 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Warmup</h4>
-              <div className="space-y-2">
-                {mockTodayWorkout.warmup.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm">
-                    <span>{item.name}</span>
-                    <span className="text-muted-foreground">
-                      {item.sets !== '-' ? `${item.sets} × ${item.reps}` : item.reps}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Main Exercises */}
-            <div className="divide-y divide-border">
-              {mockTodayWorkout.exercises.map((exercise, idx) => (
-                <div key={idx} className="p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-600">
-                          {idx + 1}
-                        </span>
-                        <h4 className="font-medium">{exercise.name}</h4>
-                      </div>
-                      {exercise.notes && (
-                        <p className="text-sm text-muted-foreground mt-1 ml-8">{exercise.notes}</p>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-4 text-center">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Sets</p>
-                        <p className="font-medium">{exercise.sets}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Reps</p>
-                        <p className="font-medium">{exercise.reps}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Weight</p>
-                        <p className="font-medium">{exercise.weight}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Rest</p>
-                        <p className="font-medium">{exercise.rest}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Cooldown */}
-            <div className="p-6 bg-muted/30">
-              <h4 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">Cooldown</h4>
-              <div className="space-y-2">
-                {mockTodayWorkout.cooldown.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm">
-                    <span>{item.name}</span>
-                    <span className="text-muted-foreground">{item.duration}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
       {activeTab === 'week' && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="rounded-xl border border-border bg-card overflow-hidden"
         >
-          <div className="divide-y divide-border">
-            {mockWeeklySchedule.map((day, idx) => (
-              <div
-                key={idx}
-                className={cn(
-                  'p-4 flex items-center gap-4',
-                  day.status === 'current' && 'bg-amber-500/5 border-l-4 border-l-amber-500',
-                  day.status === 'rest' && 'bg-muted/30'
-                )}
-              >
-                <div className="w-24 shrink-0">
-                  <p className={cn(
-                    'font-medium',
-                    day.status === 'completed' && 'text-muted-foreground',
-                    day.status === 'current' && 'text-amber-600'
-                  )}>
-                    {day.day}
-                  </p>
-                </div>
+          {weeklySchedule && weeklySchedule.length > 0 ? (
+            <div className="divide-y divide-border">
+              {weeklySchedule.map((day, idx) => (
+                <div
+                  key={idx}
+                  className={cn(
+                    'p-4 flex items-center gap-4',
+                    day.status === 'current' && 'bg-amber-500/5 border-l-4 border-l-amber-500',
+                    day.status === 'rest' && 'bg-muted/30'
+                  )}
+                >
+                  <div className="w-24 shrink-0">
+                    <p className={cn(
+                      'font-medium',
+                      day.status === 'completed' && 'text-muted-foreground',
+                      day.status === 'current' && 'text-amber-600'
+                    )}>
+                      {day.day}
+                    </p>
+                  </div>
 
-                <div className="flex-1">
-                  <p className={cn(
-                    'font-medium',
-                    day.status === 'rest' && 'text-muted-foreground'
-                  )}>
-                    {day.name}
-                  </p>
-                </div>
+                  <div className="flex-1">
+                    <p className={cn(
+                      'font-medium',
+                      day.status === 'rest' && 'text-muted-foreground'
+                    )}>
+                      {day.name}
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-4">
-                  {day.duration !== '-' && (
-                    <span className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Timer className="h-4 w-4" />
-                      {day.duration}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-4">
+                    {day.duration !== '-' && (
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Timer className="h-4 w-4" />
+                        {day.duration}
+                      </span>
+                    )}
 
-                  {day.status === 'completed' && (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  )}
-                  {day.status === 'current' && (
-                    <span className="text-xs font-medium text-amber-600 px-2 py-1 bg-amber-500/10 rounded">
-                      Today
-                    </span>
-                  )}
-                  {day.status === 'upcoming' && (
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  )}
+                    {day.status === 'completed' && (
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    )}
+                    {day.status === 'current' && (
+                      <span className="text-xs font-medium text-amber-600 px-2 py-1 bg-amber-500/10 rounded">
+                        Today
+                      </span>
+                    )}
+                    {day.status === 'upcoming' && (
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <p className="text-sm text-muted-foreground">
+                No scheduled sessions this week.
+              </p>
+            </div>
+          )}
         </motion.div>
       )}
 
@@ -332,48 +226,68 @@ export default function TrainingPage() {
           animate={{ opacity: 1 }}
           className="space-y-6"
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            {mockPRs.map((pr, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">{pr.exercise}</p>
-                    <p className="text-3xl font-bold mt-1">{pr.weight}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Set on {new Date(pr.date).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
-                    </p>
+          {personalRecords && personalRecords.length > 0 ? (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                {personalRecords.map((pr) => (
+                  <div
+                    key={pr.id}
+                    className="rounded-xl border border-border bg-card p-6"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">{pr.exercise_name}</p>
+                        <p className="text-3xl font-bold mt-1">{pr.weight_kg}kg</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {formatDistanceToNow(new Date(pr.achieved_at), { addSuffix: true })}
+                        </p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                      </div>
+                    </div>
                   </div>
-                  <div className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-full',
-                    pr.trend === 'up' && 'bg-green-500/10'
-                  )}>
-                    {pr.trend === 'up' && <TrendingUp className="h-5 w-5 text-green-500" />}
-                    {pr.trend === 'same' && <Trophy className="h-5 w-5 text-amber-500" />}
-                  </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="font-semibold mb-4">PR History</h3>
-            <p className="text-sm text-muted-foreground">
-              View your complete personal record history and track your strength gains over time.
-            </p>
-            <Button variant="outline" className="mt-4">
-              View All Records
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+              <div className="rounded-xl border border-border bg-card p-6">
+                <h3 className="font-semibold mb-4">PR History</h3>
+                <p className="text-sm text-muted-foreground">
+                  View your complete personal record history and track your strength gains over time.
+                </p>
+                <Button variant="outline" className="mt-4" asChild>
+                  <Link href="/athlete/training/exercises">
+                    View All Records
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-8 text-center">
+              <Trophy className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h3 className="font-semibold mb-2">No Personal Records Yet</h3>
+              <p className="text-sm text-muted-foreground">
+                Your personal records will appear here as you log your workouts in the iOS app.
+              </p>
+            </div>
+          )}
         </motion.div>
       )}
+
+      {/* Log Workouts CTA */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mt-8 rounded-xl border border-amber-500/20 bg-amber-500/5 p-6 text-center"
+      >
+        <Dumbbell className="h-8 w-8 mx-auto text-amber-600 mb-3" />
+        <h3 className="font-semibold mb-2">Log Your Workouts</h3>
+        <p className="text-sm text-muted-foreground max-w-md mx-auto">
+          Use the Synced Momentum iOS app to log your workouts and track your progress in real-time.
+        </p>
+      </motion.div>
     </div>
   )
 }

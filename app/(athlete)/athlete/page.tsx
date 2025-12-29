@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
   Dumbbell,
@@ -10,67 +9,55 @@ import {
   ChevronRight,
   Calendar,
   Flame,
-  Footprints,
   Moon,
   Target,
-  Clock,
   Droplets,
   ArrowUpRight,
   ArrowDownRight,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { formatDistanceToNow } from 'date-fns'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { WeatherWidget } from '@/components/athlete/weather-widget'
-
-// Mock data - would come from API
-const mockDashboardData = {
-  readinessScore: 78,
-  todayWorkout: {
-    name: 'Upper Body - Push Focus',
-    duration: '45-60 min',
-    exercises: 8,
-    scheduledTime: '18:00',
-  },
-  weeklyStats: {
-    workoutsCompleted: 4,
-    workoutsPlanned: 5,
-    caloriesBurned: 2340,
-    stepsTaken: 52400,
-    averageSleep: 7.2,
-  },
-  dailyMetrics: {
-    calories: { current: 1840, target: 2400 },
-    protein: { current: 145, target: 180 },
-    steps: { current: 8420, target: 10000 },
-    water: { current: 2.1, target: 3 },
-  },
-  recentCheckIn: {
-    date: '2 days ago',
-    status: 'reviewed',
-    feedback: 'Great progress this week!',
-  },
-  upcomingTasks: [
-    { id: '1', title: 'Submit weekly check-in', due: 'Tomorrow', type: 'check-in' },
-    { id: '2', title: 'Blood work appointment', due: 'In 3 days', type: 'blood-work' },
-    { id: '3', title: 'Programme ends', due: 'In 2 weeks', type: 'programme' },
-  ],
-  progressHighlights: [
-    { label: 'Weight', value: '76.2 kg', change: '-1.8 kg', trend: 'down', period: 'this month' },
-    { label: 'Deadlift PR', value: '180 kg', change: '+10 kg', trend: 'up', period: 'this month' },
-    { label: 'Body Fat', value: '14.2%', change: '-0.8%', trend: 'down', period: 'this month' },
-  ],
-}
+import { useAthleteDashboard } from '@/hooks/athlete'
 
 export default function AthleteDashboardPage() {
   const { user } = useAuth()
-  const [data] = useState(mockDashboardData)
+  const { data, isLoading, error } = useAthleteDashboard(user?.id)
 
   const firstName = user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 p-6">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <p className="text-lg font-medium">Failed to load dashboard</p>
+        <p className="text-sm text-muted-foreground">Please try refreshing the page</p>
+      </div>
+    )
+  }
+
+  // Default targets (could come from user settings later)
+  const targets = {
+    calories: 2400,
+    protein: 180,
+    water: 3,
+  }
 
   return (
     <div className="p-6 lg:p-8">
@@ -101,10 +88,15 @@ export default function AthleteDashboardPage() {
               className="rounded-xl border border-border bg-card p-6"
             >
               <h2 className="text-lg font-semibold mb-4">Readiness Score</h2>
-              <ReadinessGauge score={data.readinessScore} />
+              <ReadinessGauge score={data?.readinessScore || 0} />
+              {!data?.hasData?.sessions && (
+                <p className="mt-4 text-xs text-muted-foreground text-center">
+                  Log sleep and workouts to improve accuracy
+                </p>
+              )}
             </motion.div>
 
-            {/* Today's Workout */}
+            {/* Today's Workout / Programme */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -112,35 +104,46 @@ export default function AthleteDashboardPage() {
               className="rounded-xl border border-border bg-card p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Today&apos;s Workout</h2>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{data.todayWorkout.scheduledTime}</span>
-                </div>
+                <h2 className="text-lg font-semibold">Current Programme</h2>
               </div>
 
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-                  <Dumbbell className="h-6 w-6 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">{data.todayWorkout.name}</h3>
-                  <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
-                    <span>{data.todayWorkout.duration}</span>
-                    <span>•</span>
-                    <span>{data.todayWorkout.exercises} exercises</span>
+              {data?.currentProgramme ? (
+                <>
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+                      <Dumbbell className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium">
+                        {data.currentProgramme.programme_templates?.name || 'Active Programme'}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>
+                          Week {data.currentProgramme.current_week || 1} of{' '}
+                          {data.currentProgramme.programme_templates?.duration_weeks || '?'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="mt-6">
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="/athlete/training">
-                    View Training Programme
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
+                  <div className="mt-6">
+                    <Button asChild variant="outline" className="w-full">
+                      <Link href="/athlete/training">
+                        View Training Programme
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Dumbbell className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">No active programme</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your coach will assign one soon
+                  </p>
+                </div>
+              )}
             </motion.div>
           </div>
 
@@ -159,8 +162,12 @@ export default function AthleteDashboardPage() {
                   <span className="text-xs font-medium uppercase tracking-wider">Workouts</span>
                 </div>
                 <p className="mt-2 text-2xl font-bold">
-                  {data.weeklyStats.workoutsCompleted}
-                  <span className="text-muted-foreground text-base font-normal">/{data.weeklyStats.workoutsPlanned}</span>
+                  {data?.weeklyStats?.workoutsCompleted || 0}
+                  {data?.weeklyStats?.workoutsPlanned ? (
+                    <span className="text-muted-foreground text-base font-normal">
+                      /{data.weeklyStats.workoutsPlanned}
+                    </span>
+                  ) : null}
                 </p>
               </div>
 
@@ -169,23 +176,29 @@ export default function AthleteDashboardPage() {
                   <Flame className="h-4 w-4 text-orange-500" />
                   <span className="text-xs font-medium uppercase tracking-wider">Calories</span>
                 </div>
-                <p className="mt-2 text-2xl font-bold">{data.weeklyStats.caloriesBurned.toLocaleString()}</p>
-              </div>
-
-              <div className="rounded-lg bg-muted/50 p-4">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Footprints className="h-4 w-4 text-blue-500" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Steps</span>
-                </div>
-                <p className="mt-2 text-2xl font-bold">{(data.weeklyStats.stepsTaken / 1000).toFixed(1)}k</p>
+                <p className="mt-2 text-2xl font-bold">
+                  {(data?.weeklyStats?.caloriesBurned || 0).toLocaleString()}
+                </p>
               </div>
 
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Moon className="h-4 w-4 text-indigo-500" />
-                  <span className="text-xs font-medium uppercase tracking-wider">Sleep</span>
+                  <span className="text-xs font-medium uppercase tracking-wider">Avg Sleep</span>
                 </div>
-                <p className="mt-2 text-2xl font-bold">{data.weeklyStats.averageSleep}h</p>
+                <p className="mt-2 text-2xl font-bold">
+                  {data?.weeklyStats?.averageSleep || 0}h
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-muted/50 p-4">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4 text-green-500" />
+                  <span className="text-xs font-medium uppercase tracking-wider">Check-ins</span>
+                </div>
+                <p className="mt-2 text-2xl font-bold">
+                  {data?.lastCheckIn ? '1' : '0'}
+                </p>
               </div>
             </div>
           </motion.div>
@@ -198,47 +211,49 @@ export default function AthleteDashboardPage() {
             className="rounded-xl border border-border bg-card p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Today&apos;s Targets</h2>
+              <h2 className="text-lg font-semibold">Today&apos;s Nutrition</h2>
               <Link href="/athlete/nutrition" className="text-sm text-amber-600 hover:underline flex items-center gap-1">
-                View Details
+                Log Meal
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
-              <MetricProgress
-                icon={Flame}
-                label="Calories"
-                current={data.dailyMetrics.calories.current}
-                target={data.dailyMetrics.calories.target}
-                unit="kcal"
-                color="orange"
-              />
-              <MetricProgress
-                icon={Target}
-                label="Protein"
-                current={data.dailyMetrics.protein.current}
-                target={data.dailyMetrics.protein.target}
-                unit="g"
-                color="purple"
-              />
-              <MetricProgress
-                icon={Footprints}
-                label="Steps"
-                current={data.dailyMetrics.steps.current}
-                target={data.dailyMetrics.steps.target}
-                unit=""
-                color="blue"
-              />
-              <MetricProgress
-                icon={Droplets}
-                label="Water"
-                current={data.dailyMetrics.water.current}
-                target={data.dailyMetrics.water.target}
-                unit="L"
-                color="cyan"
-              />
-            </div>
+            {data?.hasData?.meals ? (
+              <div className="grid gap-4 md:grid-cols-3">
+                <MetricProgress
+                  icon={Flame}
+                  label="Calories"
+                  current={data?.todayMacros?.calories || 0}
+                  target={targets.calories}
+                  unit="kcal"
+                  color="orange"
+                />
+                <MetricProgress
+                  icon={Target}
+                  label="Protein"
+                  current={data?.todayMacros?.protein || 0}
+                  target={targets.protein}
+                  unit="g"
+                  color="purple"
+                />
+                <MetricProgress
+                  icon={Droplets}
+                  label="Water"
+                  current={0}
+                  target={targets.water}
+                  unit="L"
+                  color="cyan"
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <UtensilsCrossed className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">No meals logged today</p>
+                <Button asChild variant="outline" size="sm" className="mt-4">
+                  <Link href="/athlete/nutrition/log">Log Your First Meal</Link>
+                </Button>
+              </div>
+            )}
           </motion.div>
 
           {/* Progress Highlights */}
@@ -249,35 +264,69 @@ export default function AthleteDashboardPage() {
             className="rounded-xl border border-border bg-card p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Progress Highlights</h2>
+              <h2 className="text-lg font-semibold">Progress</h2>
               <Link href="/athlete/progress" className="text-sm text-amber-600 hover:underline flex items-center gap-1">
                 See All Progress
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              {data.progressHighlights.map((highlight, index) => (
-                <div key={index} className="rounded-lg bg-muted/50 p-4">
-                  <p className="text-sm text-muted-foreground">{highlight.label}</p>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{highlight.value}</span>
-                    <span className={cn(
-                      'flex items-center gap-0.5 text-sm font-medium',
-                      highlight.trend === 'up' ? 'text-green-500' : 'text-amber-500'
-                    )}>
-                      {highlight.trend === 'up' ? (
-                        <ArrowUpRight className="h-4 w-4" />
-                      ) : (
-                        <ArrowDownRight className="h-4 w-4" />
+            {data?.hasData?.weight || (data?.progressHighlights?.personalRecords?.length || 0) > 0 ? (
+              <div className="grid gap-4 md:grid-cols-3">
+                {data?.progressHighlights?.latestWeight && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Current Weight</p>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="text-2xl font-bold">{data.progressHighlights.latestWeight} kg</span>
+                      {data.progressHighlights.weightChange !== null && (
+                        <span className={cn(
+                          'flex items-center gap-0.5 text-sm font-medium',
+                          data.progressHighlights.weightChange > 0 ? 'text-green-500' : 'text-amber-500'
+                        )}>
+                          {data.progressHighlights.weightChange > 0 ? (
+                            <ArrowUpRight className="h-4 w-4" />
+                          ) : (
+                            <ArrowDownRight className="h-4 w-4" />
+                          )}
+                          {Math.abs(data.progressHighlights.weightChange).toFixed(1)} kg
+                        </span>
                       )}
-                      {highlight.change}
-                    </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">last 30 days</p>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">{highlight.period}</p>
-                </div>
-              ))}
-            </div>
+                )}
+
+                {data?.progressHighlights?.personalRecords?.slice(0, 2).map((pr: { id: string; exercise_name: string; weight_kg: number; achieved_at: string }, index: number) => (
+                  <div key={pr.id || index} className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">{pr.exercise_name} PR</p>
+                    <div className="mt-1 flex items-baseline gap-2">
+                      <span className="text-2xl font-bold">{pr.weight_kg} kg</span>
+                      <ArrowUpRight className="h-4 w-4 text-green-500" />
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(pr.achieved_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                ))}
+
+                {!data?.progressHighlights?.latestWeight && (data?.progressHighlights?.personalRecords?.length || 0) === 0 && (
+                  <div className="col-span-full flex flex-col items-center justify-center py-4 text-center">
+                    <p className="text-sm text-muted-foreground">No progress data yet</p>
+                    <Button asChild variant="outline" size="sm" className="mt-2">
+                      <Link href="/athlete/progress">Log Weight</Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <TrendingUp className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">Start logging to track progress</p>
+                <Button asChild variant="outline" size="sm" className="mt-4">
+                  <Link href="/athlete/progress">Log Your Weight</Link>
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -292,73 +341,62 @@ export default function AthleteDashboardPage() {
             <WeatherWidget />
           </motion.div>
 
-          {/* Upcoming Tasks */}
+          {/* Recent Check-in */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
             className="rounded-xl border border-border bg-card p-6"
           >
-            <h2 className="text-lg font-semibold mb-4">Upcoming</h2>
-            <div className="space-y-3">
-              {data.upcomingTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                  <div className={cn(
-                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                    task.type === 'check-in' && 'bg-amber-500/10',
-                    task.type === 'blood-work' && 'bg-red-500/10',
-                    task.type === 'programme' && 'bg-blue-500/10'
-                  )}>
-                    {task.type === 'check-in' && <ClipboardCheck className="h-4 w-4 text-amber-600" />}
-                    {task.type === 'blood-work' && <Droplets className="h-4 w-4 text-red-600" />}
-                    {task.type === 'programme' && <Calendar className="h-4 w-4 text-blue-600" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">{task.due}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Recent Check-in */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Last Check-in</h2>
-              <span className={cn(
-                'rounded-full px-2 py-0.5 text-xs font-medium',
-                data.recentCheckIn.status === 'reviewed' && 'bg-green-500/10 text-green-600'
-              )}>
-                Reviewed
-              </span>
+              {data?.lastCheckIn && (
+                <span className={cn(
+                  'rounded-full px-2 py-0.5 text-xs font-medium',
+                  data.lastCheckIn.status === 'reviewed' && 'bg-green-500/10 text-green-600',
+                  data.lastCheckIn.status === 'submitted' && 'bg-amber-500/10 text-amber-600',
+                  data.lastCheckIn.status === 'pending' && 'bg-muted text-muted-foreground'
+                )}>
+                  {data.lastCheckIn.status === 'reviewed' ? 'Reviewed' :
+                   data.lastCheckIn.status === 'submitted' ? 'Awaiting Review' : 'Pending'}
+                </span>
+              )}
             </div>
 
-            <p className="text-sm text-muted-foreground">Submitted {data.recentCheckIn.date}</p>
-
-            {data.recentCheckIn.feedback && (
-              <div className="mt-3 rounded-lg bg-amber-500/10 p-3 border border-amber-500/20">
-                <p className="text-sm text-amber-600">
-                  &ldquo;{data.recentCheckIn.feedback}&rdquo;
+            {data?.lastCheckIn ? (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Submitted {formatDistanceToNow(new Date(data.lastCheckIn.date), { addSuffix: true })}
                 </p>
+
+                {data.lastCheckIn.coachFeedback && (
+                  <div className="mt-3 rounded-lg bg-amber-500/10 p-3 border border-amber-500/20">
+                    <p className="text-sm text-amber-600">
+                      &ldquo;{data.lastCheckIn.coachFeedback}&rdquo;
+                    </p>
+                  </div>
+                )}
+
+                <Button asChild variant="outline" className="w-full mt-4">
+                  <Link href="/athlete/check-ins">View All Check-ins</Link>
+                </Button>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-4 text-center">
+                <ClipboardCheck className="h-10 w-10 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">No check-ins yet</p>
+                <Button asChild variant="outline" size="sm" className="mt-4">
+                  <Link href="/athlete/check-ins/new">Submit Check-in</Link>
+                </Button>
               </div>
             )}
-
-            <Button asChild variant="outline" className="w-full mt-4">
-              <Link href="/athlete/check-ins">View All Check-ins</Link>
-            </Button>
           </motion.div>
 
           {/* Quick Actions */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
             className="rounded-xl border border-border bg-card p-6"
           >
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
@@ -371,7 +409,7 @@ export default function AthleteDashboardPage() {
                 <span className="text-xs font-medium">Check-in</span>
               </Link>
               <Link
-                href="/athlete/nutrition"
+                href="/athlete/nutrition/log"
                 className="flex flex-col items-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
               >
                 <UtensilsCrossed className="h-6 w-6 text-green-600" />
