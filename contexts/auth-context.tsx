@@ -134,11 +134,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
           await fetchRoles(newSession.user.id)
         }
       } else if (event === 'SIGNED_OUT') {
+        // Clear state but don't redirect - signOut() handles redirect via window.location.href
         setRoles(['athlete'])
-        setActiveRoleState('athlete')
+        setActiveRoleState('coach')
         localStorage.removeItem('activeRole')
-        router.push(ROUTES.LOGIN)
-        router.refresh()
       } else if (event === 'PASSWORD_RECOVERY') {
         router.push('/reset-password/update')
       }
