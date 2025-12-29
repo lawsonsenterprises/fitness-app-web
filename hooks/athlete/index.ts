@@ -447,7 +447,7 @@ export function useAthleteDashboard(athleteId?: string) {
       // Calculate readiness score from sleep_score or sleep hours
       const latestSleepScore = sleepRecords.data?.[0]?.sleep_score
       const latestSleepHours = (sleepRecords.data?.[0]?.total_minutes || 0) / 60
-      const readinessScore = latestSleepScore || Math.min(Math.round((latestSleepHours / 8) * 100), 100)
+      const readinessScore = Math.round(latestSleepScore || Math.min((latestSleepHours / 8) * 100, 100))
 
       return {
         readinessScore,
