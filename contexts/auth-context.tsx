@@ -40,6 +40,16 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
+// Helper to get initial role from localStorage (runs synchronously)
+function getInitialActiveRole(): UserRole {
+  if (typeof window === 'undefined') return 'coach' // SSR default
+  const saved = localStorage.getItem('activeRole') as UserRole | null
+  if (saved && ['athlete', 'coach', 'admin'].includes(saved)) {
+    return saved
+  }
+  return 'coach' // Default to coach if nothing saved
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const supabase = createClient()
   const router = useRouter()
@@ -47,7 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [roles, setRoles] = useState<UserRole[]>(['athlete', 'coach', 'admin'])
-  const [activeRole, setActiveRoleState] = useState<UserRole>('athlete')
+  const [activeRole, setActiveRoleState] = useState<UserRole>(getInitialActiveRole)
 
   // Fetch user roles from profile
   const fetchRoles = useCallback(async (userId: string) => {
@@ -82,7 +92,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const setActiveRole = useCallback((role: UserRole) => {
     if (roles.includes(role)) {
-      console.log('[AUTH] setActiveRole:', role, '-> redirecting to', ROLE_ROUTES[role])
       setActiveRoleState(role)
       localStorage.setItem('activeRole', role)
       // Use hard navigation to ensure proper route change
@@ -115,18 +124,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log('[AUTH] onAuthStateChange:', event, newSession?.user?.id)
       setSession(newSession)
       setUser(newSession?.user ?? null)
       setIsLoading(false)
 
       // Handle specific auth events
       if (event === 'SIGNED_IN') {
-        console.log('[AUTH] SIGNED_IN event - NOT redirecting, letting signIn handle it')
         if (newSession?.user?.id) {
           await fetchRoles(newSession.user.id)
         }
-        // Don't call router.refresh() here as it interferes with signIn redirect
       } else if (event === 'SIGNED_OUT') {
         setRoles(['athlete'])
         setActiveRoleState('athlete')
@@ -146,14 +152,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signIn = useCallback(
     async (email: string, password: string) => {
       setIsLoading(true)
-      console.log('[AUTH] signIn called')
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
-
-        console.log('[AUTH] signInWithPassword result:', { user: data.user?.id, error: error?.message })
 
         if (!error && data.user) {
           // Fetch user roles to determine redirect
@@ -164,11 +167,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
             .single()
 
           const userRoles = (profile?.roles as UserRole[]) || ['athlete', 'coach', 'admin']
-          console.log('[AUTH] User roles:', userRoles)
           setRoles(userRoles)
 
           // Always show role selector on login - use hard navigation
-          console.log('[AUTH] Redirecting to /select-role')
           window.location.href = '/select-role'
         }
 
@@ -215,27 +216,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const signOut = useCallback(async () => {
-    console.log('[AUTH] signOut called')
     setIsLoading(true)
     try {
       // Clear local state FIRST
       setUser(null)
       setSession(null)
       setRoles(['athlete'])
-      setActiveRoleState('athlete')
+      setActiveRoleState('coach')
       localStorage.removeItem('activeRole')
 
       // Sign out from Supabase with global scope to clear all sessions
-      const { error } = await supabase.auth.signOut({ scope: 'global' })
-      if (error) {
-        console.error('[AUTH] Sign out error:', error)
-      }
-      console.log('[AUTH] Sign out successful, redirecting to login')
+      await supabase.auth.signOut({ scope: 'global' })
 
       // Force a hard navigation to clear any cached state
       window.location.href = ROUTES.LOGIN
-    } catch (error) {
-      console.error('[AUTH] Sign out error:', error)
+    } catch {
       // Still redirect even on error
       window.location.href = ROUTES.LOGIN
     } finally {
