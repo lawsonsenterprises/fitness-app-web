@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dumbbell, ClipboardList, Shield, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ROLE_LABELS } from '@/lib/roles'
+import { ROLE_LABELS, type UserRole } from '@/lib/roles'
 import { useAuth } from '@/contexts/auth-context'
 
 const ROLE_ICONS = {
@@ -12,14 +13,27 @@ const ROLE_ICONS = {
   admin: Shield,
 } as const
 
+const ROLE_HOME_ROUTES: Record<UserRole, string> = {
+  athlete: '/athlete',
+  coach: '/dashboard',
+  admin: '/admin',
+}
+
 interface RoleSwitcherProps {
   className?: string
   variant?: 'default' | 'compact'
 }
 
 export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherProps) {
+  const router = useRouter()
   const { roles, activeRole, setActiveRole } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
+
+  const handleRoleSwitch = (role: UserRole) => {
+    setActiveRole(role)
+    setIsOpen(false)
+    router.push(ROLE_HOME_ROUTES[role])
+  }
 
   const ActiveIcon = ROLE_ICONS[activeRole]
 
@@ -74,10 +88,7 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
                 return (
                   <button
                     key={role}
-                    onClick={() => {
-                      setActiveRole(role)
-                      setIsOpen(false)
-                    }}
+                    onClick={() => handleRoleSwitch(role)}
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-2 rounded-md',
                       'text-sm transition-colors',
