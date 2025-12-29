@@ -165,9 +165,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log('[AUTH] User roles:', userRoles)
           setRoles(userRoles)
 
-          // Always show role selector on login
+          // Always show role selector on login - use hard navigation
           console.log('[AUTH] Redirecting to /select-role')
-          router.push('/select-role')
+          window.location.href = '/select-role'
         }
 
         return { error: error as Error | null }
@@ -213,26 +213,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   )
 
   const signOut = useCallback(async () => {
+    console.log('[AUTH] signOut called')
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Sign out error:', error)
-      }
-      // Clear local state immediately
+      // Clear local state FIRST
       setUser(null)
       setSession(null)
       setRoles(['athlete'])
       setActiveRoleState('athlete')
       localStorage.removeItem('activeRole')
-      // Force redirect to login
-      router.push(ROUTES.LOGIN)
+
+      // Sign out from Supabase with global scope to clear all sessions
+      const { error } = await supabase.auth.signOut({ scope: 'global' })
+      if (error) {
+        console.error('[AUTH] Sign out error:', error)
+      }
+      console.log('[AUTH] Sign out successful, redirecting to login')
+
+      // Force a hard navigation to clear any cached state
+      window.location.href = ROUTES.LOGIN
     } catch (error) {
-      console.error('Sign out error:', error)
+      console.error('[AUTH] Sign out error:', error)
+      // Still redirect even on error
+      window.location.href = ROUTES.LOGIN
     } finally {
       setIsLoading(false)
     }
-  }, [supabase.auth, router])
+  }, [supabase.auth])
 
   const resetPassword = useCallback(
     async (email: string) => {
