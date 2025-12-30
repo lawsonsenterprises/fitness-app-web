@@ -46,23 +46,17 @@ export default function CheckInsPage() {
     <>
       <TopBar title="Check-ins" />
       <div className="p-6 lg:p-8">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Check-ins</h1>
-          <p className="mt-1 text-muted-foreground">
-            Weekly progress updates with your coach
-          </p>
+        {/* Action Button */}
+        <div className="flex justify-end mb-6">
+          <Button asChild className="gap-2 bg-foreground text-background hover:bg-foreground/90">
+            <Link href="/athlete/check-ins/new">
+              <Plus className="h-4 w-4" />
+              New Check-in
+            </Link>
+          </Button>
         </div>
-        <Button asChild className="gap-2 bg-foreground text-background hover:bg-foreground/90">
-          <Link href="/athlete/check-ins/new">
-            <Plus className="h-4 w-4" />
-            New Check-in
-          </Link>
-        </Button>
-      </div>
 
-      {/* Next Check-in Due */}
+        {/* Next Check-in Due */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

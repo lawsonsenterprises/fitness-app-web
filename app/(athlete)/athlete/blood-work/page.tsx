@@ -51,21 +51,15 @@ export default function BloodWorkPage() {
     <>
       <TopBar title="Blood Work" />
       <div className="p-6 lg:p-8">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Blood Work</h1>
-          <p className="mt-1 text-muted-foreground">
-            Track your biomarkers and health trends
-          </p>
+        {/* Action Button */}
+        <div className="flex justify-end mb-6">
+          <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
+            <Upload className="h-4 w-4" />
+            Upload Results
+          </Button>
         </div>
-        <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
-          <Upload className="h-4 w-4" />
-          Upload Results
-        </Button>
-      </div>
 
-      {hasBloodTests ? (
+        {hasBloodTests ? (
         <>
           {/* Test History */}
           <motion.div

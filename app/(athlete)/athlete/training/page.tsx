@@ -47,15 +47,7 @@ export default function TrainingPage() {
     <>
       <TopBar title="Training" />
       <div className="p-6 lg:p-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Training</h1>
-          <p className="mt-1 text-muted-foreground">
-          Your workouts and progress
-        </p>
-      </div>
-
-      {/* Programme Overview */}
+        {/* Programme Overview */}
       {programme ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
