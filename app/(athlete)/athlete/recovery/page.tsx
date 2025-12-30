@@ -26,6 +26,7 @@ import {
 } from 'recharts'
 
 import { cn } from '@/lib/utils'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockRecoveryData = {
@@ -66,17 +67,15 @@ const recoveryTips = [
 
 export default function RecoveryPage() {
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Recovery</h1>
-        <p className="mt-1 text-muted-foreground">
+    <>
+      <TopBar title="Recovery" />
+      <div className="p-6 lg:p-8">
+        <p className="mb-6 text-muted-foreground">
           Monitor your recovery metrics and optimize performance
         </p>
-      </div>
 
-      {/* Recovery Score Cards */}
-      <motion.div
+        {/* Recovery Score Cards */}
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6"
@@ -250,7 +249,8 @@ export default function RecoveryPage() {
           </div>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }
 

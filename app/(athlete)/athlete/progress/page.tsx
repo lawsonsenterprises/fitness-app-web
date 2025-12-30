@@ -25,6 +25,7 @@ import {
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockWeightData = [
@@ -63,17 +64,15 @@ export default function ProgressPage() {
   const weightChange = currentWeight - startWeight
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Progress</h1>
-        <p className="mt-1 text-muted-foreground">
+    <>
+      <TopBar title="Progress" />
+      <div className="p-6 lg:p-8">
+        <p className="mb-6 text-muted-foreground">
           Track your body composition and visual progress
         </p>
-      </div>
 
-      {/* Weight Overview */}
-      <motion.div
+        {/* Weight Overview */}
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="grid gap-4 md:grid-cols-4 mb-6"
@@ -277,7 +276,8 @@ export default function ProgressPage() {
             })}
           </p>
         </motion.div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
