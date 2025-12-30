@@ -9,11 +9,22 @@ import {
   useMemo,
   type ReactNode,
 } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ROUTES } from '@/lib/constants'
 import { type UserRole, getDefaultRole, ROLE_ROUTES } from '@/lib/roles'
+
+// Determine active role from current URL path
+function getRoleFromPathname(pathname: string): UserRole | null {
+  if (pathname.startsWith('/athlete')) return 'athlete'
+  if (pathname.startsWith('/admin')) return 'admin'
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/clients') ||
+      pathname.startsWith('/programmes') || pathname.startsWith('/check-ins') ||
+      pathname.startsWith('/meal-plans') || pathname.startsWith('/settings') ||
+      pathname.startsWith('/notifications')) return 'coach'
+  return null
+}
 
 interface AuthContextType {
   user: User | null
@@ -53,6 +64,7 @@ function getInitialActiveRole(): UserRole {
 export function AuthProvider({ children }: AuthProviderProps) {
   const supabase = createClient()
   const router = useRouter()
+  const pathname = usePathname()
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -73,16 +85,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         : ['athlete', 'coach', 'admin'] as UserRole[]
 
       setRoles(userRoles)
-
-      // Set active role from localStorage or default
-      const savedRole = localStorage.getItem('activeRole') as UserRole | null
-      if (savedRole && userRoles.includes(savedRole)) {
-        setActiveRoleState(savedRole)
-      } else {
-        const defaultRole = getDefaultRole(userRoles)
-        setActiveRoleState(defaultRole)
-        localStorage.setItem('activeRole', defaultRole)
-      }
+      // Note: activeRole is now set by the pathname sync useEffect
+      // This ensures the UI always matches the current URL
     } catch (error) {
       console.error('Error fetching user roles:', error)
       // Default to all roles on error
@@ -98,6 +102,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.location.href = ROLE_ROUTES[role]
     }
   }, [roles])
+
+  // CRITICAL: Sync activeRole with current URL pathname
+  // This ensures the RoleSwitcher always reflects where the user actually is
+  useEffect(() => {
+    const roleFromPath = getRoleFromPathname(pathname)
+    if (roleFromPath && roleFromPath !== activeRole) {
+      setActiveRoleState(roleFromPath)
+      localStorage.setItem('activeRole', roleFromPath)
+    }
+  }, [pathname, activeRole])
 
   useEffect(() => {
     // Get initial session
