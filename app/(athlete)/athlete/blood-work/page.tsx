@@ -51,8 +51,10 @@ export default function BloodWorkPage() {
     <>
       <TopBar title="Blood Work" />
       <div className="p-6 lg:p-8">
-        {/* Action Button */}
-        <div className="flex justify-end mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <p className="text-muted-foreground">
+            Track your biomarkers and health trends
+          </p>
           <Button className="gap-2 bg-foreground text-background hover:bg-foreground/90">
             <Upload className="h-4 w-4" />
             Upload Results

@@ -63,8 +63,12 @@ export default function NutritionPage() {
     <>
       <TopBar title="Nutrition" />
       <div className="p-6 lg:p-8">
+        <p className="mb-6 text-muted-foreground">
+          Track your meals and hit your macros
+        </p>
+
         {/* Macro Overview */}
-      <motion.div
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="rounded-xl border border-border bg-card p-6 mb-6"

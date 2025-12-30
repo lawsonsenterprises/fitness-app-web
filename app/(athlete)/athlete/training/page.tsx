@@ -47,8 +47,12 @@ export default function TrainingPage() {
     <>
       <TopBar title="Training" />
       <div className="p-6 lg:p-8">
+        <p className="mb-6 text-muted-foreground">
+          Your workouts and progress
+        </p>
+
         {/* Programme Overview */}
-      {programme ? (
+        {programme ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

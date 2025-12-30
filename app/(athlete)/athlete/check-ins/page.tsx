@@ -46,8 +46,10 @@ export default function CheckInsPage() {
     <>
       <TopBar title="Check-ins" />
       <div className="p-6 lg:p-8">
-        {/* Action Button */}
-        <div className="flex justify-end mb-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
+          <p className="text-muted-foreground">
+            Weekly progress updates with your coach
+          </p>
           <Button asChild className="gap-2 bg-foreground text-background hover:bg-foreground/90">
             <Link href="/athlete/check-ins/new">
               <Plus className="h-4 w-4" />
