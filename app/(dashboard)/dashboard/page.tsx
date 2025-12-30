@@ -48,7 +48,8 @@ export default function DashboardPage() {
   const { data: checkInStats } = useCheckInStats()
 
   const isLoading = analyticsLoading || statsLoading
-  const firstName = displayName || user?.user_metadata?.first_name || 'Coach'
+  // Extract first name from display_name (split on space) or fall back to metadata
+  const firstName = displayName?.split(' ')[0] || user?.user_metadata?.first_name || 'Coach'
 
   return (
     <div className="min-h-screen">

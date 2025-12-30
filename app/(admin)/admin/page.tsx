@@ -83,7 +83,8 @@ function getGreeting() {
 
 export default function AdminDashboardPage() {
   const { user, displayName } = useAuth()
-  const firstName = displayName || user?.user_metadata?.first_name || 'Admin'
+  // Extract first name from display_name (split on space) or fall back to metadata
+  const firstName = displayName?.split(' ')[0] || user?.user_metadata?.first_name || 'Admin'
 
   return (
     <div className="min-h-screen">

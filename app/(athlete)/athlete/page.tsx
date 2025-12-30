@@ -33,7 +33,8 @@ export default function AthleteDashboardPage() {
   const { data, isLoading, error } = useAthleteDashboard(user?.id)
   const { data: currentProgramme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
 
-  const firstName = displayName || user?.user_metadata?.first_name || 'Athlete'
+  // Extract first name from display_name (split on space) or fall back to metadata
+  const firstName = displayName?.split(' ')[0] || user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
 
   // Show loading while:
