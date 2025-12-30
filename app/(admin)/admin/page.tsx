@@ -27,6 +27,7 @@ import {
 
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockStats = {
@@ -73,25 +74,31 @@ const mockRecentActivity = [
   { id: '5', type: 'coach_signup', name: 'Mike Thompson', time: '2 hours ago' },
 ]
 
+function getGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const firstName = user?.user_metadata?.first_name || 'Admin'
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
-          Welcome back, {firstName}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Platform overview and key metrics
-        </p>
-      </motion.div>
+    <div className="min-h-screen">
+      <TopBar title="Dashboard" />
+
+      <div className="p-4 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {getGreeting()}, {firstName}
+          </h2>
+          <p className="mt-1 text-muted-foreground">
+            Platform overview and key metrics
+          </p>
+        </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -294,6 +301,7 @@ export default function AdminDashboardPage() {
             ))}
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   )
