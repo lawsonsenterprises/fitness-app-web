@@ -9,7 +9,6 @@ import {
   useMemo,
   type ReactNode,
 } from 'react'
-import { useRouter } from 'next/navigation'
 import type { User, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { ROUTES } from '@/lib/constants'
@@ -45,7 +44,6 @@ const SSR_DEFAULT_ROLE: UserRole = 'coach'
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const supabase = createClient()
-  const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -153,14 +151,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setActiveRoleState('coach')
         localStorage.removeItem('activeRole')
       } else if (event === 'PASSWORD_RECOVERY') {
-        router.push('/reset-password/update')
+        window.location.href = '/reset-password/update'
       }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase.auth, router, fetchRoles])
+  }, [supabase.auth, fetchRoles])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -191,7 +189,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth, supabase, router]
+    [supabase.auth, supabase]
   )
 
   const signUp = useCallback(
@@ -274,7 +272,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const { error } = await supabase.auth.updateUser({ password })
 
         if (!error) {
-          router.push(ROUTES.DASHBOARD)
+          window.location.href = ROUTES.DASHBOARD
         }
 
         return { error: error as Error | null }
@@ -282,7 +280,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth, router]
+    [supabase.auth]
   )
 
   const value = useMemo(

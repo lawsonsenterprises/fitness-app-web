@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Menu, X } from 'lucide-react'
+import { Search } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
@@ -10,11 +10,9 @@ import { useAuth } from '@/contexts/auth-context'
 
 interface TopBarProps {
   title?: string
-  onMenuClick?: () => void
-  showMobileMenu?: boolean
 }
 
-export function TopBar({ title, onMenuClick, showMobileMenu }: TopBarProps) {
+export function TopBar({ title }: TopBarProps) {
   const { user } = useAuth()
   const [searchFocused, setSearchFocused] = useState(false)
 
@@ -26,19 +24,6 @@ export function TopBar({ title, onMenuClick, showMobileMenu }: TopBarProps) {
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl lg:h-20 lg:px-8">
       {/* Left section */}
       <div className="flex items-center gap-4">
-        {/* Mobile menu toggle */}
-        <button
-          onClick={onMenuClick}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:hidden"
-          aria-label={showMobileMenu ? 'Close menu' : 'Open menu'}
-        >
-          {showMobileMenu ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
-
         {/* Page title */}
         {title && (
           <h1 className="text-lg font-semibold tracking-tight lg:text-xl">
