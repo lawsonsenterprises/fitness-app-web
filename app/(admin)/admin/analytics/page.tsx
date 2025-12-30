@@ -26,6 +26,7 @@ import {
 } from 'recharts'
 
 import { cn } from '@/lib/utils'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockDailyActiveUsers = [
@@ -73,11 +74,13 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Analytics</h1>
+    <>
+      <TopBar title="Analytics" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Analytics</h1>
           <p className="mt-1 text-muted-foreground">
             Platform usage and performance metrics
           </p>
@@ -340,8 +343,9 @@ export default function AnalyticsPage() {
             ))}
           </div>
         </motion.div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 

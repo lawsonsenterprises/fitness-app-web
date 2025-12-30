@@ -17,6 +17,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockCoaches = [
@@ -89,11 +90,13 @@ export default function CoachesPage() {
   })
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
+    <>
+      <TopBar title="Coaches" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
           <p className="mt-1 text-muted-foreground">
             Manage all coaches on the platform
           </p>
@@ -239,6 +242,7 @@ export default function CoachesPage() {
           </table>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }

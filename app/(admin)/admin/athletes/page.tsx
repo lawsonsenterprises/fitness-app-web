@@ -14,6 +14,7 @@ import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockAthletes = [
@@ -82,14 +83,16 @@ export default function AthletesPage() {
   })
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Athletes</h1>
-        <p className="mt-1 text-muted-foreground">
-          View all athletes across the platform
-        </p>
-      </div>
+    <>
+      <TopBar title="Athletes" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Athletes</h1>
+          <p className="mt-1 text-muted-foreground">
+            View all athletes across the platform
+          </p>
+        </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
@@ -237,6 +240,7 @@ export default function AthletesPage() {
           </table>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }

@@ -23,6 +23,7 @@ import {
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Mock data
 const mockSubscriptions = [
@@ -94,14 +95,16 @@ export default function SubscriptionsPage() {
     .reduce((acc, s) => acc + (s.plan.includes('Annual') ? s.amount / 12 : s.amount), 0)
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Subscriptions</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage subscriptions and billing
-        </p>
-      </div>
+    <>
+      <TopBar title="Subscriptions" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Subscriptions</h1>
+          <p className="mt-1 text-muted-foreground">
+            Manage subscriptions and billing
+          </p>
+        </div>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4 mb-6">
@@ -271,6 +274,7 @@ export default function SubscriptionsPage() {
           </table>
         </div>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }
