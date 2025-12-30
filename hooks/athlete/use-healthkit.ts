@@ -88,12 +88,18 @@ export function useTodaysReadiness(userId?: string) {
       const recoveryScore = raw.recovery_score || 0
       const steps = raw.steps || 0
 
+      // Calculate strain percentage - if strain_score > 21, it's already a percentage
+      // WHOOP uses 0-21 scale, but iOS app might send as percentage
+      const strainPercentage = strainScore > 21
+        ? Math.min(Math.round(strainScore), 100)  // Already a percentage, cap at 100
+        : Math.round((strainScore / 21) * 100)     // Convert 0-21 to percentage
+
       return {
         raw,
         recoveryScore,
         sleepScore: raw.sleep_score || 0,
         strainScore,
-        strainPercentage: Math.round((strainScore / 21) * 100),
+        strainPercentage,
         readinessBand: raw.overall_readiness_band || 'moderate',
         mode: raw.mode || 'rest_day',
         steps,

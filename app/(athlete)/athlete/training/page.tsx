@@ -489,7 +489,7 @@ export default function TrainingPage() {
                           <p className="text-sm text-muted-foreground">{pr.exercise_name}</p>
                           <p className="text-3xl font-bold mt-1">{pr.weight_kg}kg</p>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {formatDistanceToNow(new Date(pr.achieved_at), { addSuffix: true })}
+                            {pr.achieved_at ? formatDistanceToNow(new Date(pr.achieved_at), { addSuffix: true }) : 'Unknown date'}
                           </p>
                         </div>
                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">

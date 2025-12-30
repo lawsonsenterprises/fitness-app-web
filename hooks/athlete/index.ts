@@ -209,11 +209,10 @@ export function usePersonalRecords(athleteId?: string) {
   return useQuery({
     queryKey: ['personal-records', athleteId],
     queryFn: async () => {
-      // personal_bests has exercise_library_item_id, not a direct FK to exercises
-      // Query without the join for now
+      // Join with exercise_library_items to get the exercise name
       const { data, error } = await supabase
         .from('personal_bests')
-        .select('*')
+        .select('*, exercise_library_items(name)')
         .eq('user_id', athleteId!)
         .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .order('achieved_at', { ascending: false })
@@ -222,9 +221,9 @@ export function usePersonalRecords(athleteId?: string) {
         console.error('Error fetching personal records:', error)
         return []
       }
-      return (data || []).map(pb => ({
+      return (data || []).map((pb: { id: string; exercise_library_items?: { name: string } | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
         id: pb.id,
-        exercise_name: pb.exercise_name || 'Unknown Exercise',
+        exercise_name: pb.exercise_library_items?.name || 'Unknown Exercise',
         weight_kg: pb.weight,
         reps: pb.reps,
         achieved_at: pb.achieved_at,
@@ -468,10 +467,10 @@ export function useAthleteDashboard(athleteId?: string) {
           .eq('user_id', athleteId!)
           .gte('date', weekAgo)
           .order('date', { ascending: false }),
-        // Personal bests (no FK join - exercise_name is on the table)
+        // Personal bests with exercise name from exercise_library_items
         supabase
           .from('personal_bests')
-          .select('*')
+          .select('*, exercise_library_items(name)')
           .eq('user_id', athleteId!)
           .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
           .order('achieved_at', { ascending: false })
@@ -537,9 +536,9 @@ export function useAthleteDashboard(athleteId?: string) {
         progressHighlights: {
           latestWeight,
           weightChange,
-          personalBests: (personalBests.data || []).map(pb => ({
+          personalBests: (personalBests.data || []).map((pb: { id: string; exercise_library_items?: { name: string } | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
             id: pb.id,
-            exerciseName: pb.exercise_name || 'Unknown Exercise',
+            exerciseName: pb.exercise_library_items?.name || 'Unknown Exercise',
             weight: pb.weight,
             reps: pb.reps,
             achievedAt: pb.achieved_at,

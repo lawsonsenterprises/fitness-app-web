@@ -420,15 +420,15 @@ export default function AthleteDashboardPage() {
                     </div>
                   )}
 
-                  {data?.progressHighlights?.personalBests?.slice(0, 2).map((pr: { id: string; exerciseName: string; weight: number; achievedAt: string }, index: number) => (
+                  {data?.progressHighlights?.personalBests?.slice(0, 2).map((pr: { id: string; exerciseName: string; weight: number | null; achievedAt: string | null }, index: number) => (
                     <div key={pr.id || index} className="rounded-lg bg-muted/50 p-4">
                       <p className="text-sm text-muted-foreground">{pr.exerciseName} PR</p>
                       <div className="mt-1 flex items-baseline gap-2">
-                        <span className="text-2xl font-bold">{pr.weight} kg</span>
+                        <span className="text-2xl font-bold">{pr.weight ?? 0} kg</span>
                         <ArrowUpRight className="h-4 w-4 text-green-500" />
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(pr.achievedAt), { addSuffix: true })}
+                        {pr.achievedAt ? formatDistanceToNow(new Date(pr.achievedAt), { addSuffix: true }) : 'Unknown date'}
                       </p>
                     </div>
                   ))}
