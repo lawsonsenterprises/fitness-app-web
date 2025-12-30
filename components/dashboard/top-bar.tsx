@@ -93,7 +93,7 @@ export function TopBar({ title }: TopBarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl lg:h-20 lg:px-8">
+      <header className="sticky top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-xl lg:h-20 lg:px-8">
         {/* Left section */}
         <div className="flex items-center gap-4">
           {/* Mobile menu button */}
@@ -160,7 +160,7 @@ export function TopBar({ title }: TopBarProps) {
           />
 
           {/* Menu panel */}
-          <div className="fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-background shadow-lg lg:hidden flex flex-col">
+          <div className="fixed inset-y-0 left-0 z-[60] w-72 border-r border-border bg-background shadow-lg lg:hidden flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <div className="flex items-center gap-2">
