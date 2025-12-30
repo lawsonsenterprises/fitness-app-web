@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 interface WeatherData {
   temp: number
-  condition: 'clear' | 'partly_cloudy' | 'cloudy' | 'rain' | 'snow' | 'fog' | 'wind'
+  condition: 'clear' | 'partly_cloudy' | 'cloudy' | 'rain' | 'snow' | 'fog' | 'wind' | 'thunderstorm'
   location: string
   high: number
   low: number
@@ -22,6 +22,7 @@ const WEATHER_ICONS = {
   snow: CloudSnow,
   fog: CloudFog,
   wind: Wind,
+  thunderstorm: CloudRain,
 }
 
 const WEATHER_COLORS = {
@@ -32,6 +33,20 @@ const WEATHER_COLORS = {
   snow: 'text-blue-200',
   fog: 'text-slate-300',
   wind: 'text-cyan-400',
+  thunderstorm: 'text-purple-400',
+}
+
+// Map OpenWeatherMap weather codes to our conditions
+function mapWeatherCode(weatherId: number): WeatherData['condition'] {
+  if (weatherId >= 200 && weatherId < 300) return 'thunderstorm'
+  if (weatherId >= 300 && weatherId < 400) return 'rain' // Drizzle
+  if (weatherId >= 500 && weatherId < 600) return 'rain'
+  if (weatherId >= 600 && weatherId < 700) return 'snow'
+  if (weatherId >= 700 && weatherId < 800) return 'fog' // Atmosphere (mist, fog, etc.)
+  if (weatherId === 800) return 'clear'
+  if (weatherId === 801) return 'partly_cloudy'
+  if (weatherId >= 802 && weatherId < 900) return 'cloudy'
+  return 'cloudy'
 }
 
 interface WeatherWidgetProps {
@@ -44,27 +59,38 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Simulate fetching weather data
-    // In production, this would call a weather API
-    const fetchWeather = async () => {
-      setIsLoading(true)
+    const fetchWeather = async (lat: number, lon: number) => {
       try {
-        // Simulated delay
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // Use OpenWeatherMap API (free tier allows 1000 calls/day)
+        const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
 
-        // Mock weather data based on time of day
-        const _hour = new Date().getHours()
-        const conditions: WeatherData['condition'][] = ['clear', 'partly_cloudy', 'cloudy', 'rain']
-        const randomCondition = conditions[Math.floor(Math.random() * conditions.length)]
+        if (!apiKey) {
+          // Fallback to showing a message if no API key
+          setError('Weather not configured')
+          setIsLoading(false)
+          return
+        }
+
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+        )
+
+        if (!response.ok) {
+          throw new Error('Weather API error')
+        }
+
+        const data = await response.json()
+
+        const condition = mapWeatherCode(data.weather[0].id)
 
         setWeather({
-          temp: Math.round(8 + Math.random() * 10), // 8-18°C for UK
-          condition: randomCondition,
-          location: 'London',
-          high: Math.round(12 + Math.random() * 6),
-          low: Math.round(4 + Math.random() * 4),
-          humidity: Math.round(60 + Math.random() * 30),
-          description: getConditionDescription(randomCondition),
+          temp: Math.round(data.main.temp),
+          condition,
+          location: data.name,
+          high: Math.round(data.main.temp_max),
+          low: Math.round(data.main.temp_min),
+          humidity: data.main.humidity,
+          description: data.weather[0].description,
         })
       } catch {
         setError('Unable to load weather')
@@ -73,7 +99,26 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
       }
     }
 
-    fetchWeather()
+    const getLocationAndWeather = () => {
+      if (!navigator.geolocation) {
+        setError('Location not supported')
+        setIsLoading(false)
+        return
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          fetchWeather(position.coords.latitude, position.coords.longitude)
+        },
+        () => {
+          // User denied location or error - fallback to London
+          fetchWeather(51.5074, -0.1278)
+        },
+        { timeout: 10000 }
+      )
+    }
+
+    getLocationAndWeather()
   }, [])
 
   if (isLoading) {
@@ -142,28 +187,10 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
   )
 }
 
-function getConditionDescription(condition: WeatherData['condition']): string {
-  switch (condition) {
-    case 'clear':
-      return 'Clear skies'
-    case 'partly_cloudy':
-      return 'Partly cloudy'
-    case 'cloudy':
-      return 'Overcast'
-    case 'rain':
-      return 'Light rain'
-    case 'snow':
-      return 'Snow showers'
-    case 'fog':
-      return 'Foggy'
-    case 'wind':
-      return 'Windy'
-    default:
-      return 'Unknown'
-  }
-}
-
 function getTrainingRecommendation(condition: WeatherData['condition'], temp: number): string {
+  if (condition === 'thunderstorm') {
+    return 'Thunderstorm warning! Stay indoors and focus on mobility or stretching.'
+  }
   if (condition === 'rain') {
     return 'Indoor training recommended today. Perfect for hitting the gym!'
   }
