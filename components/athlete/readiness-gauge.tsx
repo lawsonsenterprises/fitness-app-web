@@ -5,10 +5,11 @@ import { cn } from '@/lib/utils'
 
 interface ReadinessGaugeProps {
   score: number // 0-100
+  size?: 'sm' | 'md' | 'lg'
   className?: string
 }
 
-export function ReadinessGauge({ score, className }: ReadinessGaugeProps) {
+export function ReadinessGauge({ score, size = 'md', className }: ReadinessGaugeProps) {
   // Clamp score between 0 and 100
   const clampedScore = Math.max(0, Math.min(100, score))
 
@@ -28,10 +29,18 @@ export function ReadinessGauge({ score, className }: ReadinessGaugeProps) {
 
   const colorInfo = getColor(clampedScore)
 
+  // Size configurations
+  const sizeConfig = {
+    sm: { width: 140, height: 84, textSize: 'text-2xl', labelPadding: 'px-3 py-0.5', labelText: 'text-xs' },
+    md: { width: 200, height: 120, textSize: 'text-4xl', labelPadding: 'px-4 py-1', labelText: 'text-sm' },
+    lg: { width: 280, height: 168, textSize: 'text-5xl', labelPadding: 'px-5 py-1.5', labelText: 'text-base' },
+  }
+  const config = sizeConfig[size]
+
   return (
     <div className={cn('flex flex-col items-center', className)}>
       <div className="relative">
-        <svg width="200" height="120" viewBox="0 0 100 60" className="overflow-visible">
+        <svg width={config.width} height={config.height} viewBox="0 0 100 60" className="overflow-visible">
           {/* Background arc */}
           <path
             d="M 5 55 A 45 45 0 0 1 95 55"
@@ -80,7 +89,7 @@ export function ReadinessGauge({ score, className }: ReadinessGaugeProps) {
         {/* Score in center */}
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-2">
           <motion.span
-            className={cn('text-4xl font-bold tabular-nums', colorInfo.text)}
+            className={cn('font-bold tabular-nums', config.textSize, colorInfo.text)}
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.3 }}
@@ -92,7 +101,7 @@ export function ReadinessGauge({ score, className }: ReadinessGaugeProps) {
 
       {/* Label */}
       <motion.div
-        className={cn('mt-2 rounded-full px-4 py-1 text-sm font-medium', colorInfo.bg, colorInfo.text)}
+        className={cn('mt-2 rounded-full font-medium', config.labelPadding, config.labelText, colorInfo.bg, colorInfo.text)}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.7 }}
@@ -100,9 +109,11 @@ export function ReadinessGauge({ score, className }: ReadinessGaugeProps) {
         {colorInfo.label}
       </motion.div>
 
-      <p className="mt-3 text-xs text-muted-foreground text-center max-w-[180px]">
-        Based on sleep, recovery, and recent activity
-      </p>
+      {size !== 'sm' && (
+        <p className="mt-3 text-xs text-muted-foreground text-center max-w-[180px]">
+          Based on sleep, recovery, and recent activity
+        </p>
+      )}
     </div>
   )
 }
