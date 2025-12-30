@@ -42,8 +42,10 @@ interface AuthProviderProps {
 // SSR-safe default - localStorage is read in useEffect after mount
 const SSR_DEFAULT_ROLE: UserRole = 'coach'
 
+// Create client once outside component - singleton pattern
+const supabase = createClient()
+
 export function AuthProvider({ children }: AuthProviderProps) {
-  const supabase = createClient()
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Default to all roles on error
       setRoles(['athlete', 'coach', 'admin'])
     }
-  }, [supabase])
+  }, [])
 
   const setActiveRole = useCallback((role: UserRole) => {
     console.log('[AUTH] setActiveRole called:', { role, roles, includes: roles.includes(role) })
@@ -163,7 +165,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [supabase.auth, fetchRoles])
+  }, [fetchRoles])
 
   const signIn = useCallback(
     async (email: string, password: string) => {
@@ -194,7 +196,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth, supabase]
+    []
   )
 
   const signUp = useCallback(
@@ -228,7 +230,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth]
+    []
   )
 
   const signOut = useCallback(async () => {
@@ -252,7 +254,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase.auth])
+  }, [])
 
   const resetPassword = useCallback(
     async (email: string) => {
@@ -267,7 +269,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth]
+    []
   )
 
   const updatePassword = useCallback(
@@ -285,7 +287,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       }
     },
-    [supabase.auth]
+    []
   )
 
   const value = useMemo(
