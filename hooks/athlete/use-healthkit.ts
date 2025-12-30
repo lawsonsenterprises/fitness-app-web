@@ -55,22 +55,48 @@ export function useTodaysReadiness(userId?: string) {
     queryKey: ['readiness', 'today', userId],
     queryFn: async (): Promise<TodaysReadiness> => {
       const today = getDateString(new Date())
-
-      const { data, error } = await supabase
-        .from('daily_readiness_summaries')
-        .select('*')
-        .eq('user_id', userId!)
-        .eq('date', today)
-        .maybeSingle()
-
-      if (error) {
-        console.error('Error fetching today\'s readiness:', error)
-      }
-
-      const raw = data as DailyReadinessSummary | null
       const defaultTarget = 10000 // Default step target
 
-      if (!raw) {
+      // Fetch from all three tables in parallel to get the most complete data
+      const [readinessResult, sleepResult, recoveryResult] = await Promise.all([
+        supabase
+          .from('daily_readiness_summaries')
+          .select('*')
+          .eq('user_id', userId!)
+          .eq('date', today)
+          .maybeSingle(),
+        supabase
+          .from('daily_sleep_summaries')
+          .select('*')
+          .eq('user_id', userId!)
+          .eq('date', today)
+          .maybeSingle(),
+        supabase
+          .from('daily_recovery_summaries')
+          .select('*')
+          .eq('user_id', userId!)
+          .eq('date', today)
+          .maybeSingle(),
+      ])
+
+      if (readinessResult.error) {
+        console.error('Error fetching today\'s readiness:', readinessResult.error)
+      }
+      if (sleepResult.error) {
+        console.error('Error fetching today\'s sleep:', sleepResult.error)
+      }
+      if (recoveryResult.error) {
+        console.error('Error fetching today\'s recovery:', recoveryResult.error)
+      }
+
+      const raw = readinessResult.data as DailyReadinessSummary | null
+      const sleepData = sleepResult.data as DailySleepSummary | null
+      const recoveryData = recoveryResult.data as DailyRecoverySummary | null
+
+      // Check if we have any data from any table
+      const hasAnyData = raw || sleepData || recoveryData
+
+      if (!hasAnyData) {
         return {
           raw: null,
           recoveryScore: 0,
@@ -88,9 +114,13 @@ export function useTodaysReadiness(userId?: string) {
         }
       }
 
-      const strainScore = raw.strain_score || 0
-      const recoveryScore = raw.recovery_score || 0
-      const steps = raw.steps || 0
+      // Merge data from all tables, preferring specific tables over readiness summary
+      const strainScore = raw?.strain_score || 0
+      const recoveryScore = recoveryData?.recovery_score ?? raw?.recovery_score ?? 0
+      const sleepScore = sleepData?.sleep_score ?? raw?.sleep_score ?? 0
+      const steps = raw?.steps || 0
+      const activeEnergy = raw?.active_energy_kcal || 0
+      const exerciseMinutes = raw?.exercise_minutes || 0
 
       // Calculate strain percentage - if strain_score > 21, it's already a percentage
       // WHOOP uses 0-21 scale, but iOS app might send as percentage
@@ -101,16 +131,16 @@ export function useTodaysReadiness(userId?: string) {
       return {
         raw,
         recoveryScore,
-        sleepScore: raw.sleep_score || 0,
+        sleepScore,
         strainScore,
         strainPercentage,
-        readinessBand: raw.overall_readiness_band || 'moderate',
-        mode: raw.mode || 'rest_day',
+        readinessBand: raw?.overall_readiness_band || 'moderate',
+        mode: raw?.mode || 'rest_day',
         steps,
         stepsTarget: defaultTarget,
         stepsPercentage: Math.min(Math.round((steps / defaultTarget) * 100), 100),
-        activeEnergy: raw.active_energy_kcal || 0,
-        exerciseMinutes: raw.exercise_minutes || 0,
+        activeEnergy,
+        exerciseMinutes,
         hasData: true,
       }
     },
