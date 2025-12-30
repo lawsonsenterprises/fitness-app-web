@@ -26,8 +26,8 @@ export default function NutritionPage() {
   const { data: dashboardData, isLoading: dashboardLoading } = useAthleteDashboard(user?.id)
   const { data: mealPlan, isLoading: mealPlanLoading } = useCurrentMealPlan(user?.id)
 
-  // Include auth loading state to prevent accessing undefined data
-  const isLoading = authLoading || dashboardLoading || mealPlanLoading
+  // Show loading while auth is loading OR (user exists AND queries are loading)
+  const isLoading = authLoading || (user && (dashboardLoading || mealPlanLoading))
 
   if (isLoading) {
     return (

@@ -114,18 +114,23 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Get initial session
     const getSession = async () => {
+      console.log('[AUTH] getSession - starting')
       try {
         const {
           data: { session: currentSession },
         } = await supabase.auth.getSession()
+        console.log('[AUTH] getSession - got session:', !!currentSession)
         setSession(currentSession)
         setUser(currentSession?.user ?? null)
         if (currentSession?.user?.id) {
+          console.log('[AUTH] getSession - fetching roles for user:', currentSession.user.id)
           await fetchRoles(currentSession.user.id)
+          console.log('[AUTH] getSession - fetchRoles complete')
         }
       } catch (error) {
-        console.error('Error fetching session:', error)
+        console.error('[AUTH] getSession - error:', error)
       } finally {
+        console.log('[AUTH] getSession - setting isLoading to false')
         setIsLoading(false)
       }
     }

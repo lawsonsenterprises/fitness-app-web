@@ -31,8 +31,8 @@ export default function TrainingPage() {
   const { data: weeklySchedule, isLoading: scheduleLoading } = useWeeklySchedule(user?.id)
   const { data: personalRecords, isLoading: prsLoading } = usePersonalRecords(user?.id)
 
-  // Include auth loading state to prevent accessing undefined data
-  const isLoading = authLoading || programmeLoading || scheduleLoading || prsLoading
+  // Show loading while auth is loading OR (user exists AND queries are loading)
+  const isLoading = authLoading || (user && (programmeLoading || scheduleLoading || prsLoading))
 
   if (isLoading) {
     return (

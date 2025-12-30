@@ -35,8 +35,10 @@ export default function AthleteDashboardPage() {
   const firstName = user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
 
-  // Show loading while auth is loading OR any query is loading
-  if (authLoading || isLoading || programmeLoading) {
+  // Show loading while:
+  // 1. Auth is loading, OR
+  // 2. User exists AND queries are loading (queries are disabled when no user)
+  if (authLoading || (user && (isLoading || programmeLoading))) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

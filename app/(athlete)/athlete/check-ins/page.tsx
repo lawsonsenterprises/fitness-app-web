@@ -23,8 +23,8 @@ export default function CheckInsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { data: checkIns, isLoading } = useCheckIns(user?.id)
 
-  // Show loading while auth is loading OR query is loading
-  if (authLoading || isLoading) {
+  // Show loading while auth is loading OR (user exists AND query is loading)
+  if (authLoading || (user && isLoading)) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
