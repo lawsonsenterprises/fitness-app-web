@@ -1,8 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Cloud, Sun, CloudRain, CloudSnow, Wind, Loader2, MapPin, CloudSun, CloudFog } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { Cloud, Sun, CloudRain, CloudSnow, Wind, Loader2, MapPin, CloudSun, CloudFog, Settings, X, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/contexts/auth-context'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface WeatherData {
   temp: number
@@ -54,52 +57,88 @@ interface WeatherWidgetProps {
 }
 
 export function WeatherWidget({ className }: WeatherWidgetProps) {
+  const { postcode, updatePostcode } = useAuth()
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
+  const [postcodeInput, setPostcodeInput] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const fetchWeatherByCoords = useCallback(async (lat: number, lon: number) => {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+
+      if (!apiKey) {
+        setError('Weather not configured')
+        setIsLoading(false)
+        return
+      }
+
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
+      )
+
+      if (!response.ok) {
+        throw new Error('Weather API error')
+      }
+
+      const data = await response.json()
+      const condition = mapWeatherCode(data.weather[0].id)
+
+      setWeather({
+        temp: Math.round(data.main.temp),
+        condition,
+        location: data.name,
+        high: Math.round(data.main.temp_max),
+        low: Math.round(data.main.temp_min),
+        humidity: data.main.humidity,
+        description: data.weather[0].description,
+      })
+      setError(null)
+    } catch {
+      setError('Unable to load weather')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchWeatherByPostcode = useCallback(async (postcodeToUse: string) => {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+
+      if (!apiKey) {
+        setError('Weather not configured')
+        setIsLoading(false)
+        return
+      }
+
+      // Use OpenWeatherMap geocoding API for UK postcodes
+      const geoResponse = await fetch(
+        `https://api.openweathermap.org/geo/1.0/zip?zip=${postcodeToUse},GB&appid=${apiKey}`
+      )
+
+      if (!geoResponse.ok) {
+        throw new Error('Invalid postcode')
+      }
+
+      const geoData = await geoResponse.json()
+      await fetchWeatherByCoords(geoData.lat, geoData.lon)
+    } catch {
+      setError('Invalid postcode')
+      setIsLoading(false)
+    }
+  }, [fetchWeatherByCoords])
 
   useEffect(() => {
-    const fetchWeather = async (lat: number, lon: number) => {
-      try {
-        // Use OpenWeatherMap API (free tier allows 1000 calls/day)
-        const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
-
-        if (!apiKey) {
-          // Fallback to showing a message if no API key
-          setError('Weather not configured')
-          setIsLoading(false)
-          return
-        }
-
-        const response = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`
-        )
-
-        if (!response.ok) {
-          throw new Error('Weather API error')
-        }
-
-        const data = await response.json()
-
-        const condition = mapWeatherCode(data.weather[0].id)
-
-        setWeather({
-          temp: Math.round(data.main.temp),
-          condition,
-          location: data.name,
-          high: Math.round(data.main.temp_max),
-          low: Math.round(data.main.temp_min),
-          humidity: data.main.humidity,
-          description: data.weather[0].description,
-        })
-      } catch {
-        setError('Unable to load weather')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
     const getLocationAndWeather = () => {
+      // If user has a saved postcode, use that
+      if (postcode) {
+        fetchWeatherByPostcode(postcode)
+        return
+      }
+
+      // Otherwise try geolocation
       if (!navigator.geolocation) {
         setError('Location not supported')
         setIsLoading(false)
@@ -108,18 +147,37 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          fetchWeather(position.coords.latitude, position.coords.longitude)
+          fetchWeatherByCoords(position.coords.latitude, position.coords.longitude)
         },
         () => {
           // User denied location or error - fallback to London
-          fetchWeather(51.5074, -0.1278)
+          fetchWeatherByCoords(51.5074, -0.1278)
         },
         { timeout: 10000 }
       )
     }
 
     getLocationAndWeather()
-  }, [])
+  }, [postcode, fetchWeatherByCoords, fetchWeatherByPostcode])
+
+  const handleSavePostcode = async () => {
+    if (!postcodeInput.trim()) return
+
+    setIsSaving(true)
+    const { error: saveError } = await updatePostcode(postcodeInput.trim().toUpperCase())
+    setIsSaving(false)
+
+    if (!saveError) {
+      setShowSettings(false)
+      setIsLoading(true)
+      fetchWeatherByPostcode(postcodeInput.trim().toUpperCase())
+    }
+  }
+
+  const handleOpenSettings = () => {
+    setPostcodeInput(postcode || '')
+    setShowSettings(true)
+  }
 
   if (isLoading) {
     return (
@@ -131,11 +189,70 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
     )
   }
 
+  // Settings modal
+  if (showSettings) {
+    return (
+      <div className={cn('rounded-xl border border-border bg-card p-4', className)}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-sm">Weather Location</h3>
+          <button
+            onClick={() => setShowSettings(false)}
+            className="p-1 rounded hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-muted-foreground mb-1 block">
+              UK Postcode
+            </label>
+            <Input
+              type="text"
+              placeholder="e.g. SW1A 1AA"
+              value={postcodeInput}
+              onChange={(e) => setPostcodeInput(e.target.value)}
+              className="h-9"
+            />
+          </div>
+
+          <Button
+            onClick={handleSavePostcode}
+            disabled={!postcodeInput.trim() || isSaving}
+            className="w-full h-9 gap-2"
+            size="sm"
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+            Save Location
+          </Button>
+
+          <p className="text-xs text-muted-foreground text-center">
+            Set your postcode to get accurate local weather
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (error || !weather) {
     return (
       <div className={cn('rounded-xl border border-border bg-card p-4', className)}>
-        <div className="flex items-center justify-center h-24 text-muted-foreground text-sm">
-          {error || 'Weather unavailable'}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center h-24 text-muted-foreground text-sm flex-1">
+            {error || 'Weather unavailable'}
+          </div>
+          <button
+            onClick={handleOpenSettings}
+            className="p-2 rounded-lg hover:bg-muted text-muted-foreground"
+            title="Weather settings"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
         </div>
       </div>
     )
@@ -160,9 +277,18 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         </div>
 
         <div className="text-right">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="h-3 w-3" />
-            <span>{weather.location}</span>
+          <div className="flex items-center justify-end gap-1">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3" />
+              <span>{weather.location}</span>
+            </div>
+            <button
+              onClick={handleOpenSettings}
+              className="p-1 rounded hover:bg-muted text-muted-foreground ml-1"
+              title="Change location"
+            >
+              <Settings className="h-3 w-3" />
+            </button>
           </div>
           <div className="mt-2 space-y-1 text-xs">
             <div className="flex justify-end gap-2">

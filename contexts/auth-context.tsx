@@ -22,7 +22,9 @@ interface AuthContextType {
   roles: UserRole[]
   activeRole: UserRole
   displayName: string | null
+  postcode: string | null
   setActiveRole: (role: UserRole) => void
+  updatePostcode: (postcode: string) => Promise<{ error: Error | null }>
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (
     email: string,
@@ -52,14 +54,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [roles, setRoles] = useState<UserRole[]>(['athlete', 'coach', 'admin'])
   const [activeRole, setActiveRoleState] = useState<UserRole>(SSR_DEFAULT_ROLE)
   const [displayName, setDisplayName] = useState<string | null>(null)
+  const [postcode, setPostcode] = useState<string | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
 
-  // Fetch user roles and display name from profile
+  // Fetch user roles, display name, and postcode from profile
   const fetchRoles = useCallback(async (userId: string) => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('roles, display_name')
+        .select('roles, display_name, postcode')
         .eq('id', userId)
         .single()
 
@@ -75,6 +78,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Set display name from profile
       if (profile?.display_name) {
         setDisplayName(profile.display_name)
+      }
+
+      // Set postcode from profile
+      if (profile?.postcode) {
+        setPostcode(profile.postcode)
       }
 
       // Set active role from localStorage or default
@@ -108,6 +116,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.warn('[AUTH] Role not in user roles, navigation blocked:', { role, roles })
     }
   }, [roles])
+
+  const updatePostcode = useCallback(async (newPostcode: string) => {
+    if (!user?.id) {
+      return { error: new Error('Not authenticated') }
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ postcode: newPostcode })
+        .eq('id', user.id)
+
+      if (!error) {
+        setPostcode(newPostcode)
+      }
+
+      return { error: error as Error | null }
+    } catch (err) {
+      return { error: err as Error }
+    }
+  }, [user?.id, supabase])
 
   // Read localStorage after mount to avoid hydration mismatch
   useEffect(() => {
@@ -309,14 +338,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       roles,
       activeRole,
       displayName,
+      postcode,
       setActiveRole,
+      updatePostcode,
       signIn,
       signUp,
       signOut,
       resetPassword,
       updatePassword,
     }),
-    [user, session, isLoading, roles, activeRole, displayName, setActiveRole, signIn, signUp, signOut, resetPassword, updatePassword]
+    [user, session, isLoading, roles, activeRole, displayName, postcode, setActiveRole, updatePostcode, signIn, signUp, signOut, resetPassword, updatePassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
