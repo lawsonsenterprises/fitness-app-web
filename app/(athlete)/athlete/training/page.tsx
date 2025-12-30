@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useCurrentProgramme, useWeeklySchedule, usePersonalRecords } from '@/hooks/athlete'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function TrainingPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -43,11 +44,13 @@ export default function TrainingPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Training</h1>
-        <p className="mt-1 text-muted-foreground">
+    <>
+      <TopBar title="Training" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Training</h1>
+          <p className="mt-1 text-muted-foreground">
           Your workouts and progress
         </p>
       </div>
@@ -289,6 +292,7 @@ export default function TrainingPage() {
           Use the Synced Momentum iOS app to log your workouts and track your progress in real-time.
         </p>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }

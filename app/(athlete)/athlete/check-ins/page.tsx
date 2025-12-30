@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useCheckIns } from '@/hooks/athlete'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function CheckInsPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -42,9 +43,11 @@ export default function CheckInsPage() {
   const weightChange = firstWeight && latestWeight ? Math.round((latestWeight - firstWeight) * 10) / 10 : null
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
+    <>
+      <TopBar title="Check-ins" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Check-ins</h1>
           <p className="mt-1 text-muted-foreground">
@@ -202,6 +205,7 @@ export default function CheckInsPage() {
           </Button>
         </motion.div>
       )}
-    </div>
+      </div>
+    </>
   )
 }

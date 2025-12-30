@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useAthleteDashboard, useCurrentMealPlan } from '@/hooks/athlete'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function NutritionPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -59,8 +60,10 @@ export default function NutritionPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
+    <>
+      <TopBar title="Nutrition" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Nutrition</h1>
         <p className="mt-1 text-muted-foreground">
@@ -176,7 +179,8 @@ export default function NutritionPage() {
           Use the Synced Momentum iOS app to log your meals and track your daily nutrition.
         </p>
       </motion.div>
-    </div>
+      </div>
+    </>
   )
 }
 

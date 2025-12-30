@@ -67,7 +67,6 @@ export default function AthleteDashboardPage() {
   return (
     <div className="min-h-screen">
       <TopBar title="Dashboard" />
-
       <div className="p-4 lg:p-8">
         {/* Header */}
         <div className="mb-8">
