@@ -215,7 +215,7 @@ export function usePersonalRecords(athleteId?: string) {
         .from('personal_bests')
         .select('*')
         .eq('user_id', athleteId!)
-        .is('is_soft_deleted', false)
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .order('achieved_at', { ascending: false })
 
       if (error) {
@@ -473,7 +473,7 @@ export function useAthleteDashboard(athleteId?: string) {
           .from('personal_bests')
           .select('*')
           .eq('user_id', athleteId!)
-          .is('is_soft_deleted', false)
+          .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
           .order('achieved_at', { ascending: false })
           .limit(3),
       ])
