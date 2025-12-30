@@ -630,3 +630,17 @@ export function useWeeklySchedule(athleteId?: string) {
     enabled: !!athleteId,
   })
 }
+
+// ============================================================================
+// HealthKit Data Hooks (Re-exported)
+// ============================================================================
+
+export {
+  useTodaysReadiness,
+  useSleepData,
+  useRecoveryData,
+  useHealthKitWorkouts,
+  useHealthKitWeightTrends,
+  useStrainRecovery,
+  useWeeklyActivity,
+} from './use-healthkit'

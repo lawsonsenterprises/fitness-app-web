@@ -15,6 +15,13 @@ import {
   Target,
   Award,
   Download,
+  Activity,
+  Moon,
+  Zap,
+  Heart,
+  Footprints,
+  Flame,
+  Timer,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -31,6 +38,8 @@ import { Button } from '@/components/ui/button'
 import { ClientStatusBadge, SubscriptionBadge } from '@/components/clients/client-status-badge'
 import { ExportModal } from '@/components/exports/export-modal'
 import { useClient } from '@/hooks/use-clients'
+import { useClientReadiness } from '@/hooks/coach'
+import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { cn } from '@/lib/utils'
 
 // Mock data for charts
@@ -111,7 +120,14 @@ export default function ClientOverviewPage() {
   const params = useParams()
   const clientId = params.clientId as string
   const { data: client, isLoading } = useClient(clientId)
+  const { data: readinessData } = useClientReadiness(clientId)
   const [showExportModal, setShowExportModal] = useState(false)
+
+  // HealthKit readiness data
+  const hasHealthKitData = readinessData?.hasData || false
+  const recoveryScore = readinessData?.recoveryScore || 0
+  const readinessBand = readinessData?.readinessBand || 'moderate'
+  const dayMode = readinessData?.mode === 'training_day' ? 'Training Day' : 'Rest Day'
 
   if (isLoading) {
     return <ClientOverviewSkeleton />
@@ -378,6 +394,95 @@ export default function ClientOverviewPage() {
 
         {/* Right column - 1/3 width */}
         <div className="space-y-6">
+          {/* Today's Readiness Card - HealthKit Data */}
+          <div className="rounded-xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-semibold">Today&apos;s Readiness</h3>
+              <Link
+                href={`/clients/${clientId}/health`}
+                className="text-sm text-amber-600 hover:text-amber-700"
+              >
+                View Health
+              </Link>
+            </div>
+
+            {hasHealthKitData && readinessData ? (
+              <div className="space-y-4">
+                {/* Mode Badge */}
+                <div className="flex items-center justify-center">
+                  <span className={cn(
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
+                    readinessData.mode === 'training_day'
+                      ? 'bg-blue-500/10 text-blue-600'
+                      : 'bg-green-500/10 text-green-600'
+                  )}>
+                    {readinessData.mode === 'training_day' ? (
+                      <Dumbbell className="h-3 w-3" />
+                    ) : (
+                      <Moon className="h-3 w-3" />
+                    )}
+                    {dayMode}
+                  </span>
+                </div>
+
+                {/* Readiness Gauge */}
+                <ReadinessGauge score={recoveryScore} size="sm" />
+
+                {/* Score Breakdown */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-muted/50 p-2">
+                    <Moon className="h-3.5 w-3.5 mx-auto text-indigo-500 mb-0.5" />
+                    <p className="text-[10px] text-muted-foreground">Sleep</p>
+                    <p className="text-sm font-bold">{readinessData.sleepScore}%</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2">
+                    <Zap className="h-3.5 w-3.5 mx-auto text-amber-500 mb-0.5" />
+                    <p className="text-[10px] text-muted-foreground">Strain</p>
+                    <p className="text-sm font-bold">{readinessData.strainPercentage}%</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2">
+                    <Heart className="h-3.5 w-3.5 mx-auto text-green-500 mb-0.5" />
+                    <p className="text-[10px] text-muted-foreground">Recovery</p>
+                    <p className="text-sm font-bold">{readinessData.recoveryScore}%</p>
+                  </div>
+                </div>
+
+                {/* Today's Activity Summary */}
+                <div className="space-y-2 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Footprints className="h-3.5 w-3.5" />
+                      Steps
+                    </span>
+                    <span className="font-medium">{readinessData.steps.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Flame className="h-3.5 w-3.5" />
+                      Active Energy
+                    </span>
+                    <span className="font-medium">{readinessData.activeEnergy} kcal</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2 text-muted-foreground">
+                      <Timer className="h-3.5 w-3.5" />
+                      Exercise
+                    </span>
+                    <span className="font-medium">{readinessData.exerciseMinutes} mins</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-6 text-center">
+                <Activity className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No HealthKit data</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">
+                  Client hasn&apos;t synced Apple Health
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Client Info Card */}
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="mb-4 font-semibold">Client Information</h3>

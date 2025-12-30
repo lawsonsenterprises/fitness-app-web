@@ -354,3 +354,16 @@ export {
   ReferenceLine,
   ReferenceArea,
 }
+
+// Re-export individual chart components
+export { SleepDurationChart } from './sleep-duration-chart'
+export { SleepQualityChart } from './sleep-quality-chart'
+export { SleepPhasesChart } from './sleep-phases-chart'
+export { SleepBankChart } from './sleep-bank-chart'
+export { HRVTrendChart } from './hrv-trend-chart'
+export { RestingHRChart } from './resting-hr-chart'
+export { RecoveryScoreChart } from './recovery-score-chart'
+export { StrainRecoveryChart } from './strain-recovery-chart'
+export { WeightTrendChart } from './weight-trend-chart'
+export { ActivitySummaryChart } from './activity-summary-chart'
+export { WorkoutTypePieChart } from './workout-type-pie-chart'
