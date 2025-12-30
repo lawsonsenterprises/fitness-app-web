@@ -18,6 +18,8 @@ import {
   TrendingDown,
   Minus,
   Dumbbell,
+  Flame,
+  Footprints,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -28,6 +30,8 @@ import {
   useClientSleepData,
   useClientRecoveryData,
   useClientStrainRecovery,
+  useClientWorkoutStats,
+  useClientActivityTrends,
 } from '@/hooks/coach'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import {
@@ -39,6 +43,8 @@ import {
   RestingHRChart,
   RecoveryScoreChart,
   StrainRecoveryChart,
+  WorkoutTypePieChart,
+  ActivitySummaryChart,
 } from '@/components/shared/charts'
 import { cn } from '@/lib/utils'
 
@@ -68,6 +74,8 @@ export default function ClientHealthPage() {
   const { data: sleepResult, isLoading: sleepLoading } = useClientSleepData(clientId, 30)
   const { data: recoveryResult, isLoading: recoveryLoading } = useClientRecoveryData(clientId, 30)
   const { data: strainRecoveryResult } = useClientStrainRecovery(clientId, 7)
+  const { data: workoutStats } = useClientWorkoutStats(clientId, 30)
+  const { data: activityTrends } = useClientActivityTrends(clientId, 30)
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'bloodwork'>('overview')
@@ -315,6 +323,89 @@ export default function ClientHealthPage() {
                     <StrainRecoveryChart data={strainRecoveryData} />
                   </div>
                 )}
+
+                {/* Workout Summary & Activity Trends */}
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {/* Workout Summary */}
+                  <div className="rounded-xl border border-border bg-card p-6">
+                    <h3 className="font-semibold mb-4">Workout Summary (30 Days)</h3>
+                    {workoutStats && workoutStats.totalWorkouts > 0 ? (
+                      <div className="space-y-6">
+                        {/* Stats grid */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="text-center">
+                            <Dumbbell className="h-5 w-5 mx-auto text-blue-500 mb-2" />
+                            <p className="text-2xl font-bold">{workoutStats.totalWorkouts}</p>
+                            <p className="text-xs text-muted-foreground">Workouts</p>
+                          </div>
+                          <div className="text-center">
+                            <Timer className="h-5 w-5 mx-auto text-purple-500 mb-2" />
+                            <p className="text-2xl font-bold">{workoutStats.avgDuration}m</p>
+                            <p className="text-xs text-muted-foreground">Avg Duration</p>
+                          </div>
+                          <div className="text-center">
+                            <Flame className="h-5 w-5 mx-auto text-orange-500 mb-2" />
+                            <p className="text-2xl font-bold">{workoutStats.avgCalories}</p>
+                            <p className="text-xs text-muted-foreground">Avg Calories</p>
+                          </div>
+                        </div>
+                        {/* Pie chart */}
+                        {workoutStats.workoutTypes.length > 0 && (
+                          <WorkoutTypePieChart data={workoutStats.workoutTypes} />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No workout data in the last 30 days</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Activity Trends */}
+                  <div className="rounded-xl border border-border bg-card p-6">
+                    <h3 className="font-semibold mb-4">Activity Trends (30 Days)</h3>
+                    {activityTrends && activityTrends.summary ? (
+                      <div className="space-y-6">
+                        {/* Summary stats */}
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="text-center">
+                            <Footprints className="h-5 w-5 mx-auto text-green-500 mb-2" />
+                            <p className="text-2xl font-bold">
+                              {activityTrends.summary.averageSteps >= 1000
+                                ? `${(activityTrends.summary.averageSteps / 1000).toFixed(1)}k`
+                                : activityTrends.summary.averageSteps}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Avg Steps</p>
+                          </div>
+                          <div className="text-center">
+                            <Activity className="h-5 w-5 mx-auto text-amber-500 mb-2" />
+                            <p className="text-2xl font-bold">{activityTrends.summary.averageExerciseMinutes}m</p>
+                            <p className="text-xs text-muted-foreground">Avg Exercise</p>
+                          </div>
+                          <div className="text-center">
+                            <Flame className="h-5 w-5 mx-auto text-red-500 mb-2" />
+                            <p className="text-2xl font-bold">
+                              {activityTrends.summary.totalActiveEnergy >= 1000
+                                ? `${(activityTrends.summary.totalActiveEnergy / 1000).toFixed(1)}k`
+                                : activityTrends.summary.totalActiveEnergy}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Total kcal</p>
+                          </div>
+                        </div>
+                        {/* Exercise minutes chart */}
+                        {activityTrends.data.length > 0 && (
+                          <ActivitySummaryChart data={activityTrends.data} targetMinutes={30} />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <Activity className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                        <p className="text-sm text-muted-foreground">No activity data available</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </motion.div>

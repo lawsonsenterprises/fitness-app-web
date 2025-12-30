@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Dumbbell,
@@ -17,6 +17,8 @@ import {
   Heart,
   Activity,
   Footprints,
+  Filter,
+  X,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow, format, parseISO } from 'date-fns'
@@ -27,17 +29,56 @@ import { useAuth } from '@/contexts/auth-context'
 import { useCurrentProgramme, useWeeklySchedule, usePersonalRecords, useHealthKitWorkouts, useWeeklyActivity } from '@/hooks/athlete'
 import { TopBar } from '@/components/dashboard/top-bar'
 
+// Time range options for filtering workouts
+const DATE_RANGES = [
+  { id: '7d', label: '7 days', days: 7 },
+  { id: '14d', label: '14 days', days: 14 },
+  { id: '30d', label: '30 days', days: 30 },
+  { id: 'all', label: 'All', days: 365 },
+] as const
+
 export default function TrainingPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<'week' | 'prs' | 'healthkit'>('week')
+  const [workoutTypeFilter, setWorkoutTypeFilter] = useState<string | null>(null)
+  const [dateRange, setDateRange] = useState<'7d' | '14d' | '30d' | 'all'>('30d')
 
   const { data: programme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
   const { data: weeklySchedule, isLoading: scheduleLoading } = useWeeklySchedule(user?.id)
   const { data: personalRecords, isLoading: prsLoading } = usePersonalRecords(user?.id)
 
-  // HealthKit data
-  const { data: healthKitWorkouts } = useHealthKitWorkouts(user?.id, 20)
+  // HealthKit data - fetch more to allow client-side filtering
+  const { data: healthKitWorkouts } = useHealthKitWorkouts(user?.id, 100)
   const { data: weeklyActivity } = useWeeklyActivity(user?.id)
+
+  // Get unique workout types for filter dropdown
+  const workoutTypes = useMemo(() => {
+    if (!healthKitWorkouts) return []
+    const types = new Set(healthKitWorkouts.map(w => w.workout_type))
+    return Array.from(types).sort()
+  }, [healthKitWorkouts])
+
+  // Filter workouts by type and date range
+  const filteredWorkouts = useMemo(() => {
+    if (!healthKitWorkouts) return []
+
+    const rangeDays = DATE_RANGES.find(r => r.id === dateRange)?.days || 30
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - rangeDays)
+
+    return healthKitWorkouts.filter(workout => {
+      // Date filter
+      const workoutDate = workout.start_time
+        ? new Date(workout.start_time)
+        : new Date(workout.date)
+      if (workoutDate < cutoffDate) return false
+
+      // Type filter
+      if (workoutTypeFilter && workout.workout_type !== workoutTypeFilter) return false
+
+      return true
+    })
+  }, [healthKitWorkouts, workoutTypeFilter, dateRange])
 
   // Show loading while auth is loading OR (user exists AND queries are loading)
   const isLoading = authLoading || (user && (programmeLoading || scheduleLoading || prsLoading))
@@ -50,8 +91,10 @@ export default function TrainingPage() {
     )
   }
 
-  // Check if there are HealthKit workouts
-  const hasHealthKitWorkouts = healthKitWorkouts && healthKitWorkouts.length > 0
+  // Check if there are any HealthKit workouts (before filtering)
+  const hasAnyHealthKitWorkouts = healthKitWorkouts && healthKitWorkouts.length > 0
+  // Check if filtered workouts exist
+  const hasFilteredWorkouts = filteredWorkouts.length > 0
 
   return (
     <>
@@ -278,8 +321,62 @@ export default function TrainingPage() {
               </div>
             )}
 
+            {/* Filters */}
+            {hasAnyHealthKitWorkouts && (
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Date Range Selector */}
+                <div className="flex gap-1 rounded-lg bg-muted p-1">
+                  {DATE_RANGES.map((range) => (
+                    <button
+                      key={range.id}
+                      onClick={() => setDateRange(range.id)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-md text-sm font-medium transition-colors',
+                        dateRange === range.id
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {range.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Workout Type Filter */}
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={workoutTypeFilter || ''}
+                    onChange={(e) => setWorkoutTypeFilter(e.target.value || null)}
+                    className="h-9 rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    <option value="">All types</option>
+                    {workoutTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                  {workoutTypeFilter && (
+                    <button
+                      onClick={() => setWorkoutTypeFilter(null)}
+                      className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Results count */}
+                <span className="text-sm text-muted-foreground ml-auto">
+                  {filteredWorkouts.length} workout{filteredWorkouts.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+
             {/* Workout List */}
-            {hasHealthKitWorkouts ? (
+            {hasAnyHealthKitWorkouts ? (
+              hasFilteredWorkouts ? (
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="p-4 border-b border-border">
                   <h3 className="font-semibold">Recent Workouts from Apple Health</h3>
@@ -288,7 +385,7 @@ export default function TrainingPage() {
                   </p>
                 </div>
                 <div className="divide-y divide-border">
-                  {healthKitWorkouts?.map((workout) => (
+                  {filteredWorkouts.map((workout) => (
                     <div
                       key={workout.id}
                       className="p-4 flex items-center gap-4"
@@ -343,6 +440,24 @@ export default function TrainingPage() {
                   ))}
                 </div>
               </div>
+              ) : (
+                <div className="rounded-xl border border-border bg-card p-8 text-center">
+                  <Filter className="h-10 w-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <h3 className="font-semibold mb-2">No Workouts Match Filters</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Try adjusting the date range or workout type filter.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setWorkoutTypeFilter(null)
+                      setDateRange('30d')
+                    }}
+                    className="mt-4 text-sm font-medium text-amber-600 hover:text-amber-500"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              )
             ) : (
               <div className="rounded-xl border border-border bg-card p-12 text-center">
                 <Watch className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
