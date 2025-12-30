@@ -42,10 +42,9 @@ interface AuthProviderProps {
 // SSR-safe default - localStorage is read in useEffect after mount
 const SSR_DEFAULT_ROLE: UserRole = 'coach'
 
-// Create client once outside component - singleton pattern
-const supabase = createClient()
-
 export function AuthProvider({ children }: AuthProviderProps) {
+  // Create client once per component mount using useMemo
+  const supabase = useMemo(() => createClient(), [])
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -88,7 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Default to all roles on error
       setRoles(['athlete', 'coach', 'admin'])
     }
-  }, [])
+  }, [supabase])
 
   const setActiveRole = useCallback((role: UserRole) => {
     console.log('[AUTH] setActiveRole called:', { role, roles, includes: roles.includes(role) })
@@ -140,9 +139,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     getSession()
 
     // Listen for auth changes
+    // IMPORTANT: Do NOT use async/await inside onAuthStateChange callback
+    // Using async causes Supabase's internal locking mechanism to deadlock
+    // See: https://github.com/supabase/supabase/issues/35754
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession)
       setUser(newSession?.user ?? null)
       setIsLoading(false)
@@ -150,7 +152,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Handle specific auth events
       if (event === 'SIGNED_IN') {
         if (newSession?.user?.id) {
-          await fetchRoles(newSession.user.id)
+          // Use .then() instead of await to avoid deadlock
+          fetchRoles(newSession.user.id).catch(console.error)
         }
       } else if (event === 'SIGNED_OUT') {
         // Clear state but don't redirect - signOut() handles redirect via window.location.href
