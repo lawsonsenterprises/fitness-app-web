@@ -29,11 +29,11 @@ import { useAthleteDashboard, useCurrentProgramme } from '@/hooks/athlete'
 import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function AthleteDashboardPage() {
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading, displayName } = useAuth()
   const { data, isLoading, error } = useAthleteDashboard(user?.id)
   const { data: currentProgramme, isLoading: programmeLoading } = useCurrentProgramme(user?.id)
 
-  const firstName = user?.user_metadata?.first_name || 'Athlete'
+  const firstName = displayName || user?.user_metadata?.first_name || 'Athlete'
   const greeting = getGreeting()
 
   // Show loading while:

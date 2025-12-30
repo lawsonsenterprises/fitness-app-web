@@ -21,6 +21,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   roles: UserRole[]
   activeRole: UserRole
+  displayName: string | null
   setActiveRole: (role: UserRole) => void
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>
   signUp: (
@@ -50,14 +51,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [roles, setRoles] = useState<UserRole[]>(['athlete', 'coach', 'admin'])
   const [activeRole, setActiveRoleState] = useState<UserRole>(SSR_DEFAULT_ROLE)
+  const [displayName, setDisplayName] = useState<string | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
 
-  // Fetch user roles from profile
+  // Fetch user roles and display name from profile
   const fetchRoles = useCallback(async (userId: string) => {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('roles')
+        .select('roles, display_name')
         .eq('id', userId)
         .single()
 
@@ -69,6 +71,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       console.log('[AUTH] fetchRoles - setting roles:', userRoles)
       setRoles(userRoles)
+
+      // Set display name from profile
+      if (profile?.display_name) {
+        setDisplayName(profile.display_name)
+      }
 
       // Set active role from localStorage or default
       const savedRole = localStorage.getItem('activeRole') as UserRole | null
@@ -301,6 +308,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated: !!user,
       roles,
       activeRole,
+      displayName,
       setActiveRole,
       signIn,
       signUp,
@@ -308,7 +316,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       resetPassword,
       updatePassword,
     }),
-    [user, session, isLoading, roles, activeRole, setActiveRole, signIn, signUp, signOut, resetPassword, updatePassword]
+    [user, session, isLoading, roles, activeRole, displayName, setActiveRole, signIn, signUp, signOut, resetPassword, updatePassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

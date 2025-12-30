@@ -40,7 +40,7 @@ function getGreeting() {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, displayName } = useAuth()
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics()
   const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats()
   const { data: clientActivity } = useClientActivity()
@@ -48,7 +48,7 @@ export default function DashboardPage() {
   const { data: checkInStats } = useCheckInStats()
 
   const isLoading = analyticsLoading || statsLoading
-  const firstName = user?.user_metadata?.first_name || 'Coach'
+  const firstName = displayName || user?.user_metadata?.first_name || 'Coach'
 
   return (
     <div className="min-h-screen">
