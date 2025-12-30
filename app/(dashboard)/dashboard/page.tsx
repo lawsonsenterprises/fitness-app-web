@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { ROUTES } from '@/lib/constants'
 import { useAnalytics, useDashboardStats, useClientActivity, useClientAdherence } from '@/hooks/use-analytics'
 import { useCheckInStats } from '@/hooks/use-check-ins'
+import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
 
 function getGreeting() {
@@ -39,6 +40,7 @@ function getGreeting() {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const { data: analytics, isLoading: analyticsLoading } = useAnalytics()
   const { data: dashboardStats, isLoading: statsLoading } = useDashboardStats()
   const { data: clientActivity } = useClientActivity()
@@ -46,6 +48,7 @@ export default function DashboardPage() {
   const { data: checkInStats } = useCheckInStats()
 
   const isLoading = analyticsLoading || statsLoading
+  const firstName = user?.user_metadata?.first_name || 'Coach'
 
   return (
     <div className="min-h-screen">
@@ -55,7 +58,7 @@ export default function DashboardPage() {
         {/* Welcome section */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold tracking-tight">
-            {getGreeting()}
+            {getGreeting()}, {firstName}
           </h2>
           <p className="mt-1 text-muted-foreground">
             Here&apos;s what&apos;s happening with your clients today.

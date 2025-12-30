@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { WeatherWidget } from '@/components/athlete/weather-widget'
 import { useAthleteDashboard, useCurrentProgramme } from '@/hooks/athlete'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function AthleteDashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -64,20 +65,19 @@ export default function AthleteDashboardPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
-          {greeting}, {firstName}
-        </h1>
-        <p className="mt-1 text-muted-foreground">
-          Here&apos;s how you&apos;re doing today
-        </p>
-      </motion.div>
+    <div className="min-h-screen">
+      <TopBar title="Dashboard" />
+
+      <div className="p-4 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {greeting}, {firstName}
+          </h2>
+          <p className="mt-1 text-muted-foreground">
+            Here&apos;s how you&apos;re doing today
+          </p>
+        </div>
 
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left column - Main content */}
@@ -429,6 +429,7 @@ export default function AthleteDashboardPage() {
             </div>
           </motion.div>
         </div>
+      </div>
       </div>
     </div>
   )
