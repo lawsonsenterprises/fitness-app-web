@@ -40,15 +40,8 @@ interface AuthProviderProps {
   children: ReactNode
 }
 
-// Helper to get initial role from localStorage (runs synchronously)
-function getInitialActiveRole(): UserRole {
-  if (typeof window === 'undefined') return 'coach' // SSR default
-  const saved = localStorage.getItem('activeRole') as UserRole | null
-  if (saved && ['athlete', 'coach', 'admin'].includes(saved)) {
-    return saved
-  }
-  return 'coach' // Default to coach if nothing saved
-}
+// SSR-safe default - localStorage is read in useEffect after mount
+const SSR_DEFAULT_ROLE: UserRole = 'coach'
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const supabase = createClient()
@@ -57,7 +50,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [roles, setRoles] = useState<UserRole[]>(['athlete', 'coach', 'admin'])
-  const [activeRole, setActiveRoleState] = useState<UserRole>(getInitialActiveRole)
+  const [activeRole, setActiveRoleState] = useState<UserRole>(SSR_DEFAULT_ROLE)
+  const [hasMounted, setHasMounted] = useState(false)
 
   // Fetch user roles from profile
   const fetchRoles = useCallback(async (userId: string) => {
@@ -108,6 +102,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.warn('[AUTH] Role not in user roles, navigation blocked:', { role, roles })
     }
   }, [roles])
+
+  // Read localStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    setHasMounted(true)
+    const savedRole = localStorage.getItem('activeRole') as UserRole | null
+    if (savedRole && ['athlete', 'coach', 'admin'].includes(savedRole)) {
+      console.log('[AUTH] Mount - restoring role from localStorage:', savedRole)
+      setActiveRoleState(savedRole)
+    }
+  }, [])
 
   useEffect(() => {
     // Get initial session
