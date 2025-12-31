@@ -2,6 +2,7 @@
 -- Description: Stores coach notification preferences for different channels
 -- Author: Synced Momentum
 -- Date: 2025-12-28
+-- NOTE: This table may already exist if iOS app applied it first
 
 -- Create notification preferences table
 CREATE TABLE IF NOT EXISTS notification_preferences (
@@ -44,19 +45,22 @@ CREATE INDEX IF NOT EXISTS idx_notification_preferences_user_id
 -- Enable RLS
 ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 
--- Users can read their own preferences
+-- Users can read their own preferences (drop first to make idempotent)
+DROP POLICY IF EXISTS "Users can read own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can read own notification preferences"
     ON notification_preferences
     FOR SELECT
     USING (auth.uid() = user_id);
 
 -- Users can insert their own preferences
+DROP POLICY IF EXISTS "Users can insert own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can insert own notification preferences"
     ON notification_preferences
     FOR INSERT
     WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own preferences
+DROP POLICY IF EXISTS "Users can update own notification preferences" ON notification_preferences;
 CREATE POLICY "Users can update own notification preferences"
     ON notification_preferences
     FOR UPDATE
@@ -71,6 +75,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_notification_preferences_updated_at ON notification_preferences;
 CREATE TRIGGER trigger_update_notification_preferences_updated_at
     BEFORE UPDATE ON notification_preferences
     FOR EACH ROW
@@ -79,9 +84,3 @@ CREATE TRIGGER trigger_update_notification_preferences_updated_at
 -- Add comments
 COMMENT ON TABLE notification_preferences IS 'Stores user notification preferences for different channels';
 COMMENT ON COLUMN notification_preferences.email_digest IS 'Frequency of email digest: realtime, daily, or weekly';
-
--- ============================================================================
--- ROLLBACK (uncomment to revert)
--- ============================================================================
--- DROP TABLE IF EXISTS notification_preferences;
--- DROP FUNCTION IF EXISTS update_notification_preferences_updated_at();

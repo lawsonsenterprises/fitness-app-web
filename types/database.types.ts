@@ -363,13 +363,24 @@ export type Database = {
       check_ins: {
         Row: {
           check_in_type: string
+          coach_feedback: string | null
+          coach_rating: number | null
           created_at: string | null
           date: string
           deleted_at: string | null
+          flag_reason: string | null
+          follow_up_completed_at: string | null
           id: string
+          is_flagged: boolean | null
           muscle_group_trained: string | null
           notes: string | null
           photo_data: string | null
+          requires_follow_up: boolean | null
+          review_status:
+            | Database["public"]["Enums"]["check_in_review_status"]
+            | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           sent_at: string | null
           session_quality: string | null
           sleep_hours: number | null
@@ -388,13 +399,24 @@ export type Database = {
         }
         Insert: {
           check_in_type: string
+          coach_feedback?: string | null
+          coach_rating?: number | null
           created_at?: string | null
           date: string
           deleted_at?: string | null
+          flag_reason?: string | null
+          follow_up_completed_at?: string | null
           id?: string
+          is_flagged?: boolean | null
           muscle_group_trained?: string | null
           notes?: string | null
           photo_data?: string | null
+          requires_follow_up?: boolean | null
+          review_status?:
+            | Database["public"]["Enums"]["check_in_review_status"]
+            | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sent_at?: string | null
           session_quality?: string | null
           sleep_hours?: number | null
@@ -413,13 +435,24 @@ export type Database = {
         }
         Update: {
           check_in_type?: string
+          coach_feedback?: string | null
+          coach_rating?: number | null
           created_at?: string | null
           date?: string
           deleted_at?: string | null
+          flag_reason?: string | null
+          follow_up_completed_at?: string | null
           id?: string
+          is_flagged?: boolean | null
           muscle_group_trained?: string | null
           notes?: string | null
           photo_data?: string | null
+          requires_follow_up?: boolean | null
+          review_status?:
+            | Database["public"]["Enums"]["check_in_review_status"]
+            | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           sent_at?: string | null
           session_quality?: string | null
           sleep_hours?: number | null
@@ -436,7 +469,208 @@ export type Database = {
           weight?: number | null
           weight_timestamp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "check_ins_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_clients: {
+        Row: {
+          check_in_frequency: number | null
+          client_id: string
+          coach_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          next_check_in_due: string | null
+          notes: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["coach_client_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          check_in_frequency?: number | null
+          client_id: string
+          coach_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          next_check_in_due?: string | null
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["coach_client_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          check_in_frequency?: number | null
+          client_id?: string
+          coach_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          next_check_in_due?: string | null
+          notes?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["coach_client_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_clients_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_clients_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_messages: {
+        Row: {
+          coach_client_id: string
+          content: string
+          created_at: string
+          id: string
+          is_deleted_by_recipient: boolean | null
+          is_deleted_by_sender: boolean | null
+          is_read: boolean | null
+          metadata: Json | null
+          read_at: string | null
+          reply_to_id: string | null
+          sender_id: string
+          type: Database["public"]["Enums"]["message_type"] | null
+          updated_at: string
+        }
+        Insert: {
+          coach_client_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_deleted_by_recipient?: boolean | null
+          is_deleted_by_sender?: boolean | null
+          is_read?: boolean | null
+          metadata?: Json | null
+          read_at?: string | null
+          reply_to_id?: string | null
+          sender_id: string
+          type?: Database["public"]["Enums"]["message_type"] | null
+          updated_at?: string
+        }
+        Update: {
+          coach_client_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_deleted_by_recipient?: boolean | null
+          is_deleted_by_sender?: boolean | null
+          is_read?: boolean | null
+          metadata?: Json | null
+          read_at?: string | null
+          reply_to_id?: string | null
+          sender_id?: string
+          type?: Database["public"]["Enums"]["message_type"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_coach_client_id_fkey"
+            columns: ["coach_client_id"]
+            isOneToOne: false
+            referencedRelation: "coach_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "coach_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_notes: {
+        Row: {
+          category: Database["public"]["Enums"]["note_category"] | null
+          client_id: string
+          coach_id: string
+          content: string
+          created_at: string
+          follow_up_date: string | null
+          id: string
+          is_flagged: boolean | null
+          is_pinned: boolean | null
+          linked_check_in_id: string | null
+          linked_meal_plan_id: string | null
+          linked_programme_id: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["note_category"] | null
+          client_id: string
+          coach_id: string
+          content: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_pinned?: boolean | null
+          linked_check_in_id?: string | null
+          linked_meal_plan_id?: string | null
+          linked_programme_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["note_category"] | null
+          client_id?: string
+          coach_id?: string
+          content?: string
+          created_at?: string
+          follow_up_date?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_pinned?: boolean | null
+          linked_check_in_id?: string | null
+          linked_meal_plan_id?: string | null
+          linked_programme_id?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_notes_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       daily_readiness_summaries: {
         Row: {
@@ -1125,6 +1359,174 @@ export type Database = {
           },
         ]
       }
+      meal_plan_assignments: {
+        Row: {
+          adherence_percentage: number | null
+          allergies: string[] | null
+          client_id: string
+          coach_id: string
+          coach_notes: string | null
+          content: Json
+          created_at: string
+          dietary_requirements: string[] | null
+          end_date: string | null
+          id: string
+          name: string
+          start_date: string
+          status: Database["public"]["Enums"]["assignment_status"] | null
+          target_calories: number | null
+          target_carbs_g: number | null
+          target_fat_g: number | null
+          target_fibre_g: number | null
+          target_protein_g: number | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          adherence_percentage?: number | null
+          allergies?: string[] | null
+          client_id: string
+          coach_id: string
+          coach_notes?: string | null
+          content?: Json
+          created_at?: string
+          dietary_requirements?: string[] | null
+          end_date?: string | null
+          id?: string
+          name: string
+          start_date: string
+          status?: Database["public"]["Enums"]["assignment_status"] | null
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fibre_g?: number | null
+          target_protein_g?: number | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adherence_percentage?: number | null
+          allergies?: string[] | null
+          client_id?: string
+          coach_id?: string
+          coach_notes?: string | null
+          content?: Json
+          created_at?: string
+          dietary_requirements?: string[] | null
+          end_date?: string | null
+          id?: string
+          name?: string
+          start_date?: string
+          status?: Database["public"]["Enums"]["assignment_status"] | null
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fibre_g?: number | null
+          target_protein_g?: number | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_assignments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_plan_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plan_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meal_plan_templates: {
+        Row: {
+          allergies: string[] | null
+          coach_id: string
+          content: Json
+          created_at: string
+          cuisine_preferences: string[] | null
+          description: string | null
+          dietary_requirements: string[] | null
+          duration_weeks: number | null
+          goal: Database["public"]["Enums"]["meal_plan_goal"] | null
+          id: string
+          is_public: boolean | null
+          is_template: boolean | null
+          name: string
+          tags: string[] | null
+          target_calories: number | null
+          target_carbs_g: number | null
+          target_fat_g: number | null
+          target_fibre_g: number | null
+          target_protein_g: number | null
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string[] | null
+          coach_id: string
+          content?: Json
+          created_at?: string
+          cuisine_preferences?: string[] | null
+          description?: string | null
+          dietary_requirements?: string[] | null
+          duration_weeks?: number | null
+          goal?: Database["public"]["Enums"]["meal_plan_goal"] | null
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          name: string
+          tags?: string[] | null
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fibre_g?: number | null
+          target_protein_g?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string[] | null
+          coach_id?: string
+          content?: Json
+          created_at?: string
+          cuisine_preferences?: string[] | null
+          description?: string | null
+          dietary_requirements?: string[] | null
+          duration_weeks?: number | null
+          goal?: Database["public"]["Enums"]["meal_plan_goal"] | null
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          name?: string
+          tags?: string[] | null
+          target_calories?: number | null
+          target_carbs_g?: number | null
+          target_fat_g?: number | null
+          target_fibre_g?: number | null
+          target_protein_g?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_plan_templates_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plans: {
         Row: {
           created_at: string | null
@@ -1780,37 +2182,158 @@ export type Database = {
         Row: {
           apple_sub: string | null
           avatar_url: string | null
+          bio: string | null
+          brand_colour: string | null
+          business_logo_url: string | null
+          business_name: string | null
+          contact_email: string | null
+          contact_phone: string | null
           created_at: string | null
           display_name: string | null
           id: string
+          is_accepting_clients: boolean | null
+          max_clients: number | null
           onboarding_completed: boolean | null
           postcode: string | null
+          qualifications: string[] | null
+          role: Database["public"]["Enums"]["user_role"] | null
           roles: string[] | null
+          social_links: Json | null
+          specialisations: string[] | null
+          timezone: string | null
           updated_at: string | null
+          website_url: string | null
         }
         Insert: {
           apple_sub?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          brand_colour?: string | null
+          business_logo_url?: string | null
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           display_name?: string | null
           id: string
+          is_accepting_clients?: boolean | null
+          max_clients?: number | null
           onboarding_completed?: boolean | null
           postcode?: string | null
+          qualifications?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           roles?: string[] | null
+          social_links?: Json | null
+          specialisations?: string[] | null
+          timezone?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Update: {
           apple_sub?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          brand_colour?: string | null
+          business_logo_url?: string | null
+          business_name?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
           created_at?: string | null
           display_name?: string | null
           id?: string
+          is_accepting_clients?: boolean | null
+          max_clients?: number | null
           onboarding_completed?: boolean | null
           postcode?: string | null
+          qualifications?: string[] | null
+          role?: Database["public"]["Enums"]["user_role"] | null
           roles?: string[] | null
+          social_links?: Json | null
+          specialisations?: string[] | null
+          timezone?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
+      }
+      programme_assignments: {
+        Row: {
+          client_id: string
+          coach_id: string
+          coach_notes: string | null
+          content: Json
+          created_at: string
+          current_day: number | null
+          current_week: number | null
+          end_date: string | null
+          id: string
+          last_workout_at: string | null
+          name: string
+          progress_percentage: number | null
+          start_date: string
+          status: Database["public"]["Enums"]["assignment_status"] | null
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          coach_id: string
+          coach_notes?: string | null
+          content?: Json
+          created_at?: string
+          current_day?: number | null
+          current_week?: number | null
+          end_date?: string | null
+          id?: string
+          last_workout_at?: string | null
+          name: string
+          progress_percentage?: number | null
+          start_date: string
+          status?: Database["public"]["Enums"]["assignment_status"] | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          coach_id?: string
+          coach_notes?: string | null
+          content?: Json
+          created_at?: string
+          current_day?: number | null
+          current_week?: number | null
+          end_date?: string | null
+          id?: string
+          last_workout_at?: string | null
+          name?: string
+          progress_percentage?: number | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["assignment_status"] | null
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_assignments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_assignments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "programme_assignments_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "programme_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       programme_days: {
         Row: {
@@ -1861,6 +2384,69 @@ export type Database = {
             columns: ["programme_id"]
             isOneToOne: false
             referencedRelation: "programmes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      programme_templates: {
+        Row: {
+          coach_id: string
+          content: Json
+          created_at: string
+          days_per_week: number
+          description: string | null
+          difficulty: Database["public"]["Enums"]["programme_difficulty"] | null
+          duration_weeks: number
+          id: string
+          is_public: boolean | null
+          is_template: boolean | null
+          name: string
+          tags: string[] | null
+          type: Database["public"]["Enums"]["programme_type"] | null
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          content?: Json
+          created_at?: string
+          days_per_week?: number
+          description?: string | null
+          difficulty?:
+            | Database["public"]["Enums"]["programme_difficulty"]
+            | null
+          duration_weeks?: number
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          name: string
+          tags?: string[] | null
+          type?: Database["public"]["Enums"]["programme_type"] | null
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          content?: Json
+          created_at?: string
+          days_per_week?: number
+          description?: string | null
+          difficulty?:
+            | Database["public"]["Enums"]["programme_difficulty"]
+            | null
+          duration_weeks?: number
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          name?: string
+          tags?: string[] | null
+          type?: Database["public"]["Enums"]["programme_type"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programme_templates_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2822,10 +3408,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_coach_client_ids: { Args: never; Returns: string[] }
+      is_admin: { Args: never; Returns: boolean }
+      is_coach: { Args: never; Returns: boolean }
+      is_coach_of: { Args: { client_uuid: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      assignment_status:
+        | "scheduled"
+        | "active"
+        | "paused"
+        | "completed"
+        | "cancelled"
+      check_in_review_status: "pending" | "reviewed" | "flagged" | "archived"
+      coach_client_status:
+        | "pending"
+        | "active"
+        | "paused"
+        | "completed"
+        | "cancelled"
+      meal_plan_goal:
+        | "weight_loss"
+        | "muscle_gain"
+        | "maintenance"
+        | "performance"
+        | "health"
+        | "custom"
+      message_type: "text" | "image" | "file" | "voice" | "system"
+      note_category:
+        | "general"
+        | "progress"
+        | "concern"
+        | "goal"
+        | "medical"
+        | "behaviour"
+        | "reminder"
+      programme_difficulty: "beginner" | "intermediate" | "advanced" | "elite"
+      programme_type:
+        | "strength"
+        | "hypertrophy"
+        | "endurance"
+        | "weight_loss"
+        | "sport_specific"
+        | "rehabilitation"
+        | "general_fitness"
+        | "custom"
+      user_role: "client" | "coach" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2952,6 +3580,52 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      assignment_status: [
+        "scheduled",
+        "active",
+        "paused",
+        "completed",
+        "cancelled",
+      ],
+      check_in_review_status: ["pending", "reviewed", "flagged", "archived"],
+      coach_client_status: [
+        "pending",
+        "active",
+        "paused",
+        "completed",
+        "cancelled",
+      ],
+      meal_plan_goal: [
+        "weight_loss",
+        "muscle_gain",
+        "maintenance",
+        "performance",
+        "health",
+        "custom",
+      ],
+      message_type: ["text", "image", "file", "voice", "system"],
+      note_category: [
+        "general",
+        "progress",
+        "concern",
+        "goal",
+        "medical",
+        "behaviour",
+        "reminder",
+      ],
+      programme_difficulty: ["beginner", "intermediate", "advanced", "elite"],
+      programme_type: [
+        "strength",
+        "hypertrophy",
+        "endurance",
+        "weight_loss",
+        "sport_specific",
+        "rehabilitation",
+        "general_fitness",
+        "custom",
+      ],
+      user_role: ["client", "coach", "admin"],
+    },
   },
 } as const

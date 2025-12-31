@@ -2,6 +2,7 @@
 -- Description: Comprehensive RLS policies ensuring proper data isolation and coach access
 -- Author: Synced Momentum
 -- Date: 2025-12-27
+-- FIXED: Corrected table names and roles array syntax
 
 -- ============================================================================
 -- HELPER FUNCTIONS
@@ -14,7 +15,7 @@ BEGIN
     RETURN EXISTS (
         SELECT 1 FROM profiles
         WHERE id = auth.uid()
-        AND role = 'coach'
+        AND 'coach' = ANY(roles)
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -26,7 +27,7 @@ BEGIN
     RETURN EXISTS (
         SELECT 1 FROM profiles
         WHERE id = auth.uid()
-        AND role = 'admin'
+        AND 'admin' = ANY(roles)
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -318,32 +319,32 @@ CREATE POLICY "Coaches can delete own notes" ON coach_notes
     FOR DELETE USING (coach_id = auth.uid());
 
 -- ============================================================================
--- CHECK_IN_DAYS TABLE POLICIES
+-- CHECK_INS TABLE POLICIES (Corrected from check_in_days)
 -- ============================================================================
 
 -- Users can view their own check-ins
-DROP POLICY IF EXISTS "Users can view own check-ins" ON check_in_days;
-CREATE POLICY "Users can view own check-ins" ON check_in_days
+DROP POLICY IF EXISTS "Users can view own check-ins" ON check_ins;
+CREATE POLICY "Users can view own check-ins" ON check_ins
     FOR SELECT USING (user_id = auth.uid());
 
 -- Coaches can view their clients' check-ins
-DROP POLICY IF EXISTS "Coaches can view client check-ins" ON check_in_days;
-CREATE POLICY "Coaches can view client check-ins" ON check_in_days
+DROP POLICY IF EXISTS "Coaches can view client check-ins" ON check_ins;
+CREATE POLICY "Coaches can view client check-ins" ON check_ins
     FOR SELECT USING (is_coach_of(user_id));
 
 -- Coaches can update review fields on client check-ins
-DROP POLICY IF EXISTS "Coaches can review client check-ins" ON check_in_days;
-CREATE POLICY "Coaches can review client check-ins" ON check_in_days
+DROP POLICY IF EXISTS "Coaches can review client check-ins" ON check_ins;
+CREATE POLICY "Coaches can review client check-ins" ON check_ins
     FOR UPDATE USING (is_coach_of(user_id));
 
 -- ============================================================================
 -- EXISTING TABLE POLICIES (Extend for coach access)
--- These assume existing tables: sessions, meals, blood_work, sleep_records, etc.
+-- Using correct table names from the actual schema
 -- ============================================================================
 
--- Sessions: Coaches can view client sessions
-DROP POLICY IF EXISTS "Coaches can view client sessions" ON sessions;
-CREATE POLICY "Coaches can view client sessions" ON sessions
+-- Training Sessions: Coaches can view client training sessions
+DROP POLICY IF EXISTS "Coaches can view client training sessions" ON training_sessions;
+CREATE POLICY "Coaches can view client training sessions" ON training_sessions
     FOR SELECT USING (
         user_id = auth.uid()
         OR is_coach_of(user_id)
@@ -357,9 +358,9 @@ CREATE POLICY "Coaches can view client meals" ON meals
         OR is_coach_of(user_id)
     );
 
--- Blood work: Coaches can view client blood work
-DROP POLICY IF EXISTS "Coaches can view client blood work" ON blood_work;
-CREATE POLICY "Coaches can view client blood work" ON blood_work
+-- Blood Panels: Coaches can view client blood work
+DROP POLICY IF EXISTS "Coaches can view client blood panels" ON blood_panels;
+CREATE POLICY "Coaches can view client blood panels" ON blood_panels
     FOR SELECT USING (
         user_id = auth.uid()
         OR is_coach_of(user_id)
@@ -373,6 +374,22 @@ CREATE POLICY "Coaches can view client sleep" ON sleep_records
         OR is_coach_of(user_id)
     );
 
+-- Weight logs: Coaches can view client weight data
+DROP POLICY IF EXISTS "Coaches can view client weight" ON weight_logs;
+CREATE POLICY "Coaches can view client weight" ON weight_logs
+    FOR SELECT USING (
+        user_id = auth.uid()
+        OR is_coach_of(user_id)
+    );
+
+-- Nutrition summaries: Coaches can view client nutrition
+DROP POLICY IF EXISTS "Coaches can view client nutrition" ON nutrition_daily_summaries;
+CREATE POLICY "Coaches can view client nutrition" ON nutrition_daily_summaries
+    FOR SELECT USING (
+        user_id = auth.uid()
+        OR is_coach_of(user_id)
+    );
+
 -- ============================================================================
 -- COMMENTS
 -- ============================================================================
@@ -381,19 +398,3 @@ COMMENT ON FUNCTION is_coach() IS 'Returns true if current user has coach role';
 COMMENT ON FUNCTION is_admin() IS 'Returns true if current user has admin role';
 COMMENT ON FUNCTION is_coach_of(UUID) IS 'Returns true if current user is coach of specified client';
 COMMENT ON FUNCTION get_coach_client_ids() IS 'Returns all client IDs for current coach';
-
--- ============================================================================
--- ROLLBACK (uncomment to revert)
--- ============================================================================
--- -- Drop all policies
--- DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
--- DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
--- DROP POLICY IF EXISTS "Coaches can view client profiles" ON profiles;
--- DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
--- -- ... (continue for all policies)
---
--- -- Drop helper functions
--- DROP FUNCTION IF EXISTS is_coach();
--- DROP FUNCTION IF EXISTS is_admin();
--- DROP FUNCTION IF EXISTS is_coach_of(UUID);
--- DROP FUNCTION IF EXISTS get_coach_client_ids();

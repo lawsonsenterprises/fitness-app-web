@@ -10,7 +10,8 @@ ADD COLUMN IF NOT EXISTS roles TEXT[] DEFAULT ARRAY['athlete']::TEXT[];
 -- Create index for role queries
 CREATE INDEX IF NOT EXISTS idx_profiles_roles ON profiles USING GIN (roles);
 
--- Add constraint to ensure valid roles
+-- Add constraint to ensure valid roles (drop first to make idempotent)
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS valid_roles;
 ALTER TABLE profiles
 ADD CONSTRAINT valid_roles CHECK (
     roles <@ ARRAY['athlete', 'coach', 'admin']::TEXT[]
