@@ -114,10 +114,13 @@ async function generatePDF(options: ExportOptions): Promise<Blob> {
   yPosition += 15
 
   // Add data based on export type
-  const data = options.data || getMockData(options.type)
+  const data = options.data
+  if (!data) {
+    console.warn('PDF export called without data - no content will be rendered')
+  }
 
   // Client/Coach info if available
-  if (data.clientName || data.coachName) {
+  if (data?.clientName || data?.coachName) {
     checkPageBreak(25)
     doc.setFillColor(249, 250, 251)
     doc.roundedRect(margin, yPosition, contentWidth, 20, 3, 3, 'F')
@@ -126,17 +129,17 @@ async function generatePDF(options: ExportOptions): Promise<Blob> {
     doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
 
-    if (data.clientName) {
+    if (data?.clientName) {
       doc.text(`Client: ${data.clientName}`, margin + 5, yPosition + 8)
     }
-    if (data.coachName) {
+    if (data?.coachName) {
       doc.text(`Coach: ${data.coachName}`, margin + 5, yPosition + 15)
     }
     yPosition += 28
   }
 
   // Metrics section
-  if (data.metrics && data.metrics.length > 0) {
+  if (data?.metrics && data.metrics.length > 0) {
     checkPageBreak(40)
 
     doc.setFontSize(14)
@@ -184,7 +187,7 @@ async function generatePDF(options: ExportOptions): Promise<Blob> {
   }
 
   // Sections
-  if (data.sections && data.sections.length > 0) {
+  if (data?.sections && data.sections.length > 0) {
     for (const section of data.sections) {
       checkPageBreak(30)
 
@@ -217,7 +220,7 @@ async function generatePDF(options: ExportOptions): Promise<Blob> {
   }
 
   // Notes section
-  if (data.notes) {
+  if (data?.notes) {
     checkPageBreak(40)
 
     doc.setFontSize(14)
@@ -278,97 +281,6 @@ function getDefaultTitle(type: ExportType): string {
   }
 }
 
-function getMockData(type: ExportType): ExportData {
-  switch (type) {
-    case 'client_progress':
-      return {
-        clientName: 'Client',
-        metrics: [
-          { label: 'Weight', value: '75.2 kg', change: '-2.3 kg' },
-          { label: 'Body Fat', value: '18%', change: '-1.5%' },
-          { label: 'Adherence', value: '94%', change: '+3%' },
-        ],
-        sections: [
-          {
-            title: 'Summary',
-            content: 'Excellent progress this period with consistent training adherence and improved nutrition compliance.',
-          },
-          {
-            title: 'Key Achievements',
-            content: [
-              'Hit all training sessions',
-              'Improved sleep quality',
-              'New personal record on deadlift',
-            ],
-          },
-        ],
-        notes: 'Continue current approach. Consider increasing training volume next phase.',
-      }
-    case 'check_in':
-      return {
-        metrics: [
-          { label: 'Weight', value: '75.2 kg' },
-          { label: 'Sleep', value: '7.5 hrs' },
-          { label: 'Steps', value: '9,245' },
-        ],
-        sections: [
-          {
-            title: 'How are you feeling?',
-            content: 'Feeling strong and energised. Ready to push harder in training.',
-          },
-        ],
-      }
-    case 'programme':
-      return {
-        sections: [
-          {
-            title: 'Programme Overview',
-            content: '4-day upper/lower split focusing on hypertrophy with progressive overload.',
-          },
-          {
-            title: 'Training Days',
-            content: [
-              'Day 1: Upper Body (Push Focus)',
-              'Day 2: Lower Body (Quad Focus)',
-              'Day 3: Rest',
-              'Day 4: Upper Body (Pull Focus)',
-              'Day 5: Lower Body (Hip Focus)',
-            ],
-          },
-        ],
-      }
-    case 'meal_plan':
-      return {
-        metrics: [
-          { label: 'Daily Calories', value: '2,400' },
-          { label: 'Protein', value: '180g' },
-          { label: 'Carbs', value: '260g' },
-          { label: 'Fat', value: '75g' },
-        ],
-        sections: [
-          {
-            title: 'Meal Structure',
-            content: [
-              'Breakfast: High protein, moderate carbs',
-              'Lunch: Balanced macros',
-              'Pre-workout: Carbs + protein',
-              'Post-workout: Protein + carbs',
-              'Dinner: Protein + fats, lower carbs',
-            ],
-          },
-        ],
-      }
-    default:
-      return {
-        sections: [
-          {
-            title: 'Summary',
-            content: 'Export generated successfully.',
-          },
-        ],
-      }
-  }
-}
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)

@@ -8,8 +8,6 @@ import {
   Ruler,
   Target,
   Camera,
-  ChevronLeft,
-  ChevronRight,
   Calendar,
   Activity,
   Loader2,
@@ -24,22 +22,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useHealthKitWeightTrends } from '@/hooks/athlete'
 import { WeightTrendChart } from '@/components/shared/charts'
 
-// Mock data for measurements and photos (to be replaced with real data in future)
-const mockMeasurements = [
-  { name: 'Chest', current: 104, previous: 103, unit: 'cm' },
-  { name: 'Waist', current: 82, previous: 84, unit: 'cm' },
-  { name: 'Hips', current: 98, previous: 99, unit: 'cm' },
-  { name: 'Arms', current: 38, previous: 37.5, unit: 'cm' },
-  { name: 'Thighs', current: 62, previous: 61, unit: 'cm' },
-]
-
-const mockPhotos = [
-  { date: '2024-12-20', hasPhotos: true },
-  { date: '2024-12-13', hasPhotos: true },
-  { date: '2024-12-06', hasPhotos: true },
-  { date: '2024-11-29', hasPhotos: false },
-  { date: '2024-11-22', hasPhotos: true },
-]
+// TODO: Implement measurements and photos from database when tables are created
 
 // Time range to days mapping
 const timeRangeDays: Record<'1m' | '3m' | '6m' | '1y', number> = {
@@ -52,7 +35,6 @@ const timeRangeDays: Record<'1m' | '3m' | '6m' | '1y', number> = {
 export default function ProgressPage() {
   const { user } = useAuth()
   const [timeRange, setTimeRange] = useState<'1m' | '3m' | '6m' | '1y'>('3m')
-  const [photoIndex, setPhotoIndex] = useState(0)
 
   // Fetch real HealthKit weight data
   const { data: weightTrends, isLoading: weightLoading, error: weightError } = useHealthKitWeightTrends(
@@ -262,7 +244,7 @@ export default function ProgressPage() {
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Measurements */}
+          {/* Measurements - Coming Soon */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -271,36 +253,21 @@ export default function ProgressPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Measurements</h2>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled>
                 Update
               </Button>
             </div>
 
-            <div className="space-y-4">
-              {mockMeasurements.map((measurement) => {
-                const change = measurement.current - measurement.previous
-                return (
-                  <div key={measurement.name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Ruler className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{measurement.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold">{measurement.current}{measurement.unit}</span>
-                      <span className={cn(
-                        'text-sm',
-                        change > 0 ? 'text-green-500' : change < 0 ? 'text-amber-500' : 'text-muted-foreground'
-                      )}>
-                        {change > 0 ? '+' : ''}{change.toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                )
-              })}
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Ruler className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="font-medium">Measurements coming soon</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Body measurements tracking will be available here
+              </p>
             </div>
           </motion.div>
 
-          {/* Progress Photos */}
+          {/* Progress Photos - Coming Soon */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -309,51 +276,19 @@ export default function ProgressPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Progress Photos</h2>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2" disabled>
                 <Camera className="h-4 w-4" />
                 Add Photos
               </Button>
             </div>
 
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setPhotoIndex(Math.max(0, photoIndex - 1))}
-                disabled={photoIndex === 0}
-                className="p-2 rounded-lg hover:bg-muted disabled:opacity-50"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-
-              <div className="flex-1 grid grid-cols-3 gap-2">
-                {['Front', 'Side', 'Back'].map((view) => (
-                  <div
-                    key={view}
-                    className="aspect-[3/4] rounded-lg bg-muted flex items-center justify-center"
-                  >
-                    <div className="text-center">
-                      <Camera className="h-6 w-6 text-muted-foreground mx-auto" />
-                      <span className="text-xs text-muted-foreground mt-1 block">{view}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <button
-                onClick={() => setPhotoIndex(Math.min(mockPhotos.length - 1, photoIndex + 1))}
-                disabled={photoIndex === mockPhotos.length - 1}
-                className="p-2 rounded-lg hover:bg-muted disabled:opacity-50"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Camera className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <p className="font-medium">Progress photos coming soon</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Track your visual progress over time
+              </p>
             </div>
-
-            <p className="text-center text-sm text-muted-foreground mt-4">
-              {new Date(mockPhotos[photoIndex].date).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              })}
-            </p>
           </motion.div>
         </div>
       </div>
