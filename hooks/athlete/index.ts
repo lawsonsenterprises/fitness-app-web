@@ -209,10 +209,11 @@ export function usePersonalRecords(athleteId?: string) {
   return useQuery({
     queryKey: ['personal-records', athleteId],
     queryFn: async () => {
-      // Join with exercise_library_items to get the exercise name
+      // Query personal_bests directly - exercise_library_items table doesn't exist
+      // The iOS app stores exercise names in a different way
       const { data, error } = await supabase
         .from('personal_bests')
-        .select('*, exercise_library_items(name)')
+        .select('*')
         .eq('user_id', athleteId!)
         .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .order('achieved_at', { ascending: false })
@@ -221,9 +222,33 @@ export function usePersonalRecords(athleteId?: string) {
         console.error('Error fetching personal records:', error)
         return []
       }
-      return (data || []).map((pb: { id: string; exercise_library_items?: { name: string } | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
+
+      // Try to get exercise names from logged_sets if available
+      const pbsWithSets = data?.filter(pb => pb.logged_set_id) || []
+      let exerciseNames: Record<string, string> = {}
+
+      if (pbsWithSets.length > 0) {
+        const setIds = pbsWithSets.map(pb => pb.logged_set_id).filter(Boolean)
+        const { data: sets } = await supabase
+          .from('logged_sets')
+          .select('id, exercises(name)')
+          .in('id', setIds)
+
+        if (sets) {
+          sets.forEach((set: { id: string; exercises?: { name: string } | { name: string }[] | null }) => {
+            const exercise = Array.isArray(set.exercises) ? set.exercises[0] : set.exercises
+            if (exercise?.name) {
+              exerciseNames[set.id] = exercise.name
+            }
+          })
+        }
+      }
+
+      return (data || []).map((pb: { id: string; logged_set_id: string | null; pb_type: string | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
         id: pb.id,
-        exercise_name: pb.exercise_library_items?.name || 'Unknown Exercise',
+        exercise_name: pb.logged_set_id && exerciseNames[pb.logged_set_id]
+          ? exerciseNames[pb.logged_set_id]
+          : pb.pb_type || 'Personal Best',
         weight_kg: pb.weight,
         reps: pb.reps,
         achieved_at: pb.achieved_at,
@@ -467,10 +492,10 @@ export function useAthleteDashboard(athleteId?: string) {
           .eq('user_id', athleteId!)
           .gte('date', weekAgo)
           .order('date', { ascending: false }),
-        // Personal bests with exercise name from exercise_library_items
+        // Personal bests - exercise_library_items table doesn't exist
         supabase
           .from('personal_bests')
-          .select('*, exercise_library_items(name)')
+          .select('*')
           .eq('user_id', athleteId!)
           .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
           .order('achieved_at', { ascending: false })
@@ -536,9 +561,9 @@ export function useAthleteDashboard(athleteId?: string) {
         progressHighlights: {
           latestWeight,
           weightChange,
-          personalBests: (personalBests.data || []).map((pb: { id: string; exercise_library_items?: { name: string } | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
+          personalBests: (personalBests.data || []).map((pb: { id: string; pb_type: string | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
             id: pb.id,
-            exerciseName: pb.exercise_library_items?.name || 'Unknown Exercise',
+            exerciseName: pb.pb_type || 'Personal Best',
             weight: pb.weight,
             reps: pb.reps,
             achievedAt: pb.achieved_at,
