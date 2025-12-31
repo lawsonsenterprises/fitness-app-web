@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       blood_marker_definitions: {
@@ -399,6 +374,9 @@ export type Database = {
           session_quality: string | null
           sleep_hours: number | null
           sleep_quality: string | null
+          snooze_count: number | null
+          snoozed_at: string | null
+          snoozed_until: string | null
           steps_average: number | null
           steps_total: number | null
           updated_at: string | null
@@ -421,6 +399,9 @@ export type Database = {
           session_quality?: string | null
           sleep_hours?: number | null
           sleep_quality?: string | null
+          snooze_count?: number | null
+          snoozed_at?: string | null
+          snoozed_until?: string | null
           steps_average?: number | null
           steps_total?: number | null
           updated_at?: string | null
@@ -443,6 +424,9 @@ export type Database = {
           session_quality?: string | null
           sleep_hours?: number | null
           sleep_quality?: string | null
+          snooze_count?: number | null
+          snoozed_at?: string | null
+          snoozed_until?: string | null
           steps_average?: number | null
           steps_total?: number | null
           updated_at?: string | null
@@ -451,6 +435,309 @@ export type Database = {
           was_sent_to_coach?: boolean | null
           weight?: number | null
           weight_timestamp?: string | null
+        }
+        Relationships: []
+      }
+      daily_readiness_summaries: {
+        Row: {
+          active_energy_kcal: number
+          created_at: string | null
+          date: string
+          exercise_minutes: number
+          has_any_sleep: boolean
+          has_high_quality_sleep: boolean
+          has_hrv: boolean
+          has_phone_motion_only: boolean
+          has_wearable: boolean
+          has_workouts: boolean
+          id: string
+          last_healthkit_sync: string | null
+          mode: string | null
+          overall_copy_key: string | null
+          overall_readiness_band: string | null
+          readiness_label: string | null
+          recovery_score: number
+          sleep_score: number
+          steps: number
+          strain_score: number
+          updated_at: string | null
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          active_energy_kcal?: number
+          created_at?: string | null
+          date: string
+          exercise_minutes?: number
+          has_any_sleep?: boolean
+          has_high_quality_sleep?: boolean
+          has_hrv?: boolean
+          has_phone_motion_only?: boolean
+          has_wearable?: boolean
+          has_workouts?: boolean
+          id?: string
+          last_healthkit_sync?: string | null
+          mode?: string | null
+          overall_copy_key?: string | null
+          overall_readiness_band?: string | null
+          readiness_label?: string | null
+          recovery_score?: number
+          sleep_score?: number
+          steps?: number
+          strain_score?: number
+          updated_at?: string | null
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          active_energy_kcal?: number
+          created_at?: string | null
+          date?: string
+          exercise_minutes?: number
+          has_any_sleep?: boolean
+          has_high_quality_sleep?: boolean
+          has_hrv?: boolean
+          has_phone_motion_only?: boolean
+          has_wearable?: boolean
+          has_workouts?: boolean
+          id?: string
+          last_healthkit_sync?: string | null
+          mode?: string | null
+          overall_copy_key?: string | null
+          overall_readiness_band?: string | null
+          readiness_label?: string | null
+          recovery_score?: number
+          sleep_score?: number
+          steps?: number
+          strain_score?: number
+          updated_at?: string | null
+          user_id?: string
+          weight_kg?: number | null
+        }
+        Relationships: []
+      }
+      daily_recovery_summaries: {
+        Row: {
+          created_at: string | null
+          date: string
+          hr_range_state: string | null
+          hrv_range_state: string | null
+          id: string
+          oxygen_saturation: number | null
+          recovery_band: string | null
+          recovery_copy_key: string | null
+          recovery_label: string | null
+          recovery_score: number
+          respiratory_range_state: string | null
+          respiratory_rate: number | null
+          resting_hr: number | null
+          resting_hrv: number | null
+          spo2_range_state: string | null
+          updated_at: string | null
+          user_id: string
+          wrist_temp_range_state: string | null
+          wrist_temperature: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          hr_range_state?: string | null
+          hrv_range_state?: string | null
+          id?: string
+          oxygen_saturation?: number | null
+          recovery_band?: string | null
+          recovery_copy_key?: string | null
+          recovery_label?: string | null
+          recovery_score?: number
+          respiratory_range_state?: string | null
+          respiratory_rate?: number | null
+          resting_hr?: number | null
+          resting_hrv?: number | null
+          spo2_range_state?: string | null
+          updated_at?: string | null
+          user_id: string
+          wrist_temp_range_state?: string | null
+          wrist_temperature?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          hr_range_state?: string | null
+          hrv_range_state?: string | null
+          id?: string
+          oxygen_saturation?: number | null
+          recovery_band?: string | null
+          recovery_copy_key?: string | null
+          recovery_label?: string | null
+          recovery_score?: number
+          respiratory_range_state?: string | null
+          respiratory_rate?: number | null
+          resting_hr?: number | null
+          resting_hrv?: number | null
+          spo2_range_state?: string | null
+          updated_at?: string | null
+          user_id?: string
+          wrist_temp_range_state?: string | null
+          wrist_temperature?: number | null
+        }
+        Relationships: []
+      }
+      daily_sleep_summaries: {
+        Row: {
+          average_sleeping_hr: number | null
+          baseline_range_state: string | null
+          created_at: string | null
+          date: string
+          deep_minutes: number
+          deep_range_state: string | null
+          hr_dip_percent: number | null
+          id: string
+          light_or_core_minutes: number
+          oxygen_saturation: number | null
+          rem_minutes: number
+          rem_range_state: string | null
+          respiratory_rate: number | null
+          sleep_bank_minutes: number
+          sleep_bank_range_state: string | null
+          sleep_end_time: string | null
+          sleep_label: string | null
+          sleep_score: number
+          sleep_score_band: string | null
+          sleep_score_range_state: string | null
+          sleep_start_time: string | null
+          source_kind: string | null
+          time_asleep_minutes: number
+          time_asleep_range_state: string | null
+          time_in_bed_minutes: number
+          time_to_fall_asleep_minutes: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          average_sleeping_hr?: number | null
+          baseline_range_state?: string | null
+          created_at?: string | null
+          date: string
+          deep_minutes?: number
+          deep_range_state?: string | null
+          hr_dip_percent?: number | null
+          id?: string
+          light_or_core_minutes?: number
+          oxygen_saturation?: number | null
+          rem_minutes?: number
+          rem_range_state?: string | null
+          respiratory_rate?: number | null
+          sleep_bank_minutes?: number
+          sleep_bank_range_state?: string | null
+          sleep_end_time?: string | null
+          sleep_label?: string | null
+          sleep_score?: number
+          sleep_score_band?: string | null
+          sleep_score_range_state?: string | null
+          sleep_start_time?: string | null
+          source_kind?: string | null
+          time_asleep_minutes?: number
+          time_asleep_range_state?: string | null
+          time_in_bed_minutes?: number
+          time_to_fall_asleep_minutes?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          average_sleeping_hr?: number | null
+          baseline_range_state?: string | null
+          created_at?: string | null
+          date?: string
+          deep_minutes?: number
+          deep_range_state?: string | null
+          hr_dip_percent?: number | null
+          id?: string
+          light_or_core_minutes?: number
+          oxygen_saturation?: number | null
+          rem_minutes?: number
+          rem_range_state?: string | null
+          respiratory_rate?: number | null
+          sleep_bank_minutes?: number
+          sleep_bank_range_state?: string | null
+          sleep_end_time?: string | null
+          sleep_label?: string | null
+          sleep_score?: number
+          sleep_score_band?: string | null
+          sleep_score_range_state?: string | null
+          sleep_start_time?: string | null
+          source_kind?: string | null
+          time_asleep_minutes?: number
+          time_asleep_range_state?: string | null
+          time_in_bed_minutes?: number
+          time_to_fall_asleep_minutes?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_workouts: {
+        Row: {
+          active_energy_kcal: number | null
+          avg_heart_rate: number | null
+          created_at: string | null
+          date: string
+          distance_meters: number | null
+          duration_seconds: number | null
+          end_time: string | null
+          healthkit_uuid: string | null
+          id: string
+          max_heart_rate: number | null
+          name: string | null
+          source_bundle_id: string | null
+          source_name: string | null
+          start_time: string | null
+          total_energy_kcal: number
+          updated_at: string | null
+          user_id: string
+          workout_name: string | null
+          workout_type: string
+        }
+        Insert: {
+          active_energy_kcal?: number | null
+          avg_heart_rate?: number | null
+          created_at?: string | null
+          date: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          healthkit_uuid?: string | null
+          id?: string
+          max_heart_rate?: number | null
+          name?: string | null
+          source_bundle_id?: string | null
+          source_name?: string | null
+          start_time?: string | null
+          total_energy_kcal?: number
+          updated_at?: string | null
+          user_id: string
+          workout_name?: string | null
+          workout_type: string
+        }
+        Update: {
+          active_energy_kcal?: number | null
+          avg_heart_rate?: number | null
+          created_at?: string | null
+          date?: string
+          distance_meters?: number | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          healthkit_uuid?: string | null
+          id?: string
+          max_heart_rate?: number | null
+          name?: string | null
+          source_bundle_id?: string | null
+          source_name?: string | null
+          start_time?: string | null
+          total_energy_kcal?: number
+          updated_at?: string | null
+          user_id?: string
+          workout_name?: string | null
+          workout_type?: string
         }
         Relationships: []
       }
@@ -951,6 +1238,66 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          check_ins_email: boolean | null
+          check_ins_in_app: boolean | null
+          check_ins_push: boolean | null
+          client_activity_email: boolean | null
+          client_activity_in_app: boolean | null
+          client_activity_push: boolean | null
+          created_at: string | null
+          email_digest: string | null
+          id: string
+          messages_email: boolean | null
+          messages_in_app: boolean | null
+          messages_push: boolean | null
+          reminders_email: boolean | null
+          reminders_in_app: boolean | null
+          reminders_push: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          check_ins_email?: boolean | null
+          check_ins_in_app?: boolean | null
+          check_ins_push?: boolean | null
+          client_activity_email?: boolean | null
+          client_activity_in_app?: boolean | null
+          client_activity_push?: boolean | null
+          created_at?: string | null
+          email_digest?: string | null
+          id?: string
+          messages_email?: boolean | null
+          messages_in_app?: boolean | null
+          messages_push?: boolean | null
+          reminders_email?: boolean | null
+          reminders_in_app?: boolean | null
+          reminders_push?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          check_ins_email?: boolean | null
+          check_ins_in_app?: boolean | null
+          check_ins_push?: boolean | null
+          client_activity_email?: boolean | null
+          client_activity_in_app?: boolean | null
+          client_activity_push?: boolean | null
+          created_at?: string | null
+          email_digest?: string | null
+          id?: string
+          messages_email?: boolean | null
+          messages_in_app?: boolean | null
+          messages_push?: boolean | null
+          reminders_email?: boolean | null
+          reminders_in_app?: boolean | null
+          reminders_push?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       nutrition_daily_summaries: {
         Row: {
           actual_calories: number | null
@@ -1437,6 +1784,8 @@ export type Database = {
           display_name: string | null
           id: string
           onboarding_completed: boolean | null
+          postcode: string | null
+          roles: string[] | null
           updated_at: string | null
         }
         Insert: {
@@ -1446,6 +1795,8 @@ export type Database = {
           display_name?: string | null
           id: string
           onboarding_completed?: boolean | null
+          postcode?: string | null
+          roles?: string[] | null
           updated_at?: string | null
         }
         Update: {
@@ -1455,6 +1806,8 @@ export type Database = {
           display_name?: string | null
           id?: string
           onboarding_completed?: boolean | null
+          postcode?: string | null
+          roles?: string[] | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2598,9 +2951,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
