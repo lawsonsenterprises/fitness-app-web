@@ -1183,13 +1183,26 @@ export function useAthleteDashboard(athleteId?: string) {
         progressHighlights: {
           latestWeight,
           weightChange,
-          personalBests: (personalBests.data || []).map((pb: { id: string; pb_type: string | null; weight: number | null; reps: number | null; achieved_at: string | null }) => ({
-            id: pb.id,
-            exerciseName: pb.pb_type || 'Personal Best',
-            weight: pb.weight,
-            reps: pb.reps,
-            achievedAt: pb.achieved_at,
-          })),
+          personalBests: (personalBests.data || []).map((pb: { id: string; pb_type: string | null; weight: number | null; reps: number | null; achieved_at: string | null }) => {
+            // Format pb_type to be human-readable
+            const formatPbType = (type: string | null): string => {
+              if (!type) return 'Personal Best'
+              switch (type) {
+                case 'weight': return 'Weight'
+                case 'estimated1RM': return 'Est. 1RM'
+                case 'volume': return 'Volume'
+                case 'reps': return 'Reps'
+                default: return type.replace(/([A-Z])/g, ' $1').trim()
+              }
+            }
+            return {
+              id: pb.id,
+              exerciseName: formatPbType(pb.pb_type),
+              weight: pb.weight,
+              reps: pb.reps,
+              achievedAt: pb.achieved_at,
+            }
+          }),
         },
         hasData: {
           sessions: (recentSessions.data?.length || 0) > 0,
