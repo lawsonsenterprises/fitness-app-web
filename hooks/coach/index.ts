@@ -13,4 +13,7 @@ export {
   useClientStrainRecovery,
   useClientWeightTrends,
   useClientActivityTrends,
+  useClientBloodWork,
 } from './use-client-healthkit'
+
+export type { BloodPanel, BloodMarker } from './use-client-healthkit'

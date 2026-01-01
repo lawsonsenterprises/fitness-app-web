@@ -1,32 +1,45 @@
 import { cn } from '@/lib/utils'
-import type { MealPlanType } from '@/types'
+import type { MealPlanGoal } from '@/types'
 
-interface MealPlanTypeBadgeProps {
-  type: MealPlanType
+interface MealPlanGoalBadgeProps {
+  goal: MealPlanGoal | null | undefined
   size?: 'sm' | 'md'
 }
 
-const typeConfig: Record<MealPlanType, { label: string; className: string }> = {
-  cutting: {
-    label: 'Cutting',
+const goalConfig: Record<MealPlanGoal, { label: string; className: string }> = {
+  weight_loss: {
+    label: 'Weight Loss',
     className: 'bg-red-500/10 text-red-600 border-red-500/20',
   },
-  bulking: {
-    label: 'Bulking',
+  muscle_gain: {
+    label: 'Muscle Gain',
     className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   },
   maintenance: {
     label: 'Maintenance',
     className: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
   },
-  contest_prep: {
-    label: 'Contest Prep',
+  performance: {
+    label: 'Performance',
     className: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  },
+  health: {
+    label: 'Health',
+    className: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
+  },
+  custom: {
+    label: 'Custom',
+    className: 'bg-muted text-muted-foreground border-border',
   },
 }
 
-export function MealPlanTypeBadge({ type, size = 'md' }: MealPlanTypeBadgeProps) {
-  const config = typeConfig[type] || typeConfig.maintenance
+const defaultConfig = {
+  label: 'Custom',
+  className: 'bg-muted text-muted-foreground border-border',
+}
+
+export function MealPlanGoalBadge({ goal, size = 'md' }: MealPlanGoalBadgeProps) {
+  const config = goal ? goalConfig[goal] ?? defaultConfig : defaultConfig
 
   return (
     <span
@@ -39,4 +52,9 @@ export function MealPlanTypeBadge({ type, size = 'md' }: MealPlanTypeBadgeProps)
       {config.label}
     </span>
   )
+}
+
+// Alias for backwards compatibility
+export function MealPlanTypeBadge({ goal, size }: { goal: MealPlanGoal | null | undefined; size?: 'sm' | 'md' }) {
+  return <MealPlanGoalBadge goal={goal} size={size} />
 }

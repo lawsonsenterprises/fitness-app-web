@@ -17,22 +17,24 @@ import { Input } from '@/components/ui/input'
 import { MealPlanTemplateCard } from '@/components/meal-plans/meal-plan-template-card'
 import { useMealPlans, useDuplicateMealPlan, useDeleteMealPlan } from '@/hooks/use-meal-plans'
 import { cn } from '@/lib/utils'
+import type { MealPlanGoal } from '@/types'
 
-const mealPlanTypes: { value: string; label: string }[] = [
-  { value: 'all', label: 'All Types' },
-  { value: 'cutting', label: 'Cutting' },
-  { value: 'bulking', label: 'Bulking' },
+const mealPlanGoals: { value: MealPlanGoal | 'all'; label: string }[] = [
+  { value: 'all', label: 'All Goals' },
+  { value: 'weight_loss', label: 'Weight Loss' },
+  { value: 'muscle_gain', label: 'Muscle Gain' },
   { value: 'maintenance', label: 'Maintenance' },
-  { value: 'contest_prep', label: 'Contest Prep' },
+  { value: 'performance', label: 'Performance' },
+  { value: 'health', label: 'Health' },
 ]
 
 export default function MealPlansPage() {
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false)
+  const [goalFilter, setGoalFilter] = useState<MealPlanGoal | 'all'>('all')
+  const [showGoalDropdown, setShowGoalDropdown] = useState(false)
 
   const { data: mealPlansData, isLoading } = useMealPlans({
-    type: typeFilter !== 'all' ? typeFilter : undefined,
+    goal: goalFilter !== 'all' ? goalFilter : undefined,
     search,
   })
 
@@ -64,7 +66,7 @@ export default function MealPlansPage() {
     }
   }
 
-  const currentType = mealPlanTypes.find((t) => t.value === typeFilter) || mealPlanTypes[0]
+  const currentGoal = mealPlanGoals.find((g) => g.value === goalFilter) || mealPlanGoals[0]
 
   return (
     <div className="min-h-screen">
@@ -86,15 +88,15 @@ export default function MealPlansPage() {
                   <span className="font-medium">{mealPlansData?.total || 0}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Published:</span>
+                  <span className="text-muted-foreground">Public:</span>
                   <span className="font-medium">
-                    {mealPlans.filter((p) => p.isPublished).length}
+                    {mealPlans.filter((p) => p.isPublic).length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Drafts:</span>
+                  <span className="text-muted-foreground">Private:</span>
                   <span className="font-medium">
-                    {mealPlans.filter((p) => !p.isPublished).length}
+                    {mealPlans.filter((p) => !p.isPublic).length}
                   </span>
                 </div>
               </div>
@@ -126,45 +128,45 @@ export default function MealPlansPage() {
             />
           </div>
 
-          {/* Type filter */}
+          {/* Goal filter */}
           <div className="relative">
             <Button
               variant="outline"
-              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+              onClick={() => setShowGoalDropdown(!showGoalDropdown)}
               className="h-11 min-w-[140px] justify-between gap-2"
             >
               <span className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                {currentType.label}
+                {currentGoal.label}
               </span>
               <ChevronDown
                 className={cn(
                   'h-4 w-4 transition-transform',
-                  showTypeDropdown && 'rotate-180'
+                  showGoalDropdown && 'rotate-180'
                 )}
               />
             </Button>
 
-            {showTypeDropdown && (
+            {showGoalDropdown && (
               <>
                 <div
                   className="fixed inset-0 z-40"
-                  onClick={() => setShowTypeDropdown(false)}
+                  onClick={() => setShowGoalDropdown(false)}
                 />
                 <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-lg">
-                  {mealPlanTypes.map((type) => (
+                  {mealPlanGoals.map((goal) => (
                     <button
-                      key={type.value}
+                      key={goal.value}
                       onClick={() => {
-                        setTypeFilter(type.value)
-                        setShowTypeDropdown(false)
+                        setGoalFilter(goal.value)
+                        setShowGoalDropdown(false)
                       }}
                       className={cn(
                         'flex w-full items-center px-3 py-2 text-sm hover:bg-muted',
-                        typeFilter === type.value && 'bg-muted'
+                        goalFilter === goal.value && 'bg-muted'
                       )}
                     >
-                      {type.label}
+                      {goal.label}
                     </button>
                   ))}
                 </div>
@@ -174,14 +176,14 @@ export default function MealPlansPage() {
         </div>
 
         {/* Active filters */}
-        {typeFilter !== 'all' && (
+        {goalFilter !== 'all' && (
           <div className="mb-4 flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Filters:</span>
             <button
-              onClick={() => setTypeFilter('all')}
+              onClick={() => setGoalFilter('all')}
               className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs hover:bg-muted/80"
             >
-              {currentType.label}
+              {currentGoal.label}
               <span className="text-muted-foreground">×</span>
             </button>
           </div>
@@ -212,16 +214,16 @@ export default function MealPlansPage() {
               <UtensilsCrossed className="h-8 w-8 text-muted-foreground" />
             </div>
             <h3 className="mb-2 text-lg font-medium">
-              {search || typeFilter !== 'all'
+              {search || goalFilter !== 'all'
                 ? 'No matching meal plans'
                 : 'No meal plans yet'}
             </h3>
             <p className="mb-6 max-w-sm text-center text-sm text-muted-foreground">
-              {search || typeFilter !== 'all'
+              {search || goalFilter !== 'all'
                 ? 'Try adjusting your filters or search term.'
                 : 'Create your first meal plan to provide nutritional guidance for your clients.'}
             </p>
-            {!search && typeFilter === 'all' && (
+            {!search && goalFilter === 'all' && (
               <Link href="/meal-plans/new">
                 <Button className="group relative overflow-hidden bg-foreground text-background hover:bg-foreground/90">
                   <Plus className="mr-2 h-4 w-4" />

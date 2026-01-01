@@ -17,6 +17,7 @@ import { TopBar } from '@/components/dashboard/top-bar'
 import { ClientStatusBadge } from '@/components/clients/client-status-badge'
 import { useClient } from '@/hooks/use-clients'
 import { cn } from '@/lib/utils'
+import { getClientDisplayName, getClientInitials } from '@/types'
 
 const tabs = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, href: '' },
@@ -77,15 +78,14 @@ export default function ClientDetailLayout({
             <div className="flex items-center gap-4">
               {/* Avatar */}
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-foreground to-foreground/80 text-lg font-semibold text-background ring-4 ring-background">
-                {client.firstName?.[0] || ''}
-                {client.lastName?.[0] || ''}
+                {getClientInitials(client)}
               </div>
 
               {/* Name and details */}
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-xl font-semibold">
-                    {client.firstName} {client.lastName}
+                    {getClientDisplayName(client)}
                   </h1>
                   <ClientStatusBadge status={client.status} />
                 </div>

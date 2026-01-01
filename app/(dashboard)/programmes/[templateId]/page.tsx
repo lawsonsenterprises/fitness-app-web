@@ -1,25 +1,35 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
   Calendar,
-  Users,
+  Layers,
   Pencil,
   Copy,
   Trash2,
-  CheckCircle2,
-  Clock,
   Play,
+  Globe,
+  Lock,
+  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { TopBar } from '@/components/dashboard/top-bar'
 import { Button } from '@/components/ui/button'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { ProgrammeTypeBadge, DifficultyBadge } from '@/components/programmes/programme-type-badge'
-import { useProgramme, useDuplicateProgramme, useDeleteProgramme, useUpdateProgramme } from '@/hooks/use-programmes'
-import { cn } from '@/lib/utils'
+import { useProgramme, useDuplicateProgramme, useDeleteProgramme, useUpdateProgrammeTemplate } from '@/hooks/use-programmes'
+import type { TrainingDay, ProgrammeExercise } from '@/types'
+
+// Parse training days from content JSON
+function getTrainingDays(content: Record<string, unknown>): TrainingDay[] {
+  if (!content || typeof content !== 'object') return []
+  const trainingDays = content.trainingDays as TrainingDay[] | undefined
+  return trainingDays ?? []
+}
 
 export default function ProgrammeDetailPage() {
   const params = useParams()
@@ -29,7 +39,9 @@ export default function ProgrammeDetailPage() {
   const { data: programme, isLoading } = useProgramme(templateId)
   const duplicateProgramme = useDuplicateProgramme()
   const deleteProgramme = useDeleteProgramme()
-  const updateProgramme = useUpdateProgramme()
+  const updateProgramme = useUpdateProgrammeTemplate()
+
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const handleDuplicate = async () => {
     try {
@@ -42,9 +54,6 @@ export default function ProgrammeDetailPage() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this programme? This action cannot be undone.')) {
-      return
-    }
     try {
       await deleteProgramme.mutateAsync(templateId)
       toast.success('Programme deleted')
@@ -54,13 +63,13 @@ export default function ProgrammeDetailPage() {
     }
   }
 
-  const handlePublish = async () => {
+  const handleTogglePublic = async () => {
     try {
       await updateProgramme.mutateAsync({
-        programmeId: templateId,
-        isPublished: !programme?.isPublished,
+        templateId,
+        isPublic: !programme?.isPublic,
       })
-      toast.success(programme?.isPublished ? 'Programme unpublished' : 'Programme published')
+      toast.success(programme?.isPublic ? 'Programme made private' : 'Programme made public')
     } catch {
       toast.error('Failed to update programme')
     }
@@ -94,6 +103,8 @@ export default function ProgrammeDetailPage() {
     )
   }
 
+  const trainingDays = getTrainingDays(programme.content)
+
   return (
     <div className="min-h-screen">
       <TopBar title={programme.name} />
@@ -116,15 +127,15 @@ export default function ProgrammeDetailPage() {
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <ProgrammeTypeBadge type={programme.type} />
                 <DifficultyBadge difficulty={programme.difficulty} />
-                {programme.isPublished ? (
+                {programme.isPublic ? (
                   <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-600">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Published
+                    <Globe className="h-3 w-3" />
+                    Public
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    Draft
+                    <Lock className="h-3 w-3" />
+                    Private
                   </span>
                 )}
               </div>
@@ -141,12 +152,8 @@ export default function ProgrammeDetailPage() {
                   <span>{programme.durationWeeks} weeks</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>
-                    {programme.timesAssigned === 0
-                      ? 'Not yet assigned'
-                      : `Assigned ${programme.timesAssigned} time${programme.timesAssigned === 1 ? '' : 's'}`}
-                  </span>
+                  <Layers className="h-4 w-4" />
+                  <span>{programme.daysPerWeek} days/week</span>
                 </div>
                 <div>
                   <span>Last updated </span>
@@ -179,14 +186,14 @@ export default function ProgrammeDetailPage() {
               </Button>
               <Button
                 variant="outline"
-                onClick={handlePublish}
+                onClick={handleTogglePublic}
                 disabled={updateProgramme.isPending}
               >
-                {programme.isPublished ? 'Unpublish' : 'Publish'}
+                {programme.isPublic ? 'Make Private' : 'Make Public'}
               </Button>
               <Button
                 variant="outline"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteDialog(true)}
                 className="gap-2 text-red-600 hover:bg-red-500/10 hover:text-red-600"
               >
                 <Trash2 className="h-4 w-4" />
@@ -196,13 +203,24 @@ export default function ProgrammeDetailPage() {
           </div>
         </div>
 
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={handleDelete}
+          title="Delete Programme"
+          description={`Are you sure you want to delete "${programme.name}"? This will permanently remove the template. Any active client assignments will not be affected.`}
+          confirmLabel="Delete"
+          variant="destructive"
+        />
+
         {/* Training days */}
         <div className="space-y-6">
           <h2 className="text-lg font-semibold">Training Schedule</h2>
 
-          {programme.trainingDays && programme.trainingDays.length > 0 ? (
+          {trainingDays.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {programme.trainingDays.map((day) => (
+              {trainingDays.map((day: TrainingDay) => (
                 <div
                   key={day.id}
                   className="rounded-xl border border-border bg-card p-5"
@@ -210,19 +228,15 @@ export default function ProgrammeDetailPage() {
                   <div className="mb-4 flex items-center justify-between">
                     <h3 className="font-semibold">{day.name}</h3>
                     <span className="rounded-full bg-muted px-2 py-1 text-xs capitalize">
-                      {day.dayType.replace('_', ' ')}
+                      {day.type?.replace('_', ' ') || 'Training'}
                     </span>
                   </div>
 
                   <div className="space-y-2">
-                    {day.exercises.map((exercise, index) => (
+                    {day.exercises?.map((exercise: ProgrammeExercise, index: number) => (
                       <div
-                        key={exercise.id}
-                        className={cn(
-                          'flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-sm',
-                          index === 0 && 'rounded-t-lg',
-                          index === day.exercises.length - 1 && 'rounded-b-lg'
-                        )}
+                        key={exercise.id || index}
+                        className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-sm"
                       >
                         <span className="font-medium">{exercise.exerciseName}</span>
                         <span className="text-muted-foreground">

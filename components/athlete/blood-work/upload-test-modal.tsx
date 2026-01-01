@@ -54,31 +54,19 @@ export function UploadTestModal({ isOpen, onClose, onComplete }: UploadTestModal
     setIsExtracting(true)
     setExtractionError(null)
 
-    // Simulate PDF parsing and marker extraction
-    // In production, this would call an API endpoint
+    // PDF marker extraction is coming soon
+    // When implemented, this will call an API endpoint to parse the PDF
+    // and extract blood markers using OCR/AI
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 1000))
 
-      // Mock extracted markers
-      const mockMarkers: ExtractedMarker[] = [
-        { name: 'Total Testosterone', value: 650, unit: 'ng/dL', referenceRange: { min: 300, max: 1000 }, confidence: 0.95, selected: true },
-        { name: 'Free Testosterone', value: 15.2, unit: 'pg/mL', referenceRange: { min: 8.7, max: 25.1 }, confidence: 0.92, selected: true },
-        { name: 'Estradiol', value: 28, unit: 'pg/mL', referenceRange: { min: 10, max: 40 }, confidence: 0.88, selected: true },
-        { name: 'SHBG', value: 42, unit: 'nmol/L', referenceRange: { min: 18, max: 54 }, confidence: 0.91, selected: true },
-        { name: 'LH', value: 5.2, unit: 'mIU/mL', referenceRange: { min: 1.7, max: 8.6 }, confidence: 0.87, selected: true },
-        { name: 'FSH', value: 4.8, unit: 'mIU/mL', referenceRange: { min: 1.5, max: 12.4 }, confidence: 0.89, selected: true },
-        { name: 'TSH', value: 2.1, unit: 'mIU/L', referenceRange: { min: 0.4, max: 4.0 }, confidence: 0.94, selected: true },
-        { name: 'Free T4', value: 1.2, unit: 'ng/dL', referenceRange: { min: 0.8, max: 1.8 }, confidence: 0.90, selected: true },
-        { name: 'Vitamin D', value: 45, unit: 'ng/mL', referenceRange: { min: 30, max: 100 }, confidence: 0.93, selected: true },
-        { name: 'Ferritin', value: 125, unit: 'ng/mL', referenceRange: { min: 30, max: 300 }, confidence: 0.86, selected: true },
-        { name: 'Haemoglobin', value: 15.2, unit: 'g/dL', referenceRange: { min: 13.5, max: 17.5 }, confidence: 0.97, selected: true },
-        { name: 'HbA1c', value: 5.1, unit: '%', referenceRange: { min: 4.0, max: 5.6 }, confidence: 0.95, selected: true },
-      ]
-
-      setExtractedMarkers(mockMarkers)
-      setStep('review')
-    } catch (error) {
-      setExtractionError('Failed to extract markers from PDF. Please try again.')
+      // PDF extraction is not yet implemented - show message to enter markers manually
+      setExtractionError(
+        'Automatic PDF extraction is coming soon. For now, please enter your blood markers manually on the Blood Work page.'
+      )
+      setExtractedMarkers([])
+    } catch {
+      setExtractionError('Failed to process PDF. Please try again.')
     } finally {
       setIsExtracting(false)
     }

@@ -17,27 +17,32 @@ import { Input } from '@/components/ui/input'
 import { ProgrammeTemplateCard } from '@/components/programmes/programme-template-card'
 import { useProgrammes, useDuplicateProgramme, useDeleteProgramme } from '@/hooks/use-programmes'
 import { cn } from '@/lib/utils'
+import type { ProgrammeType, ProgrammeDifficulty } from '@/types'
 
-const programmeTypes: { value: string; label: string }[] = [
+const programmeTypes: { value: ProgrammeType | 'all'; label: string }[] = [
   { value: 'all', label: 'All Types' },
-  { value: 'hypertrophy', label: 'Hypertrophy' },
   { value: 'strength', label: 'Strength' },
-  { value: 'powerlifting', label: 'Powerlifting' },
-  { value: 'conditioning', label: 'Conditioning' },
-  { value: 'mobility', label: 'Mobility' },
+  { value: 'hypertrophy', label: 'Hypertrophy' },
+  { value: 'endurance', label: 'Endurance' },
+  { value: 'weight_loss', label: 'Weight Loss' },
+  { value: 'sport_specific', label: 'Sport Specific' },
+  { value: 'rehabilitation', label: 'Rehabilitation' },
+  { value: 'general_fitness', label: 'General Fitness' },
+  { value: 'custom', label: 'Custom' },
 ]
 
-const difficultyLevels: { value: string; label: string }[] = [
+const difficultyLevels: { value: ProgrammeDifficulty | 'all'; label: string }[] = [
   { value: 'all', label: 'All Levels' },
   { value: 'beginner', label: 'Beginner' },
   { value: 'intermediate', label: 'Intermediate' },
   { value: 'advanced', label: 'Advanced' },
+  { value: 'elite', label: 'Elite' },
 ]
 
 export default function ProgrammesPage() {
   const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [difficultyFilter, setDifficultyFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState<ProgrammeType | 'all'>('all')
+  const [difficultyFilter, setDifficultyFilter] = useState<ProgrammeDifficulty | 'all'>('all')
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [showDifficultyDropdown, setShowDifficultyDropdown] = useState(false)
 
@@ -98,15 +103,15 @@ export default function ProgrammesPage() {
                   <span className="font-medium">{programmesData?.total || 0}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Published:</span>
+                  <span className="text-muted-foreground">Public:</span>
                   <span className="font-medium">
-                    {programmes.filter((p) => p.isPublished).length}
+                    {programmes.filter((p) => p.isPublic).length}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Drafts:</span>
+                  <span className="text-muted-foreground">Private:</span>
                   <span className="font-medium">
-                    {programmes.filter((p) => !p.isPublished).length}
+                    {programmes.filter((p) => !p.isPublic).length}
                   </span>
                 </div>
               </div>

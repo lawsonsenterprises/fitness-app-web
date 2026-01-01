@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import {
-  Users,
   MoreVertical,
   Eye,
   Pencil,
@@ -11,16 +10,19 @@ import {
   CheckCircle2,
   Clock,
   Flame,
+  Target,
+  Globe,
+  Lock,
 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { MealPlanTypeBadge } from './meal-plan-type-badge'
+import { MealPlanGoalBadge } from './meal-plan-type-badge'
 import { cn } from '@/lib/utils'
-import type { MealPlan } from '@/types'
+import type { MealPlanTemplate } from '@/types'
 
 interface MealPlanTemplateCardProps {
-  mealPlan: MealPlan
+  mealPlan: MealPlanTemplate
   onDuplicate?: (id: string) => void
   onDelete?: (id: string) => void
 }
@@ -45,16 +47,16 @@ export function MealPlanTemplateCard({
       {/* Header */}
       <div className="mb-3 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <MealPlanTypeBadge type={mealPlan.type} size="sm" />
-          {mealPlan.isPublished ? (
+          <MealPlanGoalBadge goal={mealPlan.goal} size="sm" />
+          {mealPlan.isPublic ? (
             <span className="flex items-center gap-1 text-xs text-emerald-600">
-              <CheckCircle2 className="h-3 w-3" />
-              Published
+              <Globe className="h-3 w-3" />
+              Public
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              Draft
+              <Lock className="h-3 w-3" />
+              Private
             </span>
           )}
         </div>
@@ -132,41 +134,32 @@ export function MealPlanTemplateCard({
         )}
       </Link>
 
-      {/* Macro info */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg bg-muted/30 p-3">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Training Day
+      {/* Target macros */}
+      {(mealPlan.targetCalories || mealPlan.targetProtein || mealPlan.targetCarbs || mealPlan.targetFat) && (
+        <div className="mb-4 rounded-lg bg-muted/30 p-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Daily Targets
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 mb-1">
             <Flame className="h-4 w-4 text-amber-500" />
-            <span className="font-semibold">{mealPlan.trainingDayCalories}</span>
+            <span className="font-semibold">{mealPlan.targetCalories || '-'}</span>
             <span className="text-xs text-muted-foreground">kcal</span>
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            P:{mealPlan.trainingDayProtein}g C:{mealPlan.trainingDayCarbs}g F:{mealPlan.trainingDayFat}g
+          <div className="text-xs text-muted-foreground">
+            P:{mealPlan.targetProtein || 0}g C:{mealPlan.targetCarbs || 0}g F:{mealPlan.targetFat || 0}g
           </div>
         </div>
-        <div className="rounded-lg bg-muted/30 p-3">
-          <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Rest Day
-          </p>
-          <div className="flex items-center gap-1">
-            <Flame className="h-4 w-4 text-muted-foreground" />
-            <span className="font-semibold">{mealPlan.nonTrainingDayCalories}</span>
-            <span className="text-xs text-muted-foreground">kcal</span>
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            P:{mealPlan.nonTrainingDayProtein}g C:{mealPlan.nonTrainingDayCarbs}g F:{mealPlan.nonTrainingDayFat}g
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Metadata */}
       <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <span>{mealPlan.timesAssigned} assigned</span>
+        <div className="flex items-center gap-4 text-muted-foreground">
+          {mealPlan.durationWeeks && (
+            <div className="flex items-center gap-1.5">
+              <Target className="h-4 w-4" />
+              <span>{mealPlan.durationWeeks} weeks</span>
+            </div>
+          )}
         </div>
       </div>
 

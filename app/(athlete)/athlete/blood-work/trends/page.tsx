@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Loader2,
+  Activity,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -31,260 +33,151 @@ import {
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/contexts/auth-context'
+import { useBloodTests } from '@/hooks/athlete'
+import { createClient } from '@/lib/supabase/client'
+import { useQuery } from '@tanstack/react-query'
 
-// Comprehensive marker data with historical values
-const allMarkers = [
-  {
-    id: 'testosterone',
-    name: 'Testosterone',
-    category: 'Hormones',
-    unit: 'nmol/L',
-    reference: { low: 8.64, high: 29 },
-    optimal: { low: 15, high: 25 },
-    color: '#22c55e',
-    data: [
-      { date: 'Jan 24', value: 18.5 },
-      { date: 'Mar 24', value: 19.2 },
-      { date: 'Jun 24', value: 20.1 },
-      { date: 'Sep 24', value: 21.2 },
-      { date: 'Dec 24', value: 22.5 },
-    ],
-  },
-  {
-    id: 'freeTestosterone',
-    name: 'Free Testosterone',
-    category: 'Hormones',
-    unit: 'nmol/L',
-    reference: { low: 0.2, high: 0.62 },
-    optimal: { low: 0.3, high: 0.5 },
-    color: '#10b981',
-    data: [
-      { date: 'Jan 24', value: 0.35 },
-      { date: 'Mar 24', value: 0.38 },
-      { date: 'Jun 24', value: 0.4 },
-      { date: 'Sep 24', value: 0.41 },
-      { date: 'Dec 24', value: 0.42 },
-    ],
-  },
-  {
-    id: 'shbg',
-    name: 'SHBG',
-    category: 'Hormones',
-    unit: 'nmol/L',
-    reference: { low: 18.3, high: 54.1 },
-    optimal: { low: 20, high: 40 },
-    color: '#14b8a6',
-    data: [
-      { date: 'Jan 24', value: 32 },
-      { date: 'Mar 24', value: 34 },
-      { date: 'Jun 24', value: 35 },
-      { date: 'Sep 24', value: 33 },
-      { date: 'Dec 24', value: 35 },
-    ],
-  },
-  {
-    id: 'vitaminD',
-    name: 'Vitamin D',
-    category: 'Vitamins & Minerals',
-    unit: 'nmol/L',
-    reference: { low: 50, high: 175 },
-    optimal: { low: 100, high: 150 },
-    color: '#f59e0b',
-    data: [
-      { date: 'Jan 24', value: 45 },
-      { date: 'Mar 24', value: 62 },
-      { date: 'Jun 24', value: 95 },
-      { date: 'Sep 24', value: 78 },
-      { date: 'Dec 24', value: 65 },
-    ],
-  },
-  {
-    id: 'ferritin',
-    name: 'Ferritin',
-    category: 'Vitamins & Minerals',
-    unit: 'ug/L',
-    reference: { low: 30, high: 400 },
-    optimal: { low: 100, high: 150 },
-    color: '#8b5cf6',
-    data: [
-      { date: 'Jan 24', value: 65 },
-      { date: 'Mar 24', value: 72 },
-      { date: 'Jun 24', value: 85 },
-      { date: 'Sep 24', value: 92 },
-      { date: 'Dec 24', value: 95 },
-    ],
-  },
-  {
-    id: 'tsh',
-    name: 'TSH',
-    category: 'Thyroid',
-    unit: 'mU/L',
-    reference: { low: 0.27, high: 4.2 },
-    optimal: { low: 0.5, high: 2.5 },
-    color: '#3b82f6',
-    data: [
-      { date: 'Jan 24', value: 1.6 },
-      { date: 'Mar 24', value: 1.8 },
-      { date: 'Jun 24', value: 1.7 },
-      { date: 'Sep 24', value: 1.9 },
-      { date: 'Dec 24', value: 1.8 },
-    ],
-  },
-  {
-    id: 'freeT4',
-    name: 'Free T4',
-    category: 'Thyroid',
-    unit: 'pmol/L',
-    reference: { low: 12, high: 22 },
-    optimal: { low: 14, high: 18 },
-    color: '#6366f1',
-    data: [
-      { date: 'Jan 24', value: 15.2 },
-      { date: 'Mar 24', value: 15.8 },
-      { date: 'Jun 24', value: 16.1 },
-      { date: 'Sep 24', value: 16.0 },
-      { date: 'Dec 24', value: 16.2 },
-    ],
-  },
-  {
-    id: 'freeT3',
-    name: 'Free T3',
-    category: 'Thyroid',
-    unit: 'pmol/L',
-    reference: { low: 3.1, high: 6.8 },
-    optimal: { low: 4.5, high: 6.0 },
-    color: '#a855f7',
-    data: [
-      { date: 'Jan 24', value: 4.5 },
-      { date: 'Mar 24', value: 4.6 },
-      { date: 'Jun 24', value: 4.8 },
-      { date: 'Sep 24', value: 4.7 },
-      { date: 'Dec 24', value: 4.8 },
-    ],
-  },
-  {
-    id: 'totalCholesterol',
-    name: 'Total Cholesterol',
-    category: 'Lipid Panel',
-    unit: 'mmol/L',
-    reference: { low: 0, high: 5 },
-    optimal: { low: 3.5, high: 4.5 },
-    color: '#ef4444',
-    data: [
-      { date: 'Jan 24', value: 5.2 },
-      { date: 'Mar 24', value: 5.0 },
-      { date: 'Jun 24', value: 4.8 },
-      { date: 'Sep 24', value: 4.7 },
-      { date: 'Dec 24', value: 4.8 },
-    ],
-  },
-  {
-    id: 'ldl',
-    name: 'LDL Cholesterol',
-    category: 'Lipid Panel',
-    unit: 'mmol/L',
-    reference: { low: 0, high: 3 },
-    optimal: { low: 0, high: 2.5 },
-    color: '#f97316',
-    data: [
-      { date: 'Jan 24', value: 3.2 },
-      { date: 'Mar 24', value: 3.0 },
-      { date: 'Jun 24', value: 2.9 },
-      { date: 'Sep 24', value: 2.8 },
-      { date: 'Dec 24', value: 2.9 },
-    ],
-  },
-  {
-    id: 'hdl',
-    name: 'HDL Cholesterol',
-    category: 'Lipid Panel',
-    unit: 'mmol/L',
-    reference: { low: 1.0, high: 10 },
-    optimal: { low: 1.5, high: 2.5 },
-    color: '#84cc16',
-    data: [
-      { date: 'Jan 24', value: 1.3 },
-      { date: 'Mar 24', value: 1.4 },
-      { date: 'Jun 24', value: 1.5 },
-      { date: 'Sep 24', value: 1.5 },
-      { date: 'Dec 24', value: 1.6 },
-    ],
-  },
-  {
-    id: 'hba1c',
-    name: 'HbA1c',
-    category: 'Blood Count',
-    unit: 'mmol/mol',
-    reference: { low: 20, high: 42 },
-    optimal: { low: 20, high: 36 },
-    color: '#ec4899',
-    data: [
-      { date: 'Jan 24', value: 34 },
-      { date: 'Mar 24', value: 33 },
-      { date: 'Jun 24', value: 32 },
-      { date: 'Sep 24', value: 32 },
-      { date: 'Dec 24', value: 32 },
-    ],
-  },
-]
+// Hook to fetch all blood markers with their historical data
+function useAllBloodMarkersWithHistory(athleteId?: string) {
+  return useQuery({
+    queryKey: ['blood-markers-history', athleteId],
+    queryFn: async () => {
+      if (!athleteId) return []
 
-const suggestedComparisons = [
-  {
-    name: 'Testosterone Panel',
-    markers: ['testosterone', 'freeTestosterone', 'shbg'],
-    description: 'Compare total and free testosterone with SHBG',
-  },
-  {
-    name: 'Lipid Panel',
-    markers: ['totalCholesterol', 'ldl', 'hdl'],
-    description: 'Track cholesterol markers together',
-  },
-  {
-    name: 'Thyroid Function',
-    markers: ['tsh', 'freeT4', 'freeT3'],
-    description: 'Complete thyroid hormone overview',
-  },
-  {
-    name: 'Key Vitamins',
-    markers: ['vitaminD', 'ferritin'],
-    description: 'Essential vitamin and mineral levels',
-  },
-]
+      const supabase = createClient()
+
+      // Get all blood panels for this user with their markers
+      const { data: panels, error } = await supabase
+        .from('blood_panels')
+        .select('id, date, blood_markers(*)')
+        .eq('user_id', athleteId)
+        .order('date', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching blood markers history:', error)
+        return []
+      }
+
+      // Group markers by their code with historical values
+      const markerMap = new Map<string, {
+        id: string
+        code: string
+        name: string
+        category: string
+        unit: string
+        reference_low: number | null
+        reference_high: number | null
+        color: string
+        data: Array<{ date: string; value: number }>
+      }>()
+
+      // Color palette for markers
+      const colors = [
+        '#22c55e', '#10b981', '#14b8a6', '#f59e0b', '#8b5cf6',
+        '#3b82f6', '#6366f1', '#a855f7', '#ef4444', '#f97316',
+        '#84cc16', '#ec4899', '#06b6d4', '#0ea5e9',
+      ]
+      let colorIndex = 0
+
+      panels?.forEach((panel: {
+        id: string
+        date: string | null
+        blood_markers: Array<{
+          id: string
+          code: string
+          name: string
+          category: string | null
+          unit: string
+          value: number
+          reference_low: number | null
+          reference_high: number | null
+        }> | null
+      }) => {
+        const dateStr = panel.date
+          ? new Date(panel.date).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
+          : 'Unknown'
+
+        panel.blood_markers?.forEach((marker: {
+          id: string
+          code: string
+          name: string
+          category: string | null
+          unit: string
+          value: number
+          reference_low: number | null
+          reference_high: number | null
+        }) => {
+          if (!markerMap.has(marker.code)) {
+            markerMap.set(marker.code, {
+              id: marker.code,
+              code: marker.code,
+              name: marker.name,
+              category: marker.category || 'Other',
+              unit: marker.unit,
+              reference_low: marker.reference_low,
+              reference_high: marker.reference_high,
+              color: colors[colorIndex % colors.length],
+              data: [],
+            })
+            colorIndex++
+          }
+
+          const existing = markerMap.get(marker.code)!
+          existing.data.push({
+            date: dateStr,
+            value: marker.value,
+          })
+        })
+      })
+
+      return Array.from(markerMap.values())
+    },
+    enabled: !!athleteId,
+  })
+}
 
 const dateRanges = [
   { id: '6m', label: '6 Months' },
   { id: '1y', label: '1 Year' },
   { id: 'all', label: 'All Time' },
-  { id: 'custom', label: 'Custom' },
 ]
 
 export default function BloodWorkTrendsPage() {
-  const [selectedMarkers, setSelectedMarkers] = useState<string[]>(['testosterone', 'vitaminD'])
+  const { user, isLoading: authLoading } = useAuth()
+  const [selectedMarkers, setSelectedMarkers] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [dateRange, setDateRange] = useState('1y')
   const [showOptimalRange, setShowOptimalRange] = useState(true)
 
+  const { data: markers = [], isLoading: markersLoading } = useAllBloodMarkersWithHistory(user?.id)
+
+  const isLoading = authLoading || (user && markersLoading)
+
+  // Group markers by category
   const categories = useMemo(() => {
-    const cats = new Map<string, typeof allMarkers>()
-    allMarkers.forEach((marker) => {
+    const cats = new Map<string, typeof markers>()
+    markers.forEach((marker) => {
       const existing = cats.get(marker.category) || []
       cats.set(marker.category, [...existing, marker])
     })
     return cats
-  }, [])
+  }, [markers])
 
+  // Filter markers by search query
   const filteredMarkers = useMemo(() => {
-    if (!searchQuery) return allMarkers
-    return allMarkers.filter(
+    if (!searchQuery) return markers
+    return markers.filter(
       (m) =>
         m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.category.toLowerCase().includes(searchQuery.toLowerCase())
     )
-  }, [searchQuery])
+  }, [markers, searchQuery])
 
+  // Get selected markers data
   const selectedMarkersData = useMemo(() => {
-    return allMarkers.filter((m) => selectedMarkers.includes(m.id))
-  }, [selectedMarkers])
+    return markers.filter((m) => selectedMarkers.includes(m.id))
+  }, [markers, selectedMarkers])
 
   // Combine data for chart
   const chartData = useMemo(() => {
@@ -295,15 +188,7 @@ export default function BloodWorkTrendsPage() {
       marker.data.forEach((d) => allDates.add(d.date))
     })
 
-    const dates = Array.from(allDates).sort((a, b) => {
-      const [monthA, yearA] = a.split(' ')
-      const [monthB, yearB] = b.split(' ')
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-      return (
-        parseInt(yearA) - parseInt(yearB) ||
-        months.indexOf(monthA) - months.indexOf(monthB)
-      )
-    })
+    const dates = Array.from(allDates)
 
     return dates.map((date) => {
       const point: { date: string; [key: string]: number | string } = { date }
@@ -325,11 +210,7 @@ export default function BloodWorkTrendsPage() {
     }
   }
 
-  const applySuggestedComparison = (markers: string[]) => {
-    setSelectedMarkers(markers)
-  }
-
-  const getTrend = (marker: typeof allMarkers[0]) => {
+  const getTrend = (marker: typeof markers[0]) => {
     const data = marker.data
     if (data.length < 2) return 'stable'
     const latest = data[data.length - 1].value
@@ -340,12 +221,58 @@ export default function BloodWorkTrendsPage() {
     return 'stable'
   }
 
-  const getStatus = (marker: typeof allMarkers[0]) => {
-    const latest = marker.data[marker.data.length - 1].value
-    if (latest < marker.reference.low) return 'low'
-    if (latest > marker.reference.high) return 'high'
-    if (latest >= marker.optimal.low && latest <= marker.optimal.high) return 'optimal'
-    return 'normal'
+  const getStatus = (marker: typeof markers[0]) => {
+    if (!marker.reference_low || !marker.reference_high) return 'normal'
+    const latest = marker.data[marker.data.length - 1]?.value || 0
+    if (latest < marker.reference_low) return 'low'
+    if (latest > marker.reference_high) return 'high'
+    return 'optimal'
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  // Show empty state if no markers data
+  if (markers.length === 0) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div>
+          <Link
+            href="/athlete/blood-work"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back to Blood Work
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Marker Trends</h1>
+          <p className="mt-1 text-muted-foreground">
+            Compare multiple biomarkers over time
+          </p>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-12 rounded-xl border border-border bg-card p-12 text-center"
+        >
+          <Activity className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">No Blood Work Data</h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+            Upload blood work results to track and compare your biomarkers over time.
+          </p>
+          <Button asChild>
+            <Link href="/athlete/blood-work">
+              Go to Blood Work
+            </Link>
+          </Button>
+        </motion.div>
+      </div>
+    )
   }
 
   return (
@@ -380,32 +307,10 @@ export default function BloodWorkTrendsPage() {
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Left Sidebar - Marker Selection */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-6">
-          {/* Suggested Comparisons */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="rounded-xl border border-border bg-card p-4"
-          >
-            <h3 className="text-sm font-semibold mb-3">Quick Comparisons</h3>
-            <div className="space-y-2">
-              {suggestedComparisons.map((comparison) => (
-                <button
-                  key={comparison.name}
-                  onClick={() => applySuggestedComparison(comparison.markers)}
-                  className="w-full text-left rounded-lg bg-muted/50 p-3 hover:bg-muted transition-colors"
-                >
-                  <p className="font-medium text-sm">{comparison.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{comparison.description}</p>
-                </button>
-              ))}
-            </div>
-          </motion.div>
-
           {/* Marker Search & Selection */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
             className="rounded-xl border border-border bg-card p-4"
           >
             <div className="flex items-center justify-between mb-3">
@@ -424,8 +329,8 @@ export default function BloodWorkTrendsPage() {
             </div>
 
             <div className="max-h-[400px] overflow-y-auto space-y-4">
-              {Array.from(categories.entries()).map(([category, markers]) => {
-                const filtered = markers.filter((m) =>
+              {Array.from(categories.entries()).map(([category, categoryMarkers]) => {
+                const filtered = categoryMarkers.filter((m) =>
                   filteredMarkers.some((f) => f.id === m.id)
                 )
                 if (filtered.length === 0) return null
@@ -571,7 +476,7 @@ export default function BloodWorkTrendsPage() {
               className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
               {selectedMarkersData.map((marker) => {
-                const latestValue = marker.data[marker.data.length - 1].value
+                const latestValue = marker.data[marker.data.length - 1]?.value || 0
                 const previousValue = marker.data[marker.data.length - 2]?.value
                 const trend = getTrend(marker)
                 const status = getStatus(marker)
@@ -643,12 +548,14 @@ export default function BloodWorkTrendsPage() {
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between text-muted-foreground mt-1">
-                        <span>Optimal</span>
-                        <span className="font-medium text-foreground">
-                          {marker.optimal.low} - {marker.optimal.high}
-                        </span>
-                      </div>
+                      {marker.reference_low !== null && marker.reference_high !== null && (
+                        <div className="flex justify-between text-muted-foreground mt-1">
+                          <span>Reference</span>
+                          <span className="font-medium text-foreground">
+                            {marker.reference_low} - {marker.reference_high}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )

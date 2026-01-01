@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import {
   Calendar,
-  Users,
   MoreVertical,
   Eye,
   Pencil,
@@ -11,16 +10,17 @@ import {
   Trash2,
   CheckCircle2,
   Clock,
+  Layers,
 } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { ProgrammeTypeBadge, DifficultyBadge } from './programme-type-badge'
 import { cn } from '@/lib/utils'
-import type { Programme } from '@/types'
+import type { ProgrammeTemplate } from '@/types'
 
 interface ProgrammeTemplateCardProps {
-  programme: Programme
+  programme: ProgrammeTemplate
   onDuplicate?: (id: string) => void
   onDelete?: (id: string) => void
 }
@@ -46,15 +46,15 @@ export function ProgrammeTemplateCard({
       <div className="mb-3 flex items-start justify-between">
         <div className="flex items-center gap-2">
           <ProgrammeTypeBadge type={programme.type} size="sm" />
-          {programme.isPublished ? (
+          {programme.isPublic ? (
             <span className="flex items-center gap-1 text-xs text-emerald-600">
               <CheckCircle2 className="h-3 w-3" />
-              Published
+              Public
             </span>
           ) : (
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              Draft
+              Private
             </span>
           )}
         </div>
@@ -140,8 +140,8 @@ export function ProgrammeTemplateCard({
             <span>{programme.durationWeeks} weeks</span>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>{programme.timesAssigned}</span>
+            <Layers className="h-4 w-4" />
+            <span>{programme.daysPerWeek} days/week</span>
           </div>
         </div>
         <DifficultyBadge difficulty={programme.difficulty} size="sm" />

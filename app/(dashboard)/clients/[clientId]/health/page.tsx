@@ -32,6 +32,7 @@ import {
   useClientStrainRecovery,
   useClientWorkoutStats,
   useClientActivityTrends,
+  useClientBloodWork,
 } from '@/hooks/coach'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import {
@@ -48,22 +49,6 @@ import {
 } from '@/components/shared/charts'
 import { cn } from '@/lib/utils'
 
-// Mock data for blood tests (to be replaced with real data in future)
-const mockBloodTests = [
-  {
-    id: '1',
-    date: '2024-12-15',
-    lab: 'Medichecks',
-    tags: ['Full Blood Count', 'Liver Function', 'Thyroid'],
-    markers: [
-      { name: 'Testosterone', value: 18.5, unit: 'nmol/L', status: 'normal', refLow: 8.6, refHigh: 29 },
-      { name: 'TSH', value: 2.1, unit: 'mIU/L', status: 'normal', refLow: 0.27, refHigh: 4.2 },
-      { name: 'Vitamin D', value: 85, unit: 'nmol/L', status: 'normal', refLow: 50, refHigh: 175 },
-      { name: 'Ferritin', value: 45, unit: 'ug/L', status: 'low', refLow: 30, refHigh: 400 },
-    ],
-  },
-]
-
 export default function ClientHealthPage() {
   const params = useParams()
   const clientId = params.clientId as string
@@ -76,6 +61,7 @@ export default function ClientHealthPage() {
   const { data: strainRecoveryResult } = useClientStrainRecovery(clientId, 7)
   const { data: workoutStats } = useClientWorkoutStats(clientId, 30)
   const { data: activityTrends } = useClientActivityTrends(clientId, 30)
+  const { data: bloodPanels, isLoading: bloodWorkLoading } = useClientBloodWork(clientId)
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'overview' | 'sleep' | 'recovery' | 'bloodwork'>('overview')
@@ -631,68 +617,85 @@ export default function ClientHealthPage() {
             exit={{ opacity: 0, y: -10 }}
             className="space-y-6"
           >
-            <div className="rounded-xl border border-border bg-card">
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <h3 className="font-semibold">Blood Work</h3>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Test
-                </Button>
+            {bloodWorkLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-              <div className="divide-y divide-border">
-                {mockBloodTests.map((test) => (
-                  <div key={test.id} className="p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">
-                          {new Date(test.date).toLocaleDateString('en-GB', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{test.lab}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        {test.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full bg-muted px-2 py-1 text-xs"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Markers grid */}
-                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                      {test.markers.map((marker) => (
-                        <div
-                          key={marker.name}
-                          className={cn(
-                            'rounded-lg border p-3',
-                            marker.status === 'normal'
-                              ? 'border-emerald-500/20 bg-emerald-500/5'
-                              : marker.status === 'low'
-                              ? 'border-amber-500/20 bg-amber-500/5'
-                              : 'border-red-500/20 bg-red-500/5'
+            ) : !bloodPanels || bloodPanels.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Droplets className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                <h3 className="text-lg font-medium">No Blood Work Data</h3>
+                <p className="text-muted-foreground mt-2 max-w-sm">
+                  This client hasn&apos;t uploaded any blood work results yet. Blood panels will appear here once they&apos;re added via the iOS app.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-border bg-card">
+                <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                  <h3 className="font-semibold">Blood Work</h3>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Test
+                  </Button>
+                </div>
+                <div className="divide-y divide-border">
+                  {bloodPanels.map((panel) => (
+                    <div key={panel.id} className="p-6">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {new Date(panel.date).toLocaleDateString('en-GB', {
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </p>
+                          {panel.labName && (
+                            <p className="text-sm text-muted-foreground">{panel.labName}</p>
                           )}
-                        >
-                          <p className="text-xs text-muted-foreground">{marker.name}</p>
-                          <p className="mt-1 text-lg font-semibold">
-                            {marker.value} {marker.unit}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Ref: {marker.refLow} - {marker.refHigh}
-                          </p>
                         </div>
-                      ))}
+                        {panel.notes && (
+                          <p className="text-sm text-muted-foreground max-w-xs truncate">
+                            {panel.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Markers grid */}
+                      {panel.markers.length > 0 ? (
+                        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                          {panel.markers.map((marker) => (
+                            <div
+                              key={marker.id}
+                              className={cn(
+                                'rounded-lg border p-3',
+                                marker.status === 'normal'
+                                  ? 'border-emerald-500/20 bg-emerald-500/5'
+                                  : marker.status === 'low'
+                                  ? 'border-amber-500/20 bg-amber-500/5'
+                                  : 'border-red-500/20 bg-red-500/5'
+                              )}
+                            >
+                              <p className="text-xs text-muted-foreground">{marker.name}</p>
+                              <p className="mt-1 text-lg font-semibold">
+                                {marker.value} {marker.unit}
+                              </p>
+                              {(marker.refLow != null || marker.refHigh != null) && (
+                                <p className="text-xs text-muted-foreground">
+                                  Ref: {marker.refLow ?? '—'} - {marker.refHigh ?? '—'}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No markers recorded for this panel.</p>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

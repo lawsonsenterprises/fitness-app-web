@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState, use, useMemo } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -14,6 +14,8 @@ import {
   FileText,
   Building2,
   MessageSquare,
+  Loader2,
+  Droplets,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -30,217 +32,92 @@ import {
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useBloodTest } from '@/hooks/athlete'
 
-// Mock detailed blood work data
-const mockBloodWorkDetail = {
-  id: '1',
-  date: '2024-12-15',
-  lab: 'Medichecks',
-  testName: 'Ultimate Performance Blood Test',
-  status: 'reviewed',
-  coachNotes: 'Good progress on testosterone. Continue with current supplement protocol. Consider increasing Vitamin D supplementation to 4000 IU daily during winter months.',
-  categories: [
-    {
-      name: 'Hormones',
-      markers: [
-        {
-          name: 'Testosterone',
-          value: 22.5,
-          unit: 'nmol/L',
-          reference: { low: 8.64, high: 29 },
-          optimal: { low: 15, high: 25 },
-          status: 'optimal',
-          trend: 'up',
-          history: [
-            { date: 'Jun 24', value: 20.1 },
-            { date: 'Sep 24', value: 21.2 },
-            { date: 'Dec 24', value: 22.5 },
-          ],
-        },
-        {
-          name: 'Free Testosterone',
-          value: 0.42,
-          unit: 'nmol/L',
-          reference: { low: 0.2, high: 0.62 },
-          optimal: { low: 0.3, high: 0.5 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 0.38 },
-            { date: 'Sep 24', value: 0.40 },
-            { date: 'Dec 24', value: 0.42 },
-          ],
-        },
-        {
-          name: 'SHBG',
-          value: 35,
-          unit: 'nmol/L',
-          reference: { low: 18, high: 54 },
-          optimal: { low: 25, high: 45 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 36 },
-            { date: 'Sep 24', value: 34 },
-            { date: 'Dec 24', value: 35 },
-          ],
-        },
-        {
-          name: 'Cortisol',
-          value: 380,
-          unit: 'nmol/L',
-          reference: { low: 166, high: 507 },
-          optimal: { low: 200, high: 400 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 395 },
-            { date: 'Sep 24', value: 385 },
-            { date: 'Dec 24', value: 380 },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'Vitamins & Minerals',
-      markers: [
-        {
-          name: 'Vitamin D',
-          value: 65,
-          unit: 'nmol/L',
-          reference: { low: 50, high: 175 },
-          optimal: { low: 100, high: 150 },
-          status: 'low',
-          trend: 'down',
-          history: [
-            { date: 'Jun 24', value: 95 },
-            { date: 'Sep 24', value: 78 },
-            { date: 'Dec 24', value: 65 },
-          ],
-          recommendation: 'Increase supplementation to 4000 IU daily. Consider vitamin D + K2 combo.',
-        },
-        {
-          name: 'Ferritin',
-          value: 95,
-          unit: 'ug/L',
-          reference: { low: 30, high: 400 },
-          optimal: { low: 100, high: 150 },
-          status: 'borderline',
-          trend: 'up',
-          history: [
-            { date: 'Jun 24', value: 72 },
-            { date: 'Sep 24', value: 85 },
-            { date: 'Dec 24', value: 95 },
-          ],
-        },
-        {
-          name: 'Vitamin B12',
-          value: 520,
-          unit: 'pmol/L',
-          reference: { low: 140, high: 724 },
-          optimal: { low: 400, high: 600 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 505 },
-            { date: 'Sep 24', value: 515 },
-            { date: 'Dec 24', value: 520 },
-          ],
-        },
-        {
-          name: 'Folate',
-          value: 18.5,
-          unit: 'ug/L',
-          reference: { low: 3.89, high: 26.8 },
-          optimal: { low: 10, high: 20 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 17.8 },
-            { date: 'Sep 24', value: 18.2 },
-            { date: 'Dec 24', value: 18.5 },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'Thyroid',
-      markers: [
-        {
-          name: 'TSH',
-          value: 1.8,
-          unit: 'mU/L',
-          reference: { low: 0.27, high: 4.2 },
-          optimal: { low: 0.5, high: 2.5 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 1.9 },
-            { date: 'Sep 24', value: 1.85 },
-            { date: 'Dec 24', value: 1.8 },
-          ],
-        },
-        {
-          name: 'Free T4',
-          value: 16.2,
-          unit: 'pmol/L',
-          reference: { low: 12, high: 22 },
-          optimal: { low: 14, high: 18 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 15.8 },
-            { date: 'Sep 24', value: 16.0 },
-            { date: 'Dec 24', value: 16.2 },
-          ],
-        },
-        {
-          name: 'Free T3',
-          value: 5.2,
-          unit: 'pmol/L',
-          reference: { low: 3.1, high: 6.8 },
-          optimal: { low: 4.5, high: 6 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 5.0 },
-            { date: 'Sep 24', value: 5.1 },
-            { date: 'Dec 24', value: 5.2 },
-          ],
-        },
-      ],
-    },
-    {
-      name: 'Metabolic',
-      markers: [
-        {
-          name: 'HbA1c',
-          value: 32,
-          unit: 'mmol/mol',
-          reference: { low: 20, high: 42 },
-          optimal: { low: 20, high: 36 },
-          status: 'optimal',
-          trend: 'stable',
-          history: [
-            { date: 'Jun 24', value: 33 },
-            { date: 'Sep 24', value: 32 },
-            { date: 'Dec 24', value: 32 },
-          ],
-        },
-      ],
-    },
-  ],
+// Helper to determine marker status based on value and reference ranges
+function getMarkerStatus(value: number, refLow: number | null, refHigh: number | null): 'optimal' | 'low' | 'high' | 'borderline' {
+  if (refLow === null || refHigh === null) return 'optimal'
+  if (value < refLow) return 'low'
+  if (value > refHigh) return 'high'
+  // Check if close to boundaries (within 10%)
+  const range = refHigh - refLow
+  if (value < refLow + range * 0.15 || value > refHigh - range * 0.15) return 'borderline'
+  return 'optimal'
+}
+
+// Group markers by category
+function groupMarkersByCategory(markers: Array<{
+  id: string
+  code: string
+  name: string
+  value: number
+  unit: string
+  reference_low: number | null
+  reference_high: number | null
+  category: string | null
+}>) {
+  const groups: Record<string, typeof markers> = {}
+  markers.forEach(marker => {
+    const category = marker.category || 'Other'
+    if (!groups[category]) groups[category] = []
+    groups[category].push(marker)
+  })
+  return Object.entries(groups).map(([name, markers]) => ({ name, markers }))
 }
 
 export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const _resolvedParams = use(params)
+  const resolvedParams = use(params)
   const [expandedMarker, setExpandedMarker] = useState<string | null>(null)
 
-  const totalMarkers = mockBloodWorkDetail.categories.reduce((acc, cat) => acc + cat.markers.length, 0)
-  const flaggedMarkers = mockBloodWorkDetail.categories.reduce(
-    (acc, cat) => acc + cat.markers.filter((m) => m.status !== 'optimal').length,
-    0
-  )
+  const { data: bloodTest, isLoading, error } = useBloodTest(resolvedParams.id)
+
+  // Process markers into categories
+  const categories = useMemo(() => {
+    if (!bloodTest?.blood_markers) return []
+    return groupMarkersByCategory(bloodTest.blood_markers)
+  }, [bloodTest])
+
+  // Calculate summary stats
+  const totalMarkers = bloodTest?.blood_markers?.length || 0
+  const flaggedMarkers = useMemo(() => {
+    if (!bloodTest?.blood_markers) return 0
+    return bloodTest.blood_markers.filter((m: { value: number; reference_low: number | null; reference_high: number | null }) => {
+      const status = getMarkerStatus(m.value, m.reference_low, m.reference_high)
+      return status !== 'optimal'
+    }).length
+  }, [bloodTest])
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (error || !bloodTest) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Link
+            href="/athlete/blood-work"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h1 className="text-2xl font-bold">Blood Work Results</h1>
+        </div>
+        <div className="flex flex-col items-center justify-center py-16">
+          <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+          <p className="text-muted-foreground">
+            {error ? 'Failed to load blood work data' : 'Blood work results not found'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const testDate = bloodTest.date ? new Date(bloodTest.date) : null
 
   return (
     <div className="p-6 lg:p-8">
@@ -255,19 +132,23 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
-              {new Date(mockBloodWorkDetail.date).toLocaleDateString('en-GB', {
+              {testDate ? testDate.toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
-              })}
+              }) : 'Blood Work Results'}
             </h1>
             <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-              <span className="flex items-center gap-1">
-                <Building2 className="h-4 w-4" />
-                {mockBloodWorkDetail.lab}
-              </span>
-              <span>•</span>
-              <span>{mockBloodWorkDetail.testName}</span>
+              {bloodTest.lab_name && (
+                <>
+                  <span className="flex items-center gap-1">
+                    <Building2 className="h-4 w-4" />
+                    {bloodTest.lab_name}
+                  </span>
+                  <span>•</span>
+                </>
+              )}
+              <span>{totalMarkers} markers tested</span>
             </div>
           </div>
         </div>
@@ -337,8 +218,8 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
         </motion.div>
       </div>
 
-      {/* Coach Notes */}
-      {mockBloodWorkDetail.coachNotes && (
+      {/* Notes */}
+      {bloodTest.notes && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -350,148 +231,140 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
               <MessageSquare className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-amber-600">Coach Notes</h3>
-              <p className="text-sm mt-1">{mockBloodWorkDetail.coachNotes}</p>
+              <h3 className="font-semibold text-amber-600">Notes</h3>
+              <p className="text-sm mt-1">{bloodTest.notes}</p>
             </div>
           </div>
         </motion.div>
       )}
 
       {/* Marker Categories */}
-      <div className="space-y-6">
-        {mockBloodWorkDetail.categories.map((category, categoryIdx) => (
-          <motion.div
-            key={category.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + categoryIdx * 0.1 }}
-            className="rounded-xl border border-border bg-card overflow-hidden"
-          >
-            <div className="p-4 border-b border-border bg-muted/30">
-              <h2 className="font-semibold">{category.name}</h2>
-            </div>
+      {categories.length > 0 ? (
+        <div className="space-y-6">
+          {categories.map((category, categoryIdx) => (
+            <motion.div
+              key={category.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 + categoryIdx * 0.1 }}
+              className="rounded-xl border border-border bg-card overflow-hidden"
+            >
+              <div className="p-4 border-b border-border bg-muted/30">
+                <h2 className="font-semibold">{category.name}</h2>
+              </div>
 
-            <div className="divide-y divide-border">
-              {category.markers.map((marker) => {
-                const isExpanded = expandedMarker === marker.name
+              <div className="divide-y divide-border">
+                {category.markers.map((marker) => {
+                  const isExpanded = expandedMarker === marker.id
+                  const status = getMarkerStatus(marker.value, marker.reference_low, marker.reference_high)
 
-                return (
-                  <div key={marker.name}>
-                    <button
-                      onClick={() => setExpandedMarker(isExpanded ? null : marker.name)}
-                      className="w-full p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
-                        marker.status === 'optimal' && 'bg-green-500/10',
-                        marker.status === 'low' && 'bg-amber-500/10',
-                        marker.status === 'high' && 'bg-red-500/10',
-                        marker.status === 'borderline' && 'bg-yellow-500/10'
-                      )}>
-                        {marker.status === 'optimal' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                        {(marker.status === 'low' || marker.status === 'borderline') && (
-                          <AlertTriangle className="h-4 w-4 text-amber-500" />
-                        )}
-                        {marker.status === 'high' && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                      </div>
-
-                      <div className="flex-1 text-left">
-                        <p className="font-medium">{marker.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Reference: {marker.reference.low} - {marker.reference.high} {marker.unit}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        {marker.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                        {marker.trend === 'down' && <TrendingDown className="h-4 w-4 text-amber-500" />}
-                        {marker.trend === 'stable' && <Minus className="h-4 w-4 text-muted-foreground" />}
-
-                        <div className="text-right">
-                          <p className="text-xl font-bold">{marker.value}</p>
-                          <p className="text-xs text-muted-foreground">{marker.unit}</p>
-                        </div>
-                      </div>
-                    </button>
-
-                    {/* Expanded View with Chart */}
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="px-4 pb-4"
+                  return (
+                    <div key={marker.id}>
+                      <button
+                        onClick={() => setExpandedMarker(isExpanded ? null : marker.id)}
+                        className="w-full p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors"
                       >
-                        <div className="rounded-lg bg-muted/30 p-4">
-                          <h4 className="text-sm font-medium mb-4">Trend Over Time</h4>
-                          <div className="h-[200px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <LineChart data={marker.history} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                <XAxis
-                                  dataKey="date"
-                                  stroke="hsl(var(--muted-foreground))"
-                                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                                />
-                                <YAxis
-                                  stroke="hsl(var(--muted-foreground))"
-                                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
-                                  domain={[marker.reference.low * 0.9, marker.reference.high * 1.1]}
-                                />
-                                <Tooltip
-                                  contentStyle={{
-                                    backgroundColor: 'hsl(var(--card))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px',
-                                  }}
-                                />
-                                {/* Optimal range shading */}
-                                <ReferenceArea
-                                  y1={marker.optimal.low}
-                                  y2={marker.optimal.high}
-                                  fill="#22c55e"
-                                  fillOpacity={0.1}
-                                />
-                                <ReferenceLine
-                                  y={marker.optimal.low}
-                                  stroke="#22c55e"
-                                  strokeDasharray="3 3"
-                                  strokeOpacity={0.5}
-                                />
-                                <ReferenceLine
-                                  y={marker.optimal.high}
-                                  stroke="#22c55e"
-                                  strokeDasharray="3 3"
-                                  strokeOpacity={0.5}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="value"
-                                  stroke={marker.status === 'optimal' ? '#22c55e' : '#f59e0b'}
-                                  strokeWidth={2}
-                                  dot={{ fill: marker.status === 'optimal' ? '#22c55e' : '#f59e0b', r: 5 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          </div>
+                        <div className={cn(
+                          'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
+                          status === 'optimal' && 'bg-green-500/10',
+                          status === 'low' && 'bg-amber-500/10',
+                          status === 'high' && 'bg-red-500/10',
+                          status === 'borderline' && 'bg-yellow-500/10'
+                        )}>
+                          {status === 'optimal' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                          {(status === 'low' || status === 'borderline') && (
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                          )}
+                          {status === 'high' && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                        </div>
 
-                          {marker.recommendation && (
-                            <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                              <p className="text-sm text-amber-600">
-                                <strong>Recommendation:</strong> {marker.recommendation}
-                              </p>
-                            </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-medium">{marker.name}</p>
+                          {marker.reference_low !== null && marker.reference_high !== null && (
+                            <p className="text-sm text-muted-foreground">
+                              Reference: {marker.reference_low} - {marker.reference_high} {marker.unit}
+                            </p>
                           )}
                         </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+
+                        <div className="flex items-center gap-3">
+                          <Minus className="h-4 w-4 text-muted-foreground" />
+
+                          <div className="text-right">
+                            <p className="text-xl font-bold">{marker.value}</p>
+                            <p className="text-xs text-muted-foreground">{marker.unit}</p>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Expanded View */}
+                      {isExpanded && marker.reference_low !== null && marker.reference_high !== null && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="px-4 pb-4"
+                        >
+                          <div className="rounded-lg bg-muted/30 p-4">
+                            <h4 className="text-sm font-medium mb-4">Value Position</h4>
+
+                            {/* Simple visual indicator */}
+                            <div className="relative h-8 bg-muted rounded-full overflow-hidden">
+                              {/* Optimal range */}
+                              <div
+                                className="absolute h-full bg-green-500/20"
+                                style={{
+                                  left: '20%',
+                                  width: '60%',
+                                }}
+                              />
+                              {/* Value indicator */}
+                              <div
+                                className={cn(
+                                  'absolute top-1 bottom-1 w-2 rounded-full',
+                                  status === 'optimal' ? 'bg-green-500' : status === 'high' ? 'bg-red-500' : 'bg-amber-500'
+                                )}
+                                style={{
+                                  left: `${Math.min(Math.max((marker.value - marker.reference_low) / (marker.reference_high - marker.reference_low) * 80 + 10, 2), 98)}%`,
+                                }}
+                              />
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+                              <span>{marker.reference_low} {marker.unit}</span>
+                              <span className="text-green-600">Optimal Range</span>
+                              <span>{marker.reference_high} {marker.unit}</span>
+                            </div>
+
+                            {status !== 'optimal' && (
+                              <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <p className="text-sm text-amber-600">
+                                  <strong>Note:</strong> This marker is {status === 'low' ? 'below' : status === 'high' ? 'above' : 'near the edge of'} the reference range. Consult with your coach or healthcare provider.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-border bg-card p-12 text-center"
+        >
+          <Droplets className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">No Markers Found</h2>
+          <p className="text-sm text-muted-foreground">
+            No blood markers have been recorded for this test.
+          </p>
+        </motion.div>
+      )}
     </div>
   )
 }

@@ -15,320 +15,19 @@ import {
   Info,
   BookOpen,
   ExternalLink,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useExerciseLibrary, useToggleExerciseFavourite, type ExerciseLibraryItem } from '@/hooks/athlete'
+import { useAuth } from '@/contexts/auth-context'
 
-// Types
-interface Exercise {
-  id: string
-  name: string
-  muscleGroup: MuscleGroup
-  secondaryMuscles: MuscleGroup[]
-  equipment: Equipment[]
-  difficulty: 'beginner' | 'intermediate' | 'advanced'
-  type: 'compound' | 'isolation'
-  description: string
-  instructions: string[]
-  tips: string[]
-  videoUrl?: string
-  imageUrl?: string
-  isFavourite?: boolean
-}
+// Type alias for page-specific use
+type Exercise = ExerciseLibraryItem
 
-type MuscleGroup =
-  | 'chest'
-  | 'back'
-  | 'shoulders'
-  | 'biceps'
-  | 'triceps'
-  | 'forearms'
-  | 'core'
-  | 'quadriceps'
-  | 'hamstrings'
-  | 'glutes'
-  | 'calves'
-  | 'full_body'
-
-type Equipment =
-  | 'barbell'
-  | 'dumbbell'
-  | 'cable'
-  | 'machine'
-  | 'bodyweight'
-  | 'kettlebell'
-  | 'resistance_band'
-  | 'smith_machine'
-
-// Mock data
-const mockExercises: Exercise[] = [
-  {
-    id: '1',
-    name: 'Barbell Bench Press',
-    muscleGroup: 'chest',
-    secondaryMuscles: ['shoulders', 'triceps'],
-    equipment: ['barbell'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'The king of chest exercises. A fundamental compound movement for upper body strength.',
-    instructions: [
-      'Lie flat on the bench with your feet firmly on the ground',
-      'Grip the bar slightly wider than shoulder-width',
-      'Unrack the bar and hold it directly above your chest',
-      'Lower the bar to your mid-chest with control',
-      'Press the bar back up to the starting position',
-    ],
-    tips: [
-      'Keep your shoulder blades retracted and depressed',
-      'Maintain a slight arch in your lower back',
-      'Drive through your feet for stability',
-    ],
-    isFavourite: true,
-  },
-  {
-    id: '2',
-    name: 'Conventional Deadlift',
-    muscleGroup: 'back',
-    secondaryMuscles: ['hamstrings', 'glutes', 'core'],
-    equipment: ['barbell'],
-    difficulty: 'advanced',
-    type: 'compound',
-    description: 'The ultimate test of full-body strength. Builds a powerful posterior chain.',
-    instructions: [
-      'Stand with feet hip-width apart, bar over mid-foot',
-      'Bend at the hips and knees to grip the bar',
-      'Keep your back straight and chest up',
-      'Drive through your feet and extend hips and knees',
-      'Stand tall, then reverse the movement to lower',
-    ],
-    tips: [
-      'Keep the bar close to your body throughout',
-      'Engage your lats before lifting',
-      'Breathe and brace your core before each rep',
-    ],
-    isFavourite: true,
-  },
-  {
-    id: '3',
-    name: 'Barbell Back Squat',
-    muscleGroup: 'quadriceps',
-    secondaryMuscles: ['glutes', 'hamstrings', 'core'],
-    equipment: ['barbell'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'The foundation of lower body training. Builds strength, power, and muscle mass.',
-    instructions: [
-      'Position the bar on your upper back, not your neck',
-      'Unrack and step back with feet shoulder-width apart',
-      'Brace your core and begin descending',
-      'Lower until your thighs are at least parallel',
-      'Drive through your feet to stand back up',
-    ],
-    tips: [
-      'Keep your knees tracking over your toes',
-      'Maintain a neutral spine throughout',
-      'Control the descent, explode on the way up',
-    ],
-  },
-  {
-    id: '4',
-    name: 'Pull-Up',
-    muscleGroup: 'back',
-    secondaryMuscles: ['biceps', 'forearms'],
-    equipment: ['bodyweight'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'A classic bodyweight exercise that builds a wide, powerful back.',
-    instructions: [
-      'Hang from the bar with an overhand grip',
-      'Grip slightly wider than shoulder-width',
-      'Pull yourself up until your chin clears the bar',
-      'Lower yourself with control',
-      'Repeat for desired reps',
-    ],
-    tips: [
-      'Initiate the movement by depressing your scapulae',
-      'Avoid swinging or using momentum',
-      'Focus on squeezing your lats at the top',
-    ],
-  },
-  {
-    id: '5',
-    name: 'Romanian Deadlift',
-    muscleGroup: 'hamstrings',
-    secondaryMuscles: ['glutes', 'back'],
-    equipment: ['barbell', 'dumbbell'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'Excellent for hamstring development and hip hinge mechanics.',
-    instructions: [
-      'Stand with feet hip-width apart, holding the bar',
-      'Push your hips back while keeping a slight knee bend',
-      'Lower the bar along your thighs until you feel a hamstring stretch',
-      'Drive your hips forward to return to standing',
-      'Squeeze your glutes at the top',
-    ],
-    tips: [
-      'Keep your back straight throughout',
-      'Don\'t round your lower back',
-      'The bar should travel in a straight line close to your body',
-    ],
-  },
-  {
-    id: '6',
-    name: 'Overhead Press',
-    muscleGroup: 'shoulders',
-    secondaryMuscles: ['triceps', 'core'],
-    equipment: ['barbell', 'dumbbell'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'The primary movement for building powerful shoulders.',
-    instructions: [
-      'Stand with feet shoulder-width apart',
-      'Hold the bar at shoulder height, hands just outside shoulders',
-      'Brace your core and squeeze your glutes',
-      'Press the bar overhead until arms are fully extended',
-      'Lower the bar back to shoulder height with control',
-    ],
-    tips: [
-      'Move your head back slightly as the bar passes your face',
-      'Lock out fully at the top',
-      'Keep your elbows slightly in front of the bar',
-    ],
-  },
-  {
-    id: '7',
-    name: 'Dumbbell Lateral Raise',
-    muscleGroup: 'shoulders',
-    secondaryMuscles: [],
-    equipment: ['dumbbell'],
-    difficulty: 'beginner',
-    type: 'isolation',
-    description: 'Targets the lateral deltoid for wider, capped shoulders.',
-    instructions: [
-      'Stand with dumbbells at your sides',
-      'Raise your arms out to the sides until parallel with the floor',
-      'Keep a slight bend in your elbows',
-      'Lower with control back to the starting position',
-      'Avoid using momentum',
-    ],
-    tips: [
-      'Lead with your elbows, not your hands',
-      'Don\'t go above shoulder height',
-      'Use lighter weight with strict form',
-    ],
-  },
-  {
-    id: '8',
-    name: 'Barbell Curl',
-    muscleGroup: 'biceps',
-    secondaryMuscles: ['forearms'],
-    equipment: ['barbell'],
-    difficulty: 'beginner',
-    type: 'isolation',
-    description: 'The classic bicep builder. Simple but effective.',
-    instructions: [
-      'Stand with feet shoulder-width apart',
-      'Hold the barbell with an underhand grip',
-      'Curl the bar up towards your shoulders',
-      'Squeeze at the top',
-      'Lower with control',
-    ],
-    tips: [
-      'Keep your elbows pinned to your sides',
-      'Avoid swinging the weight',
-      'Focus on the contraction at the top',
-    ],
-  },
-  {
-    id: '9',
-    name: 'Tricep Pushdown',
-    muscleGroup: 'triceps',
-    secondaryMuscles: [],
-    equipment: ['cable'],
-    difficulty: 'beginner',
-    type: 'isolation',
-    description: 'An effective isolation movement for tricep development.',
-    instructions: [
-      'Attach a straight or rope handle to a high cable',
-      'Stand facing the machine with elbows at your sides',
-      'Push the handle down until arms are fully extended',
-      'Squeeze your triceps at the bottom',
-      'Return with control',
-    ],
-    tips: [
-      'Keep your elbows stationary',
-      'Don\'t lean forward excessively',
-      'Control the negative portion',
-    ],
-  },
-  {
-    id: '10',
-    name: 'Hip Thrust',
-    muscleGroup: 'glutes',
-    secondaryMuscles: ['hamstrings'],
-    equipment: ['barbell'],
-    difficulty: 'intermediate',
-    type: 'compound',
-    description: 'The most effective exercise for glute development.',
-    instructions: [
-      'Sit on the ground with your upper back against a bench',
-      'Roll a barbell over your hips',
-      'Plant your feet hip-width apart',
-      'Drive through your heels and squeeze your glutes',
-      'Lower your hips back down with control',
-    ],
-    tips: [
-      'Keep your chin tucked throughout',
-      'Fully extend your hips at the top',
-      'Use a pad for comfort on the bar',
-    ],
-    isFavourite: true,
-  },
-  {
-    id: '11',
-    name: 'Hanging Leg Raise',
-    muscleGroup: 'core',
-    secondaryMuscles: [],
-    equipment: ['bodyweight'],
-    difficulty: 'advanced',
-    type: 'isolation',
-    description: 'Advanced core exercise targeting the lower abs.',
-    instructions: [
-      'Hang from a pull-up bar with an overhand grip',
-      'Keep your legs straight',
-      'Raise your legs until parallel with the floor or higher',
-      'Lower with control',
-      'Avoid swinging',
-    ],
-    tips: [
-      'Initiate the movement with your abs',
-      'Breathe out as you raise your legs',
-      'For beginners, bend your knees',
-    ],
-  },
-  {
-    id: '12',
-    name: 'Cable Fly',
-    muscleGroup: 'chest',
-    secondaryMuscles: ['shoulders'],
-    equipment: ['cable'],
-    difficulty: 'beginner',
-    type: 'isolation',
-    description: 'Excellent for chest isolation and stretch.',
-    instructions: [
-      'Set cables at chest height',
-      'Stand in the middle with handles in each hand',
-      'Step forward slightly for stability',
-      'Bring handles together in front of your chest',
-      'Return with control, feeling the chest stretch',
-    ],
-    tips: [
-      'Keep a slight bend in your elbows',
-      'Focus on squeezing your chest at the peak',
-      'Control the stretch on the way back',
-    ],
-  },
-]
+// Note: MuscleGroup and Equipment are now strings since they come from the database
+// These arrays are used for display/filtering purposes only
+type MuscleGroup = string
+type Equipment = string
 
 const muscleGroups: { id: MuscleGroup; label: string; colour: string }[] = [
   { id: 'chest', label: 'Chest', colour: '#ef4444' },
@@ -357,6 +56,7 @@ const equipmentOptions: { id: Equipment; label: string }[] = [
 ]
 
 export default function ExerciseLibraryPage() {
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null)
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment[]>([])
@@ -365,10 +65,15 @@ export default function ExerciseLibraryPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null)
   const [showFavouritesOnly, setShowFavouritesOnly] = useState(false)
-  const [exercises, setExercises] = useState(mockExercises)
+
+  // Fetch exercises from database
+  const { data: exerciseData, isLoading } = useExerciseLibrary(user?.id)
+  const toggleFavouriteMutation = useToggleExerciseFavourite()
+
+  const exercises = exerciseData || []
 
   const filteredExercises = useMemo(() => {
-    return exercises.filter((exercise) => {
+    return exercises.filter((exercise: Exercise) => {
       // Search query
       if (
         searchQuery &&
@@ -415,11 +120,15 @@ export default function ExerciseLibraryPage() {
   }, [exercises, searchQuery, selectedMuscle, selectedEquipment, selectedDifficulty, selectedType, showFavouritesOnly])
 
   const toggleFavourite = (exerciseId: string) => {
-    setExercises((prev) =>
-      prev.map((ex) =>
-        ex.id === exerciseId ? { ...ex, isFavourite: !ex.isFavourite } : ex
-      )
-    )
+    if (!user?.id) return
+    const exercise = exercises.find((ex: Exercise) => ex.id === exerciseId)
+    if (exercise) {
+      toggleFavouriteMutation.mutate({
+        athleteId: user.id,
+        exerciseId,
+        isFavourite: !exercise.isFavourite,
+      })
+    }
   }
 
   const clearFilters = () => {
@@ -435,6 +144,15 @@ export default function ExerciseLibraryPage() {
 
   const getMuscleColour = (muscleGroup: MuscleGroup) => {
     return muscleGroups.find((m) => m.id === muscleGroup)?.colour || '#64748b'
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -710,11 +428,19 @@ export default function ExerciseLibraryPage() {
       {filteredExercises.length === 0 && (
         <div className="text-center py-12">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-            <Search className="h-8 w-8 text-muted-foreground" />
+            {exercises.length === 0 ? (
+              <Dumbbell className="h-8 w-8 text-muted-foreground" />
+            ) : (
+              <Search className="h-8 w-8 text-muted-foreground" />
+            )}
           </div>
-          <h3 className="font-semibold mb-1">No exercises found</h3>
-          <p className="text-sm text-muted-foreground">
-            Try adjusting your search or filters
+          <h3 className="font-semibold mb-1">
+            {exercises.length === 0 ? 'Exercise Library Coming Soon' : 'No exercises found'}
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+            {exercises.length === 0
+              ? 'We\'re building a comprehensive exercise library with video tutorials and form guides. Check back soon!'
+              : 'Try adjusting your search or filters'}
           </p>
         </div>
       )}

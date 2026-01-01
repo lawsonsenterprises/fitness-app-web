@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { WeatherWidget } from '@/components/athlete/weather-widget'
-import { useAthleteDashboard, useCurrentProgramme, useTodaysReadiness, useWeeklyActivity, useHealthKitWorkouts } from '@/hooks/athlete'
+import { useAthleteDashboard, useCurrentProgramme, useTodaysReadiness, useWeeklyActivity, useHealthKitWorkouts, useUserDietaryProfile } from '@/hooks/athlete'
 import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function AthleteDashboardPage() {
@@ -41,6 +41,9 @@ export default function AthleteDashboardPage() {
   const { data: readinessData } = useTodaysReadiness(user?.id)
   const { data: weeklyActivity } = useWeeklyActivity(user?.id)
   const { data: recentWorkouts } = useHealthKitWorkouts(user?.id, 5)
+
+  // User profile for nutrition targets
+  const { data: dietaryProfile } = useUserDietaryProfile(user?.id)
 
   // Extract first name from display_name (split on space) or fall back to metadata
   const firstName = displayName?.split(' ')[0] || user?.user_metadata?.first_name || 'Athlete'
@@ -67,12 +70,12 @@ export default function AthleteDashboardPage() {
     )
   }
 
-  // Default targets (could come from user settings later)
+  // Targets from user dietary profile, with sensible defaults
   const targets = {
-    calories: 2400,
-    protein: 180,
-    water: 3,
-    steps: 10000,
+    calories: dietaryProfile?.targetCalories || 2400,
+    protein: dietaryProfile?.targetProtein || 180,
+    water: 3, // Water target not in profile yet
+    steps: 10000, // Steps target not in profile yet
   }
 
   // Use HealthKit readiness data if available, fall back to dashboard data

@@ -651,3 +651,91 @@ export function useClientActivityTrends(clientId?: string, days: number = 30) {
     staleTime: 1000 * 60 * 5,
   })
 }
+
+// ============================================================================
+// Client Blood Work Hooks
+// ============================================================================
+
+export interface BloodMarker {
+  id: string
+  name: string
+  code: string
+  value: number
+  unit: string
+  refLow: number | null
+  refHigh: number | null
+  status: 'normal' | 'low' | 'high'
+}
+
+export interface BloodPanel {
+  id: string
+  date: string
+  labName: string | null
+  notes: string | null
+  markers: BloodMarker[]
+}
+
+export function useClientBloodWork(clientId?: string) {
+  return useQuery({
+    queryKey: ['client-blood-work', clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blood_panels')
+        .select(`
+          *,
+          blood_markers(*)
+        `)
+        .eq('user_id', clientId!)
+        .order('date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching client blood work:', error)
+        return []
+      }
+
+      // Transform to frontend format
+      const panels: BloodPanel[] = (data || []).map(panel => {
+        const markers: BloodMarker[] = (panel.blood_markers || []).map((marker: {
+          id: string
+          name: string
+          code: string
+          value: number
+          unit: string
+          reference_low: number | null
+          reference_high: number | null
+        }) => {
+          // Determine status based on reference ranges
+          let status: 'normal' | 'low' | 'high' = 'normal'
+          if (marker.reference_low != null && marker.value < marker.reference_low) {
+            status = 'low'
+          } else if (marker.reference_high != null && marker.value > marker.reference_high) {
+            status = 'high'
+          }
+
+          return {
+            id: marker.id,
+            name: marker.name,
+            code: marker.code,
+            value: marker.value,
+            unit: marker.unit,
+            refLow: marker.reference_low,
+            refHigh: marker.reference_high,
+            status,
+          }
+        })
+
+        return {
+          id: panel.id,
+          date: panel.date,
+          labName: panel.lab_name,
+          notes: panel.notes,
+          markers,
+        }
+      })
+
+      return panels
+    },
+    enabled: !!clientId,
+    staleTime: 1000 * 60 * 5,
+  })
+}

@@ -1,31 +1,39 @@
 import { cn } from '@/lib/utils'
-import type { Programme } from '@/types'
+import type { ProgrammeType, ProgrammeDifficulty } from '@/types'
 
 interface ProgrammeTypeBadgeProps {
-  type: Programme['type']
+  type: ProgrammeType | null | undefined
   size?: 'sm' | 'md'
 }
 
-const typeConfig: Record<Programme['type'], { label: string; className: string }> = {
-  hypertrophy: {
-    label: 'Hypertrophy',
-    className: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
-  },
+const typeConfig: Record<ProgrammeType, { label: string; className: string }> = {
   strength: {
     label: 'Strength',
     className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
   },
-  powerlifting: {
-    label: 'Powerlifting',
-    className: 'bg-red-500/10 text-red-600 border-red-500/20',
+  hypertrophy: {
+    label: 'Hypertrophy',
+    className: 'bg-violet-500/10 text-violet-600 border-violet-500/20',
   },
-  conditioning: {
-    label: 'Conditioning',
+  endurance: {
+    label: 'Endurance',
     className: 'bg-sky-500/10 text-sky-600 border-sky-500/20',
   },
-  mobility: {
-    label: 'Mobility',
+  weight_loss: {
+    label: 'Weight Loss',
+    className: 'bg-pink-500/10 text-pink-600 border-pink-500/20',
+  },
+  sport_specific: {
+    label: 'Sport Specific',
     className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  },
+  rehabilitation: {
+    label: 'Rehabilitation',
+    className: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
+  },
+  general_fitness: {
+    label: 'General Fitness',
+    className: 'bg-muted text-muted-foreground border-border',
   },
   custom: {
     label: 'Custom',
@@ -33,8 +41,13 @@ const typeConfig: Record<Programme['type'], { label: string; className: string }
   },
 }
 
+const defaultConfig = {
+  label: 'Custom',
+  className: 'bg-muted text-muted-foreground border-border',
+}
+
 export function ProgrammeTypeBadge({ type, size = 'md' }: ProgrammeTypeBadgeProps) {
-  const config = typeConfig[type] || typeConfig.custom
+  const config = type ? typeConfig[type] ?? defaultConfig : defaultConfig
 
   return (
     <span
@@ -50,23 +63,26 @@ export function ProgrammeTypeBadge({ type, size = 'md' }: ProgrammeTypeBadgeProp
 }
 
 interface DifficultyBadgeProps {
-  difficulty: Programme['difficulty']
+  difficulty: ProgrammeDifficulty | null | undefined
   size?: 'sm' | 'md'
 }
 
-export function DifficultyBadge({ difficulty, size = 'md' }: DifficultyBadgeProps) {
-  const difficultyConfig: Record<Programme['difficulty'], { dots: number; label: string }> = {
-    beginner: { dots: 1, label: 'Beginner' },
-    intermediate: { dots: 2, label: 'Intermediate' },
-    advanced: { dots: 3, label: 'Advanced' },
-  }
+const difficultyConfig: Record<ProgrammeDifficulty, { dots: number; label: string }> = {
+  beginner: { dots: 1, label: 'Beginner' },
+  intermediate: { dots: 2, label: 'Intermediate' },
+  advanced: { dots: 3, label: 'Advanced' },
+  elite: { dots: 4, label: 'Elite' },
+}
 
-  const config = difficultyConfig[difficulty]
+const defaultDifficultyConfig = { dots: 0, label: 'Unknown' }
+
+export function DifficultyBadge({ difficulty, size = 'md' }: DifficultyBadgeProps) {
+  const config = difficulty ? difficultyConfig[difficulty] ?? defaultDifficultyConfig : defaultDifficultyConfig
 
   return (
     <div className="flex items-center gap-1.5">
       <div className="flex gap-0.5">
-        {[1, 2, 3].map((dot) => (
+        {[1, 2, 3, 4].map((dot) => (
           <div
             key={dot}
             className={cn(

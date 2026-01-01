@@ -19,10 +19,8 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { useAuth } from '@/contexts/auth-context'
-import { useHealthKitWeightTrends } from '@/hooks/athlete'
+import { useHealthKitWeightTrends, useUserDietaryProfile } from '@/hooks/athlete'
 import { WeightTrendChart } from '@/components/shared/charts'
-
-// TODO: Implement measurements and photos from database when tables are created
 
 // Time range to days mapping
 const timeRangeDays: Record<'1m' | '3m' | '6m' | '1y', number> = {
@@ -42,6 +40,9 @@ export default function ProgressPage() {
     timeRangeDays[timeRange]
   )
 
+  // Fetch user dietary profile for goal weight
+  const { data: dietaryProfile } = useUserDietaryProfile(user?.id)
+
   // Calculate weight stats from real data
   const weightData = weightTrends?.data || []
   const weightStats = weightTrends?.stats
@@ -51,9 +52,9 @@ export default function ProgressPage() {
   const weightChange = weightStats?.change || 0
   const weeklyChange = weightStats?.weeklyAvgChange || 0
 
-  // Goal weight (would come from user profile in production)
-  const goalWeight = 74.0
-  const toGo = currentWeight > 0 ? currentWeight - goalWeight : 0
+  // Goal weight from user dietary profile
+  const goalWeight = dietaryProfile?.targetWeightKg || null
+  const toGo = currentWeight > 0 && goalWeight ? currentWeight - goalWeight : null
 
   return (
     <>
@@ -90,7 +91,9 @@ export default function ProgressPage() {
               <Target className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wider">Target</span>
             </div>
-            <p className="text-2xl font-bold">{goalWeight}kg</p>
+            <p className="text-2xl font-bold">
+              {goalWeight ? `${goalWeight}kg` : <span className="text-muted-foreground">Not set</span>}
+            </p>
           </div>
 
           <div className="rounded-xl border border-border bg-card p-4">
@@ -129,7 +132,7 @@ export default function ProgressPage() {
               <div className="flex items-center gap-2">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
-            ) : hasWeightData ? (
+            ) : hasWeightData && toGo !== null ? (
               <p className={cn(
                 'text-2xl font-bold',
                 toGo <= 0 ? 'text-green-500' : ''
@@ -236,7 +239,7 @@ export default function ProgressPage() {
               >
                 <WeightTrendChart
                   data={weightData}
-                  goalWeight={goalWeight}
+                  goalWeight={goalWeight || undefined}
                 />
               </motion.div>
             )}

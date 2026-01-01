@@ -30,8 +30,14 @@ const statusConfig: Record<
       'bg-orange-500/10 text-orange-600 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400',
     dotClass: 'bg-orange-500',
   },
-  ended: {
-    label: 'Ended',
+  completed: {
+    label: 'Completed',
+    className:
+      'bg-blue-500/10 text-blue-600 ring-blue-500/20 dark:bg-blue-500/20 dark:text-blue-400',
+    dotClass: 'bg-blue-500',
+  },
+  cancelled: {
+    label: 'Cancelled',
     className:
       'bg-zinc-500/10 text-zinc-500 ring-zinc-500/20 dark:bg-zinc-500/20 dark:text-zinc-400',
     dotClass: 'bg-zinc-400',
@@ -64,30 +70,42 @@ const subscriptionConfig: Record<
   SubscriptionStatus,
   { label: string; className: string }
 > = {
+  trialing: {
+    label: 'Trial',
+    className: 'bg-blue-500/10 text-blue-600 ring-blue-500/20',
+  },
   active: {
     label: 'Subscribed',
     className: 'bg-foreground/5 text-foreground/70 ring-foreground/10',
   },
-  trial: {
-    label: 'Trial',
-    className: 'bg-blue-500/10 text-blue-600 ring-blue-500/20',
+  past_due: {
+    label: 'Past Due',
+    className: 'bg-amber-500/10 text-amber-600 ring-amber-500/20',
   },
-  cancelled: {
+  canceled: {
     label: 'Cancelled',
     className: 'bg-red-500/10 text-red-600 ring-red-500/20',
   },
-  expired: {
+  unpaid: {
+    label: 'Unpaid',
+    className: 'bg-red-500/10 text-red-600 ring-red-500/20',
+  },
+  incomplete: {
+    label: 'Incomplete',
+    className: 'bg-amber-500/10 text-amber-600 ring-amber-500/20',
+  },
+  incomplete_expired: {
     label: 'Expired',
     className: 'bg-zinc-500/10 text-zinc-500 ring-zinc-500/20',
   },
-  none: {
-    label: 'None',
-    className: 'bg-zinc-500/10 text-zinc-500 ring-zinc-500/20',
+  paused: {
+    label: 'Paused',
+    className: 'bg-orange-500/10 text-orange-600 ring-orange-500/20',
   },
 }
 
 export function SubscriptionBadge({ status, className }: SubscriptionBadgeProps) {
-  if (!status || status === 'none') return null
+  if (!status) return null
 
   const config = subscriptionConfig[status]
 

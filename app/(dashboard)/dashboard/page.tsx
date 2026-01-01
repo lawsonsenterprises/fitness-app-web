@@ -31,6 +31,7 @@ import { useAnalytics, useDashboardStats, useClientActivity, useClientAdherence 
 import { useCheckInStats } from '@/hooks/use-check-ins'
 import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
+import { getClientDisplayName, getClientInitials } from '@/types'
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -234,17 +235,17 @@ export default function DashboardPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-sm font-medium text-amber-600">
-                        {client.firstName[0]}{client.lastName[0]}
+                        {getClientInitials(client)}
                       </div>
                       <div>
-                        <p className="font-medium">{client.firstName} {client.lastName}</p>
+                        <p className="font-medium">{getClientDisplayName(client)}</p>
                         <p className="text-sm text-muted-foreground">
-                          Last active {client.lastActiveAt
-                            ? new Date(client.lastActiveAt).toLocaleDateString('en-GB', {
+                          Started {client.startedAt
+                            ? new Date(client.startedAt).toLocaleDateString('en-GB', {
                                 day: 'numeric',
                                 month: 'short'
                               })
-                            : 'Never'}
+                            : 'Pending'}
                         </p>
                       </div>
                     </div>

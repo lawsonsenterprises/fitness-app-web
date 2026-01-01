@@ -20,7 +20,7 @@ const statusFilters: { value: StatusFilter; label: string; icon: typeof Users }[
   { value: 'active', label: 'Active', icon: UserCheck },
   { value: 'pending', label: 'Pending', icon: Clock },
   { value: 'paused', label: 'Paused', icon: Clock },
-  { value: 'ended', label: 'Ended', icon: UserX },
+  { value: 'completed', label: 'Completed', icon: UserX },
 ]
 
 export default function ClientsPage() {
@@ -36,9 +36,9 @@ export default function ClientsPage() {
 
   const updateStatus = useUpdateClientStatus()
 
-  const handleStatusChange = async (clientId: string, newStatus: ClientStatus) => {
+  const handleStatusChange = async (clientRelationshipId: string, newStatus: ClientStatus) => {
     try {
-      await updateStatus.mutateAsync({ clientId, status: newStatus })
+      await updateStatus.mutateAsync({ clientRelationshipId, status: newStatus })
       toast.success('Client status updated', {
         description: `Client has been marked as ${newStatus}.`,
       })
@@ -53,14 +53,14 @@ export default function ClientsPage() {
 
   // Stats for the filter badges
   const stats = useMemo(() => {
-    if (!clientsData?.data) return { all: 0, active: 0, pending: 0, paused: 0, ended: 0 }
+    if (!clientsData?.data) return { all: 0, active: 0, pending: 0, paused: 0, completed: 0 }
     const clients = clientsData.data
     return {
       all: clients.length,
       active: clients.filter((c) => c.status === 'active').length,
       pending: clients.filter((c) => c.status === 'pending').length,
       paused: clients.filter((c) => c.status === 'paused').length,
-      ended: clients.filter((c) => c.status === 'ended').length,
+      completed: clients.filter((c) => c.status === 'completed').length,
     }
   }, [clientsData])
 

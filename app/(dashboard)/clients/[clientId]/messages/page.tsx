@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation'
 
 import { MessageThread } from '@/components/messages/message-thread'
 import { useClient } from '@/hooks/use-clients'
+import { getClientDisplayName } from '@/types'
 
 export default function ClientMessagesPage() {
   const params = useParams()
@@ -18,7 +19,7 @@ export default function ClientMessagesPage() {
 
   if (!client) return null
 
-  const clientName = `${client.firstName} ${client.lastName}`.trim() || 'Client'
+  const clientName = getClientDisplayName(client)
 
   return (
     <MessageThread

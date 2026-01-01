@@ -25,14 +25,14 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Dumbbell,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
-import { ClientStatusBadge, SubscriptionBadge } from './client-status-badge'
+import { ClientStatusBadge } from './client-status-badge'
 import { Button } from '@/components/ui/button'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { cn } from '@/lib/utils'
-import type { Client } from '@/types'
+import { getClientDisplayName, getClientInitials, type Client } from '@/types'
 
 interface ClientsTableProps {
   clients: Client[]
@@ -41,13 +41,14 @@ interface ClientsTableProps {
 }
 
 function ClientAvatar({ client }: { client: Client }) {
-  const initials = `${client.firstName?.[0] || ''}${client.lastName?.[0] || ''}`.toUpperCase()
+  const initials = getClientInitials(client)
+  const displayName = getClientDisplayName(client)
 
   if (client.avatarUrl) {
     return (
       <Image
         src={client.avatarUrl}
-        alt={`${client.firstName} ${client.lastName}`}
+        alt={displayName}
         width={40}
         height={40}
         className="h-10 w-10 rounded-full object-cover ring-2 ring-background"
@@ -70,77 +71,94 @@ function RowActions({
   onStatusChange?: (clientId: string, status: Client['status']) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showEndConfirmation, setShowEndConfirmation] = useState(false)
+
+  const displayName = getClientDisplayName(client)
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </button>
+    <>
+      <div className="relative">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
 
-      {isOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-lg">
-            <Link
-              href={`/clients/${client.id}`}
-              className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
-              onClick={() => setIsOpen(false)}
-            >
-              <Eye className="h-4 w-4 text-muted-foreground" />
-              View Profile
-            </Link>
-            <Link
-              href={`/clients/${client.id}/messages`}
-              className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
-              onClick={() => setIsOpen(false)}
-            >
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              Send Message
-            </Link>
-            <div className="my-1 border-t border-border" />
-            {client.status === 'active' && (
-              <button
-                onClick={() => {
-                  onStatusChange?.(client.id, 'paused')
-                  setIsOpen(false)
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-lg">
+              <Link
+                href={`/clients/${client.id}`}
+                className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                onClick={() => setIsOpen(false)}
               >
-                <Pause className="h-4 w-4 text-muted-foreground" />
-                Pause Relationship
-              </button>
-            )}
-            {client.status === 'paused' && (
-              <button
-                onClick={() => {
-                  onStatusChange?.(client.id, 'active')
-                  setIsOpen(false)
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                <Eye className="h-4 w-4 text-muted-foreground" />
+                View Profile
+              </Link>
+              <Link
+                href={`/clients/${client.id}/messages`}
+                className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                onClick={() => setIsOpen(false)}
               >
-                <Play className="h-4 w-4 text-muted-foreground" />
-                Resume Relationship
-              </button>
-            )}
-            {client.status !== 'ended' && (
-              <button
-                onClick={() => {
-                  onStatusChange?.(client.id, 'ended')
-                  setIsOpen(false)
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
-              >
-                <UserX className="h-4 w-4" />
-                End Relationship
-              </button>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                Send Message
+              </Link>
+              <div className="my-1 border-t border-border" />
+              {client.status === 'active' && (
+                <button
+                  onClick={() => {
+                    onStatusChange?.(client.id, 'paused')
+                    setIsOpen(false)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <Pause className="h-4 w-4 text-muted-foreground" />
+                  Pause Relationship
+                </button>
+              )}
+              {client.status === 'paused' && (
+                <button
+                  onClick={() => {
+                    onStatusChange?.(client.id, 'active')
+                    setIsOpen(false)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <Play className="h-4 w-4 text-muted-foreground" />
+                  Resume Relationship
+                </button>
+              )}
+              {client.status !== 'completed' && client.status !== 'cancelled' && (
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    setShowEndConfirmation(true)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+                >
+                  <UserX className="h-4 w-4" />
+                  End Relationship
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <ConfirmationDialog
+        isOpen={showEndConfirmation}
+        onClose={() => setShowEndConfirmation(false)}
+        onConfirm={() => onStatusChange?.(client.id, 'completed')}
+        title="End Client Relationship"
+        description={`Are you sure you want to end your coaching relationship with ${displayName}? They will no longer have access to assigned programmes and meal plans. This action cannot be undone.`}
+        confirmLabel="End Relationship"
+        cancelLabel="Keep Client"
+        variant="destructive"
+        icon={<UserX className="h-5 w-5" />}
+      />
+    </>
   )
 }
 
@@ -162,9 +180,10 @@ const columns: ColumnDef<Client>[] = [
         )}
       </button>
     ),
-    accessorFn: (row) => `${row.firstName} ${row.lastName}`,
+    accessorFn: (row) => getClientDisplayName(row),
     cell: ({ row }) => {
       const client = row.original
+      const displayName = getClientDisplayName(client)
       return (
         <Link
           href={`/clients/${client.id}`}
@@ -173,7 +192,7 @@ const columns: ColumnDef<Client>[] = [
           <ClientAvatar client={client} />
           <div>
             <p className="font-medium group-hover:text-amber-600 transition-colors">
-              {client.firstName} {client.lastName}
+              {displayName}
             </p>
             <p className="text-xs text-muted-foreground md:hidden">
               {client.email}
@@ -199,20 +218,13 @@ const columns: ColumnDef<Client>[] = [
     },
   },
   {
-    accessorKey: 'subscriptionStatus',
-    header: 'Subscription',
-    cell: ({ row }) => (
-      <SubscriptionBadge status={row.original.subscriptionStatus} />
-    ),
-  },
-  {
-    accessorKey: 'lastActiveAt',
+    accessorKey: 'nextCheckInDue',
     header: ({ column }) => (
       <button
         className="flex items-center gap-1 text-left"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Last Active
+        Next Check-in
         {column.getIsSorted() === 'asc' ? (
           <ArrowUp className="h-3 w-3" />
         ) : column.getIsSorted() === 'desc' ? (
@@ -223,23 +235,23 @@ const columns: ColumnDef<Client>[] = [
       </button>
     ),
     cell: ({ row }) => {
-      const lastActive = row.original.lastActiveAt
-      if (!lastActive) return <span className="text-sm text-muted-foreground">Never</span>
+      const nextDue = row.original.nextCheckInDue
+      if (!nextDue) return <span className="text-sm text-muted-foreground">Not set</span>
       return (
         <span className="text-sm text-muted-foreground">
-          {formatDistanceToNow(new Date(lastActive), { addSuffix: true })}
+          {formatDistanceToNow(new Date(nextDue), { addSuffix: true })}
         </span>
       )
     },
   },
   {
-    accessorKey: 'sessionsThisWeek',
+    accessorKey: 'startedAt',
     header: ({ column }) => (
       <button
         className="flex items-center gap-1 text-left"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Sessions
+        Started
         {column.getIsSorted() === 'asc' ? (
           <ArrowUp className="h-3 w-3" />
         ) : column.getIsSorted() === 'desc' ? (
@@ -250,13 +262,12 @@ const columns: ColumnDef<Client>[] = [
       </button>
     ),
     cell: ({ row }) => {
-      const sessions = row.original.sessionsThisWeek || 0
+      const startedAt = row.original.startedAt
+      if (!startedAt) return <span className="text-sm text-muted-foreground">Pending</span>
       return (
-        <div className="flex items-center gap-1.5">
-          <Dumbbell className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-medium">{sessions}</span>
-          <span className="text-xs text-muted-foreground">/wk</span>
-        </div>
+        <span className="text-sm text-muted-foreground">
+          {formatDistanceToNow(new Date(startedAt), { addSuffix: true })}
+        </span>
       )
     },
   },
@@ -318,9 +329,8 @@ export function ClientsTable({ clients, isLoading, onStatusChange }: ClientsTabl
                       className={cn(
                         'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground',
                         header.id === 'email' && 'hidden md:table-cell',
-                        header.id === 'subscriptionStatus' && 'hidden lg:table-cell',
-                        header.id === 'lastActiveAt' && 'hidden lg:table-cell',
-                        header.id === 'sessionsThisWeek' && 'hidden xl:table-cell'
+                        header.id === 'nextCheckInDue' && 'hidden lg:table-cell',
+                        header.id === 'startedAt' && 'hidden xl:table-cell'
                       )}
                     >
                       {header.isPlaceholder
@@ -346,9 +356,8 @@ export function ClientsTable({ clients, isLoading, onStatusChange }: ClientsTabl
                       className={cn(
                         'px-4 py-4',
                         cell.column.id === 'email' && 'hidden md:table-cell',
-                        cell.column.id === 'subscriptionStatus' && 'hidden lg:table-cell',
-                        cell.column.id === 'lastActiveAt' && 'hidden lg:table-cell',
-                        cell.column.id === 'sessionsThisWeek' && 'hidden xl:table-cell',
+                        cell.column.id === 'nextCheckInDue' && 'hidden lg:table-cell',
+                        cell.column.id === 'startedAt' && 'hidden xl:table-cell',
                         cell.column.id === 'actions' && 'text-right'
                       )}
                     >
@@ -435,9 +444,6 @@ function ClientsTableSkeleton() {
             <th className="hidden px-4 py-3 text-left lg:table-cell">
               <div className="h-3 w-20 animate-pulse rounded bg-muted" />
             </th>
-            <th className="hidden px-4 py-3 text-left lg:table-cell">
-              <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-            </th>
             <th className="hidden px-4 py-3 text-left xl:table-cell">
               <div className="h-3 w-16 animate-pulse rounded bg-muted" />
             </th>
@@ -460,13 +466,10 @@ function ClientsTableSkeleton() {
                 <div className="h-6 w-16 animate-pulse rounded-full bg-muted" />
               </td>
               <td className="hidden px-4 py-4 lg:table-cell">
-                <div className="h-5 w-20 animate-pulse rounded-full bg-muted" />
-              </td>
-              <td className="hidden px-4 py-4 lg:table-cell">
                 <div className="h-4 w-24 animate-pulse rounded bg-muted" />
               </td>
               <td className="hidden px-4 py-4 xl:table-cell">
-                <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
               </td>
               <td className="px-4 py-4" />
             </tr>

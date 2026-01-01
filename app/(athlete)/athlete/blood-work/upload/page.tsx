@@ -16,6 +16,7 @@ import {
   Tag,
   Plus,
   Trash2,
+  Info,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -23,22 +24,16 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/contexts/auth-context'
+import { useCreateBloodTest, type BloodMarkerInput } from '@/hooks/athlete'
 
-// Mock extracted markers from PDF
-const mockExtractedMarkers = [
-  { name: 'Testosterone', value: 22.5, unit: 'nmol/L', reference: { low: 8.64, high: 29 }, status: 'normal' },
-  { name: 'Free Testosterone', value: 0.42, unit: 'nmol/L', reference: { low: 0.2, high: 0.62 }, status: 'normal' },
-  { name: 'SHBG', value: 35, unit: 'nmol/L', reference: { low: 18.3, high: 54.1 }, status: 'normal' },
-  { name: 'Oestradiol', value: 98, unit: 'pmol/L', reference: { low: 41, high: 159 }, status: 'normal' },
-  { name: 'TSH', value: 1.8, unit: 'mU/L', reference: { low: 0.27, high: 4.2 }, status: 'normal' },
-  { name: 'Free T4', value: 16.2, unit: 'pmol/L', reference: { low: 12, high: 22 }, status: 'normal' },
-  { name: 'Free T3', value: 4.8, unit: 'pmol/L', reference: { low: 3.1, high: 6.8 }, status: 'normal' },
-  { name: 'Vitamin D', value: 65, unit: 'nmol/L', reference: { low: 50, high: 175 }, status: 'low' },
-  { name: 'Ferritin', value: 95, unit: 'ug/L', reference: { low: 30, high: 400 }, status: 'normal' },
-  { name: 'HbA1c', value: 32, unit: 'mmol/mol', reference: { low: 20, high: 42 }, status: 'normal' },
-  { name: 'Total Cholesterol', value: 4.8, unit: 'mmol/L', reference: { low: 0, high: 5 }, status: 'normal' },
-  { name: 'LDL Cholesterol', value: 2.9, unit: 'mmol/L', reference: { low: 0, high: 3 }, status: 'normal' },
-]
+interface MarkerEntry {
+  name: string
+  value: number
+  unit: string
+  reference: { low: number; high: number }
+  status: 'normal' | 'low' | 'high'
+}
 
 const labProviders = [
   { id: 'medichecks', name: 'Medichecks' },
@@ -60,19 +55,48 @@ const suggestedTags = [
   'Full Panel',
 ]
 
+// Common blood markers for manual entry with reference ranges
+const commonMarkers = [
+  { name: 'Testosterone', unit: 'nmol/L', refLow: 8.64, refHigh: 29 },
+  { name: 'Free Testosterone', unit: 'nmol/L', refLow: 0.2, refHigh: 0.62 },
+  { name: 'SHBG', unit: 'nmol/L', refLow: 18.3, refHigh: 54.1 },
+  { name: 'Oestradiol', unit: 'pmol/L', refLow: 41, refHigh: 159 },
+  { name: 'TSH', unit: 'mU/L', refLow: 0.27, refHigh: 4.2 },
+  { name: 'Free T4', unit: 'pmol/L', refLow: 12, refHigh: 22 },
+  { name: 'Free T3', unit: 'pmol/L', refLow: 3.1, refHigh: 6.8 },
+  { name: 'Vitamin D', unit: 'nmol/L', refLow: 50, refHigh: 175 },
+  { name: 'Ferritin', unit: 'ug/L', refLow: 30, refHigh: 400 },
+  { name: 'HbA1c', unit: 'mmol/mol', refLow: 20, refHigh: 42 },
+  { name: 'Total Cholesterol', unit: 'mmol/L', refLow: 0, refHigh: 5 },
+  { name: 'LDL Cholesterol', unit: 'mmol/L', refLow: 0, refHigh: 3 },
+  { name: 'HDL Cholesterol', unit: 'mmol/L', refLow: 1, refHigh: 2.1 },
+  { name: 'Triglycerides', unit: 'mmol/L', refLow: 0, refHigh: 1.7 },
+  { name: 'Haemoglobin', unit: 'g/L', refLow: 130, refHigh: 170 },
+  { name: 'Haematocrit', unit: '%', refLow: 37, refHigh: 50 },
+]
+
 export default function BloodWorkUploadPage() {
+  const { user } = useAuth()
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [isProcessing, setIsProcessing] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [extractedMarkers, setExtractedMarkers] = useState<typeof mockExtractedMarkers>([])
+  const [extractedMarkers, setExtractedMarkers] = useState<MarkerEntry[]>([])
   const [testDate, setTestDate] = useState('')
   const [labProvider, setLabProvider] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
   const [notes, setNotes] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
+  const [showMarkerSelector, setShowMarkerSelector] = useState(false)
+  const [newMarker, setNewMarker] = useState({
+    name: '',
+    value: '',
+    unit: '',
+    refLow: '',
+    refHigh: '',
+  })
+
+  const createBloodTestMutation = useCreateBloodTest()
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -90,7 +114,8 @@ export default function BloodWorkUploadPage() {
     const file = e.dataTransfer.files[0]
     if (file && file.type === 'application/pdf') {
       setUploadedFile(file)
-      processFile(file)
+      toast.info('PDF upload received - automatic extraction coming soon. Please enter markers manually for now.')
+      setStep(2)
     } else {
       toast.error('Please upload a PDF file')
     }
@@ -100,28 +125,57 @@ export default function BloodWorkUploadPage() {
     const file = e.target.files?.[0]
     if (file) {
       setUploadedFile(file)
-      processFile(file)
+      toast.info('PDF upload received - automatic extraction coming soon. Please enter markers manually for now.')
+      setStep(2)
     }
-  }
-
-  const processFile = async (_file: File) => {
-    setIsProcessing(true)
-    // Simulate PDF processing
-    await new Promise(resolve => setTimeout(resolve, 2500))
-    setExtractedMarkers(mockExtractedMarkers)
-    setIsProcessing(false)
-    setStep(2)
-    toast.success(`Extracted ${mockExtractedMarkers.length} markers from PDF`)
   }
 
   const updateMarkerValue = (index: number, value: string) => {
     const updated = [...extractedMarkers]
-    updated[index] = { ...updated[index], value: parseFloat(value) || 0 }
+    const numValue = parseFloat(value) || 0
+    const marker = updated[index]
+    updated[index] = {
+      ...marker,
+      value: numValue,
+      status: getMarkerStatus(numValue, marker.reference),
+    }
     setExtractedMarkers(updated)
   }
 
   const removeMarker = (index: number) => {
     setExtractedMarkers(markers => markers.filter((_, i) => i !== index))
+  }
+
+  const addCommonMarker = (marker: typeof commonMarkers[0]) => {
+    const newEntry: MarkerEntry = {
+      name: marker.name,
+      value: 0,
+      unit: marker.unit,
+      reference: { low: marker.refLow, high: marker.refHigh },
+      status: 'normal',
+    }
+    setExtractedMarkers([...extractedMarkers, newEntry])
+    setShowMarkerSelector(false)
+  }
+
+  const addCustomMarker = () => {
+    if (!newMarker.name || !newMarker.unit) {
+      toast.error('Please fill in marker name and unit')
+      return
+    }
+    const value = parseFloat(newMarker.value) || 0
+    const refLow = parseFloat(newMarker.refLow) || 0
+    const refHigh = parseFloat(newMarker.refHigh) || 100
+    const newEntry: MarkerEntry = {
+      name: newMarker.name,
+      value,
+      unit: newMarker.unit,
+      reference: { low: refLow, high: refHigh },
+      status: getMarkerStatus(value, { low: refLow, high: refHigh }),
+    }
+    setExtractedMarkers([...extractedMarkers, newEntry])
+    setNewMarker({ name: '', value: '', unit: '', refLow: '', refHigh: '' })
+    setShowMarkerSelector(false)
   }
 
   const addTag = (tag: string) => {
@@ -136,16 +190,43 @@ export default function BloodWorkUploadPage() {
   }
 
   const handleSave = async () => {
-    setIsSaving(true)
-    // Simulate saving
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    toast.success('Blood test saved successfully')
-    router.push('/athlete/blood-work')
+    if (!user?.id) {
+      toast.error('You must be logged in to save')
+      return
+    }
+
+    if (!testDate) {
+      toast.error('Please select a test date')
+      return
+    }
+
+    try {
+      const markersData: BloodMarkerInput[] = extractedMarkers.map(m => ({
+        name: m.name,
+        value: m.value,
+        unit: m.unit,
+        reference: m.reference,
+      }))
+
+      await createBloodTestMutation.mutateAsync({
+        athleteId: user.id,
+        date: testDate,
+        labName: labProviders.find(l => l.id === labProvider)?.name || 'Unknown Lab',
+        notes: notes || undefined,
+        markers: markersData,
+      })
+
+      toast.success('Blood test saved successfully')
+      router.push('/athlete/blood-work')
+    } catch (error) {
+      console.error('Failed to save blood test:', error)
+      toast.error('Failed to save blood test')
+    }
   }
 
-  const getMarkerStatus = (marker: typeof mockExtractedMarkers[0]) => {
-    if (marker.value < marker.reference.low) return 'low'
-    if (marker.value > marker.reference.high) return 'high'
+  const getMarkerStatus = (value: number, reference: { low: number; high: number }): 'normal' | 'low' | 'high' => {
+    if (value < reference.low) return 'low'
+    if (value > reference.high) return 'high'
     return 'normal'
   }
 
@@ -205,6 +286,19 @@ export default function BloodWorkUploadPage() {
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="text-lg font-semibold mb-4">Upload Blood Test PDF</h2>
 
+              {/* Info Banner */}
+              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-4 mb-6">
+                <div className="flex gap-3">
+                  <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-blue-600">Automatic PDF extraction coming soon</p>
+                    <p className="text-sm text-blue-600/80 mt-1">
+                      For now, please upload your PDF as a reference and enter markers manually on the next step.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Drop Zone */}
               <div
                 onDragOver={handleDragOver}
@@ -214,8 +308,7 @@ export default function BloodWorkUploadPage() {
                   'relative rounded-xl border-2 border-dashed p-12 text-center transition-all cursor-pointer',
                   isDragOver
                     ? 'border-amber-500 bg-amber-500/5'
-                    : 'border-border hover:border-muted-foreground/50',
-                  isProcessing && 'pointer-events-none opacity-50'
+                    : 'border-border hover:border-muted-foreground/50'
                 )}
               >
                 <input
@@ -223,20 +316,9 @@ export default function BloodWorkUploadPage() {
                   accept="application/pdf"
                   onChange={handleFileChange}
                   className="absolute inset-0 opacity-0 cursor-pointer"
-                  disabled={isProcessing}
                 />
 
-                {isProcessing ? (
-                  <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-12 w-12 text-amber-500 animate-spin" />
-                    <div>
-                      <p className="font-medium">Processing PDF...</p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Extracting biomarkers from your blood test
-                      </p>
-                    </div>
-                  </div>
-                ) : uploadedFile ? (
+                {uploadedFile ? (
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-green-500/10">
                       <FileText className="h-8 w-8 text-green-600" />
@@ -291,7 +373,7 @@ export default function BloodWorkUploadPage() {
           </motion.div>
         )}
 
-        {/* Step 2: Review Extracted Markers */}
+        {/* Step 2: Enter/Review Markers */}
         {step === 2 && (
           <motion.div
             key="step2"
@@ -301,16 +383,25 @@ export default function BloodWorkUploadPage() {
             className="space-y-6"
           >
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="p-6 border-b border-border">
-                <h2 className="text-lg font-semibold">Review Extracted Markers</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {extractedMarkers.length} markers found. Edit values if needed.
-                </p>
+              <div className="p-6 border-b border-border flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Blood Markers</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {extractedMarkers.length} markers added. Click below to add more.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setShowMarkerSelector(true)}
+                  className="bg-foreground text-background hover:bg-foreground/90"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Marker
+                </Button>
               </div>
 
               <div className="divide-y divide-border max-h-[500px] overflow-y-auto">
                 {extractedMarkers.map((marker, index) => {
-                  const status = getMarkerStatus(marker)
+                  const status = getMarkerStatus(marker.value, marker.reference)
                   return (
                     <div
                       key={index}
@@ -363,10 +454,108 @@ export default function BloodWorkUploadPage() {
               {extractedMarkers.length === 0 && (
                 <div className="p-12 text-center text-muted-foreground">
                   <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No markers extracted. Add markers manually below.</p>
+                  <p>No markers added yet. Click Add Marker to begin.</p>
                 </div>
               )}
             </div>
+
+            {/* Marker Selector Modal */}
+            <AnimatePresence>
+              {showMarkerSelector && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowMarkerSelector(false)}
+                    className="fixed inset-0 bg-black/50 z-50"
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg"
+                  >
+                    <div className="rounded-xl border border-border bg-card shadow-2xl max-h-[80vh] overflow-hidden">
+                      <div className="p-4 border-b border-border flex items-center justify-between">
+                        <h3 className="font-semibold">Add Blood Marker</h3>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowMarkerSelector(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="p-4 max-h-[50vh] overflow-y-auto">
+                        <p className="text-sm font-medium mb-2">Common Markers</p>
+                        <div className="grid grid-cols-2 gap-2 mb-6">
+                          {commonMarkers
+                            .filter(m => !extractedMarkers.some(em => em.name === m.name))
+                            .map((marker) => (
+                              <button
+                                key={marker.name}
+                                onClick={() => addCommonMarker(marker)}
+                                className="text-left p-3 rounded-lg border border-border hover:border-amber-500/50 hover:bg-muted/50 transition-colors"
+                              >
+                                <p className="font-medium text-sm">{marker.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {marker.refLow}-{marker.refHigh} {marker.unit}
+                                </p>
+                              </button>
+                            ))}
+                        </div>
+
+                        <p className="text-sm font-medium mb-2">Custom Marker</p>
+                        <div className="space-y-3">
+                          <Input
+                            placeholder="Marker name"
+                            value={newMarker.name}
+                            onChange={(e) => setNewMarker({ ...newMarker, name: e.target.value })}
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="Value"
+                              type="number"
+                              step="0.01"
+                              value={newMarker.value}
+                              onChange={(e) => setNewMarker({ ...newMarker, value: e.target.value })}
+                            />
+                            <Input
+                              placeholder="Unit (e.g., nmol/L)"
+                              value={newMarker.unit}
+                              onChange={(e) => setNewMarker({ ...newMarker, unit: e.target.value })}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input
+                              placeholder="Ref. Low"
+                              type="number"
+                              step="0.01"
+                              value={newMarker.refLow}
+                              onChange={(e) => setNewMarker({ ...newMarker, refLow: e.target.value })}
+                            />
+                            <Input
+                              placeholder="Ref. High"
+                              type="number"
+                              step="0.01"
+                              value={newMarker.refHigh}
+                              onChange={(e) => setNewMarker({ ...newMarker, refHigh: e.target.value })}
+                            />
+                          </div>
+                          <Button
+                            onClick={addCustomMarker}
+                            className="w-full bg-foreground text-background hover:bg-foreground/90"
+                          >
+                            Add Custom Marker
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
 
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep(1)}>
@@ -400,13 +589,14 @@ export default function BloodWorkUploadPage() {
               <div>
                 <label className="block text-sm font-medium mb-2">
                   <Calendar className="h-4 w-4 inline mr-2" />
-                  Test Date
+                  Test Date <span className="text-red-500">*</span>
                 </label>
                 <Input
                   type="date"
                   value={testDate}
                   onChange={(e) => setTestDate(e.target.value)}
                   className="max-w-xs"
+                  required
                 />
               </div>
 
@@ -501,6 +691,7 @@ export default function BloodWorkUploadPage() {
               </Button>
               <Button
                 onClick={() => setStep(4)}
+                disabled={!testDate}
                 className="flex-1 bg-foreground text-background hover:bg-foreground/90"
               >
                 Review & Save
@@ -575,22 +766,22 @@ export default function BloodWorkUploadPage() {
                 <div className="flex items-center gap-4 text-sm">
                   <span className="flex items-center gap-1">
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    {extractedMarkers.filter((m) => getMarkerStatus(m) === 'normal').length} Normal
+                    {extractedMarkers.filter((m) => getMarkerStatus(m.value, m.reference) === 'normal').length} Normal
                   </span>
                   <span className="flex items-center gap-1">
                     <AlertTriangle className="h-4 w-4 text-amber-500" />
-                    {extractedMarkers.filter((m) => getMarkerStatus(m) === 'low').length} Low
+                    {extractedMarkers.filter((m) => getMarkerStatus(m.value, m.reference) === 'low').length} Low
                   </span>
                   <span className="flex items-center gap-1">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
-                    {extractedMarkers.filter((m) => getMarkerStatus(m) === 'high').length} High
+                    {extractedMarkers.filter((m) => getMarkerStatus(m.value, m.reference) === 'high').length} High
                   </span>
                 </div>
               </div>
             </div>
 
             {/* Flagged Markers Warning */}
-            {extractedMarkers.some((m) => getMarkerStatus(m) !== 'normal') && (
+            {extractedMarkers.some((m) => getMarkerStatus(m.value, m.reference) !== 'normal') && (
               <div className="rounded-xl border border-amber-500/50 bg-amber-500/10 p-4">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
@@ -611,10 +802,10 @@ export default function BloodWorkUploadPage() {
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={createBloodTestMutation.isPending}
                 className="flex-1 bg-foreground text-background hover:bg-foreground/90"
               >
-                {isSaving ? (
+                {createBloodTestMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Saving...

@@ -18,166 +18,17 @@ import {
   ExternalLink,
   Ban,
   Mail,
+  Loader2,
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
-
-// Types
-interface MessageThread {
-  id: string
-  participants: {
-    id: string
-    name: string
-    role: 'coach' | 'athlete'
-    avatar?: string
-  }[]
-  lastMessage: {
-    content: string
-    senderId: string
-    timestamp: Date
-  }
-  messageCount: number
-  isFlagged: boolean
-  flagReason?: string
-  status: 'active' | 'resolved' | 'pending_review'
-  createdAt: Date
-}
-
-interface FlaggedContent {
-  id: string
-  threadId: string
-  content: string
-  sender: {
-    id: string
-    name: string
-    role: 'coach' | 'athlete'
-  }
-  recipient: {
-    id: string
-    name: string
-    role: 'coach' | 'athlete'
-  }
-  flagReason: 'harassment' | 'spam' | 'inappropriate' | 'other'
-  flaggedAt: Date
-  status: 'pending' | 'reviewed' | 'dismissed'
-  reviewedBy?: string
-}
-
-// Mock data
-const mockThreads: MessageThread[] = [
-  {
-    id: '1',
-    participants: [
-      { id: 'c1', name: 'Mike Johnson', role: 'coach' },
-      { id: 'a1', name: 'Sarah Williams', role: 'athlete' },
-    ],
-    lastMessage: {
-      content: 'Great progress this week! Let\'s keep the momentum going.',
-      senderId: 'c1',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    },
-    messageCount: 47,
-    isFlagged: false,
-    status: 'active',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 30),
-  },
-  {
-    id: '2',
-    participants: [
-      { id: 'c2', name: 'Emma Davis', role: 'coach' },
-      { id: 'a2', name: 'James Anderson', role: 'athlete' },
-    ],
-    lastMessage: {
-      content: 'I\'ve updated your meal plan based on your feedback.',
-      senderId: 'c2',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    },
-    messageCount: 23,
-    isFlagged: true,
-    flagReason: 'Reported by athlete',
-    status: 'pending_review',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 15),
-  },
-  {
-    id: '3',
-    participants: [
-      { id: 'c1', name: 'Mike Johnson', role: 'coach' },
-      { id: 'a3', name: 'Emily Brown', role: 'athlete' },
-    ],
-    lastMessage: {
-      content: 'When should I expect the new programme?',
-      senderId: 'a3',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    },
-    messageCount: 156,
-    isFlagged: false,
-    status: 'active',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90),
-  },
-  {
-    id: '4',
-    participants: [
-      { id: 'c3', name: 'Tom Wilson', role: 'coach' },
-      { id: 'a4', name: 'Alex Taylor', role: 'athlete' },
-    ],
-    lastMessage: {
-      content: 'This is getting out of hand...',
-      senderId: 'a4',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4),
-    },
-    messageCount: 89,
-    isFlagged: true,
-    flagReason: 'Auto-flagged: Potential conflict',
-    status: 'pending_review',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45),
-  },
-  {
-    id: '5',
-    participants: [
-      { id: 'c2', name: 'Emma Davis', role: 'coach' },
-      { id: 'a5', name: 'Chris Martin', role: 'athlete' },
-    ],
-    lastMessage: {
-      content: 'See you at the check-in tomorrow!',
-      senderId: 'c2',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    },
-    messageCount: 34,
-    isFlagged: false,
-    status: 'active',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20),
-  },
-]
-
-const mockFlaggedContent: FlaggedContent[] = [
-  {
-    id: 'f1',
-    threadId: '2',
-    content: 'This message was flagged for review due to reported issues.',
-    sender: { id: 'c2', name: 'Emma Davis', role: 'coach' },
-    recipient: { id: 'a2', name: 'James Anderson', role: 'athlete' },
-    flagReason: 'harassment',
-    flaggedAt: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    status: 'pending',
-  },
-  {
-    id: 'f2',
-    threadId: '4',
-    content: 'Automated system detected potentially problematic language.',
-    sender: { id: 'c3', name: 'Tom Wilson', role: 'coach' },
-    recipient: { id: 'a4', name: 'Alex Taylor', role: 'athlete' },
-    flagReason: 'inappropriate',
-    flaggedAt: new Date(Date.now() - 1000 * 60 * 60 * 4),
-    status: 'pending',
-  },
-]
-
-const stats = {
-  totalThreads: 1247,
-  activeToday: 342,
-  flaggedPending: 8,
-  averageResponseTime: '2.4h',
-}
+import {
+  useMessageThreads,
+  useFlaggedMessages,
+  useMessageStats,
+  type MessageThread,
+  type FlaggedContent,
+} from '@/hooks/admin'
 
 export default function AdminMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -186,8 +37,25 @@ export default function AdminMessagesPage() {
   const [selectedThread, setSelectedThread] = useState<MessageThread | null>(null)
   const [activeTab, setActiveTab] = useState<'threads' | 'flagged'>('threads')
 
+  // Fetch data from hooks
+  const { data: threadsData, isLoading: threadsLoading } = useMessageThreads({
+    status: statusFilter || undefined,
+    flaggedOnly: showFlaggedOnly,
+    search: searchQuery || undefined,
+  })
+  const { data: flaggedContent = [], isLoading: flaggedLoading } = useFlaggedMessages()
+  const { data: messageStats, isLoading: statsLoading } = useMessageStats()
+
+  const threads = threadsData?.threads || []
+  const stats = messageStats || {
+    totalThreads: 0,
+    activeToday: 0,
+    flaggedPending: 0,
+    averageResponseTime: 'N/A',
+  }
+
   const filteredThreads = useMemo(() => {
-    return mockThreads.filter((thread) => {
+    return threads.filter((thread: MessageThread) => {
       // Search
       if (searchQuery) {
         const searchLower = searchQuery.toLowerCase()
@@ -208,7 +76,7 @@ export default function AdminMessagesPage() {
 
       return true
     })
-  }, [searchQuery, statusFilter, showFlaggedOnly])
+  }, [threads, searchQuery, statusFilter, showFlaggedOnly])
 
   const getStatusConfig = (status: MessageThread['status']) => {
     switch (status) {
@@ -244,6 +112,15 @@ export default function AdminMessagesPage() {
       case 'other':
         return { label: 'Other', colour: 'text-blue-500' }
     }
+  }
+
+  // Loading state
+  if (threadsLoading || statsLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
   return (
@@ -333,9 +210,9 @@ export default function AdminMessagesPage() {
         >
           <Flag className="h-4 w-4" />
           Flagged Content
-          {mockFlaggedContent.filter((f) => f.status === 'pending').length > 0 && (
+          {flaggedContent.filter((f: FlaggedContent) => f.status === 'pending').length > 0 && (
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] text-white">
-              {mockFlaggedContent.filter((f) => f.status === 'pending').length}
+              {flaggedContent.filter((f: FlaggedContent) => f.status === 'pending').length}
             </span>
           )}
         </button>
@@ -383,218 +260,225 @@ export default function AdminMessagesPage() {
 
           {/* Threads list */}
           <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="divide-y divide-border">
-              {filteredThreads.map((thread, index) => {
-                const statusConfig = getStatusConfig(thread.status)
-                const StatusIcon = statusConfig.icon
-                return (
-                  <motion.div
-                    key={thread.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedThread(thread)}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        {/* Participants */}
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex -space-x-2">
-                            {thread.participants.map((p) => (
-                              <div
-                                key={p.id}
-                                className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-medium ring-2 ring-card"
-                              >
-                                {p.name
-                                  .split(' ')
-                                  .map((n) => n[0])
-                                  .join('')}
-                              </div>
-                            ))}
-                          </div>
-                          <span className="font-medium">
-                            {thread.participants.map((p) => p.name).join(' & ')}
-                          </span>
-                          {thread.isFlagged && (
-                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-xs">
-                              <Flag className="h-3 w-3" />
-                              Flagged
+            {filteredThreads.length > 0 ? (
+              <div className="divide-y divide-border">
+                {filteredThreads.map((thread: MessageThread, index: number) => {
+                  const statusConfig = getStatusConfig(thread.status)
+                  const StatusIcon = statusConfig.icon
+                  return (
+                    <motion.div
+                      key={thread.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => setSelectedThread(thread)}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {/* Participants */}
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex -space-x-2">
+                              {thread.participants.map((p) => (
+                                <div
+                                  key={p.id}
+                                  className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-medium ring-2 ring-card"
+                                >
+                                  {p.name
+                                    .split(' ')
+                                    .map((n) => n[0])
+                                    .join('')}
+                                </div>
+                              ))}
                             </div>
-                          )}
+                            <span className="font-medium">
+                              {thread.participants.map((p) => p.name).join(' & ')}
+                            </span>
+                            {thread.isFlagged && (
+                              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-xs">
+                                <Flag className="h-3 w-3" />
+                                Flagged
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Last message */}
+                          <p className="text-sm text-muted-foreground truncate">
+                            <span className="font-medium text-foreground">
+                              {thread.participants.find(
+                                (p) => p.id === thread.lastMessage.senderId
+                              )?.name || 'Unknown'}
+                              :
+                            </span>{' '}
+                            {thread.lastMessage.content}
+                          </p>
+
+                          {/* Meta */}
+                          <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                            <span>{thread.messageCount} messages</span>
+                            <span>
+                              Started{' '}
+                              {formatDistanceToNow(thread.createdAt, {
+                                addSuffix: true,
+                              })}
+                            </span>
+                            {thread.flagReason && (
+                              <span className="text-rose-500">{thread.flagReason}</span>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Last message */}
-                        <p className="text-sm text-muted-foreground truncate">
-                          <span className="font-medium text-foreground">
-                            {thread.participants.find(
-                              (p) => p.id === thread.lastMessage.senderId
-                            )?.name}
-                            :
-                          </span>{' '}
-                          {thread.lastMessage.content}
-                        </p>
-
-                        {/* Meta */}
-                        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                          <span>{thread.messageCount} messages</span>
-                          <span>
-                            Started{' '}
-                            {formatDistanceToNow(thread.createdAt, {
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              'flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium',
+                              statusConfig.colour
+                            )}
+                          >
+                            <StatusIcon className="h-3 w-3" />
+                            {statusConfig.label}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(thread.lastMessage.timestamp, {
                               addSuffix: true,
                             })}
                           </span>
-                          {thread.flagReason && (
-                            <span className="text-rose-500">{thread.flagReason}</span>
-                          )}
+                          <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium',
-                            statusConfig.colour
-                          )}
-                        >
-                          <StatusIcon className="h-3 w-3" />
-                          {statusConfig.label}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(thread.lastMessage.timestamp, {
-                            addSuffix: true,
-                          })}
-                        </span>
-                        <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Empty state */}
-          {filteredThreads.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                    </motion.div>
+                  )
+                })}
               </div>
-              <h3 className="font-semibold mb-1">No threads found</h3>
-              <p className="text-sm text-muted-foreground">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          )}
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold mb-1">
+                  {threads.length === 0 ? 'No message threads yet' : 'No threads found'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {threads.length === 0
+                    ? 'Message threads will appear here when coaches and athletes start communicating'
+                    : 'Try adjusting your search or filters'}
+                </p>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         /* Flagged content tab */
         <div className="space-y-4">
-          {mockFlaggedContent.map((flag, index) => {
-            const reasonConfig = getFlagReasonConfig(flag.flagReason)
-            return (
-              <motion.div
-                key={flag.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-rose-500/10">
-                      <AlertTriangle className="h-5 w-5 text-rose-500" />
+          {flaggedLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : flaggedContent.length > 0 ? (
+            flaggedContent.map((flag: FlaggedContent, index: number) => {
+              const reasonConfig = getFlagReasonConfig(flag.flagReason)
+              return (
+                <motion.div
+                  key={flag.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="rounded-xl border border-border bg-card p-6"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-rose-500/10">
+                        <AlertTriangle className="h-5 w-5 text-rose-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">Flagged Message</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDistanceToNow(flag.flaggedAt, { addSuffix: true })}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">Flagged Message</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(flag.flaggedAt, { addSuffix: true })}
-                      </p>
+                    <span
+                      className={cn(
+                        'px-2 py-1 rounded-lg text-xs font-medium',
+                        flag.status === 'pending'
+                          ? 'bg-amber-500/10 text-amber-500'
+                          : flag.status === 'reviewed'
+                            ? 'bg-emerald-500/10 text-emerald-500'
+                            : 'bg-muted text-muted-foreground'
+                      )}
+                    >
+                      {flag.status.charAt(0).toUpperCase() + flag.status.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Message content */}
+                  <div className="rounded-lg bg-muted/50 p-4 mb-4">
+                    <p className="text-sm italic">&quot;{flag.content}&quot;</p>
+                  </div>
+
+                  {/* Participants */}
+                  <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="p-2 rounded-lg bg-blue-500/10">
+                        <User className="h-4 w-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Sender</p>
+                        <p className="text-sm font-medium">
+                          {flag.sender.name}
+                          <span className="text-muted-foreground ml-1 capitalize">
+                            ({flag.sender.role})
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                      <div className="p-2 rounded-lg bg-purple-500/10">
+                        <User className="h-4 w-4 text-purple-500" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Recipient</p>
+                        <p className="text-sm font-medium">
+                          {flag.recipient.name}
+                          <span className="text-muted-foreground ml-1 capitalize">
+                            ({flag.recipient.role})
+                          </span>
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <span
-                    className={cn(
-                      'px-2 py-1 rounded-lg text-xs font-medium',
-                      flag.status === 'pending'
-                        ? 'bg-amber-500/10 text-amber-500'
-                        : flag.status === 'reviewed'
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    {flag.status.charAt(0).toUpperCase() + flag.status.slice(1)}
-                  </span>
-                </div>
 
-                {/* Message content */}
-                <div className="rounded-lg bg-muted/50 p-4 mb-4">
-                  <p className="text-sm italic">&quot;{flag.content}&quot;</p>
-                </div>
-
-                {/* Participants */}
-                <div className="grid sm:grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <div className="p-2 rounded-lg bg-blue-500/10">
-                      <User className="h-4 w-4 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Sender</p>
-                      <p className="text-sm font-medium">
-                        {flag.sender.name}
-                        <span className="text-muted-foreground ml-1 capitalize">
-                          ({flag.sender.role})
-                        </span>
-                      </p>
-                    </div>
+                  {/* Flag reason */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Flag className={cn('h-4 w-4', reasonConfig.colour)} />
+                    <span className="text-sm font-medium">{reasonConfig.label}</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                    <div className="p-2 rounded-lg bg-purple-500/10">
-                      <User className="h-4 w-4 text-purple-500" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Recipient</p>
-                      <p className="text-sm font-medium">
-                        {flag.recipient.name}
-                        <span className="text-muted-foreground ml-1 capitalize">
-                          ({flag.recipient.role})
-                        </span>
-                      </p>
-                    </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors text-sm font-medium">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Dismiss Flag
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors text-sm font-medium">
+                      <Mail className="h-4 w-4" />
+                      Send Warning
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors text-sm font-medium">
+                      <Ban className="h-4 w-4" />
+                      Take Action
+                    </button>
+                    <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium">
+                      <Eye className="h-4 w-4" />
+                      View Thread
+                    </button>
                   </div>
-                </div>
-
-                {/* Flag reason */}
-                <div className="flex items-center gap-2 mb-4">
-                  <Flag className={cn('h-4 w-4', reasonConfig.colour)} />
-                  <span className="text-sm font-medium">{reasonConfig.label}</span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-3">
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition-colors text-sm font-medium">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Dismiss Flag
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors text-sm font-medium">
-                    <Mail className="h-4 w-4" />
-                    Send Warning
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500 text-white hover:bg-rose-600 transition-colors text-sm font-medium">
-                    <Ban className="h-4 w-4" />
-                    Take Action
-                  </button>
-                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors text-sm font-medium">
-                    <Eye className="h-4 w-4" />
-                    View Thread
-                  </button>
-                </div>
-              </motion.div>
-            )
-          })}
-
-          {mockFlaggedContent.length === 0 && (
+                </motion.div>
+              )
+            })
+          ) : (
             <div className="text-center py-12">
               <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 className="h-8 w-8 text-emerald-500" />

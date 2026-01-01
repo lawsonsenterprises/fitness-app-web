@@ -7,7 +7,6 @@ import {
   Scale,
   Footprints,
   Moon,
-  Pill,
   Star,
   MessageSquare,
   TrendingUp,
@@ -15,89 +14,78 @@ import {
   Minus,
   ImageIcon,
   Calendar,
+  Dumbbell,
+  ClipboardCheck,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts'
 
 import { cn } from '@/lib/utils'
-
-// Mock check-in data
-const mockCheckIn = {
-  id: '1',
-  submittedAt: '2024-12-21T10:30:00Z',
-  weekNumber: 7,
-  status: 'reviewed',
-  coachRating: 5,
-  weight: {
-    current: 76.2,
-    previous: 77.1,
-    change: -0.9,
-    trend: 'down',
-  },
-  steps: {
-    daily: [
-      { day: 'Mon', steps: 12450 },
-      { day: 'Tue', steps: 8920 },
-      { day: 'Wed', steps: 11200 },
-      { day: 'Thu', steps: 9800 },
-      { day: 'Fri', steps: 13500 },
-      { day: 'Sat', steps: 15200 },
-      { day: 'Sun', steps: 7800 },
-    ],
-    average: 11267,
-    target: 10000,
-  },
-  sleep: {
-    daily: [
-      { day: 'Mon', hours: 7.5, quality: 85 },
-      { day: 'Tue', hours: 6.8, quality: 72 },
-      { day: 'Wed', hours: 8.0, quality: 90 },
-      { day: 'Thu', hours: 7.2, quality: 78 },
-      { day: 'Fri', hours: 7.8, quality: 85 },
-      { day: 'Sat', hours: 8.5, quality: 92 },
-      { day: 'Sun', hours: 7.0, quality: 75 },
-    ],
-    average: 7.5,
-    target: 7.5,
-    avgQuality: 82,
-  },
-  supplements: [
-    { name: 'Creatine', daysCompliant: 7, totalDays: 7, compliance: 100 },
-    { name: 'Vitamin D', daysCompliant: 6, totalDays: 7, compliance: 86 },
-    { name: 'Fish Oil', daysCompliant: 5, totalDays: 7, compliance: 71 },
-    { name: 'Magnesium', daysCompliant: 7, totalDays: 7, compliance: 100 },
-  ],
-  overallCompliance: 89,
-  athleteNotes: 'Felt really strong this week. Sleep was a bit off on Tuesday due to late work, but made up for it over the weekend. Training sessions all completed with good intensity.',
-  coachFeedback: 'Excellent week! Weight is trending nicely and your training consistency is paying off. Keep the sleep consistent if possible - Tuesday dip affected Wednesday performance slightly. Very happy with your progress.',
-  progressPhotos: [
-    { id: '1', type: 'front', url: '/placeholder.jpg' },
-    { id: '2', type: 'side', url: '/placeholder.jpg' },
-    { id: '3', type: 'back', url: '/placeholder.jpg' },
-  ],
-  comparison: {
-    weightChange4Weeks: -2.8,
-    avgStepsChange: '+1200',
-    avgSleepChange: '+0.3h',
-  },
-}
+import { useCheckIn } from '@/hooks/athlete'
+import { CheckInStatusBadge } from '@/components/check-ins/check-in-status-badge'
+import type { CheckInReviewStatus } from '@/types'
 
 export default function CheckInDetailPage({
   params,
 }: {
   params: Promise<{ checkInId: string }>
 }) {
-  const _resolvedParams = use(params)
+  const resolvedParams = use(params)
+  const { data: checkIn, isLoading } = useCheckIn(resolvedParams.checkInId)
+
+  if (isLoading) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="mb-8">
+          <div className="h-6 w-32 animate-pulse rounded bg-muted mb-4" />
+          <div className="h-8 w-64 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8 space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-64 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-40 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!checkIn) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="flex flex-col items-center justify-center py-24">
+          <ClipboardCheck className="h-16 w-16 text-muted-foreground/30 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Check-in not found</h2>
+          <p className="text-muted-foreground mb-6">This check-in may have been deleted or doesn&apos;t exist.</p>
+          <Link
+            href="/athlete/check-ins"
+            className="text-amber-600 hover:text-amber-700"
+          >
+            Back to Check-Ins
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Map database fields to display
+  const reviewStatus = (checkIn.review_status || 'pending') as CheckInReviewStatus
+  const coachRating = checkIn.coach_rating
+  const coachFeedback = checkIn.coach_feedback
+  const athleteNotes = checkIn.notes
+  const weight = checkIn.weight
+  const sleepHours = checkIn.sleep_hours
+  const sleepQuality = checkIn.sleep_quality
+  const stepsAverage = checkIn.steps_average
+  const stepsTotal = checkIn.steps_total
+  const sessionQuality = checkIn.session_quality
+  const muscleGroup = checkIn.muscle_group_trained
+  const checkInType = checkIn.check_in_type
 
   return (
     <div className="p-6 lg:p-8">
@@ -114,17 +102,18 @@ export default function CheckInDetailPage({
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Week {mockCheckIn.weekNumber} Check-In</h1>
-              <span className={cn(
-                'rounded-full px-3 py-1 text-sm font-medium',
-                mockCheckIn.status === 'reviewed' && 'bg-green-500/10 text-green-600'
-              )}>
-                Reviewed
-              </span>
+              <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
+                {new Date(checkIn.date).toLocaleDateString('en-GB', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </h1>
+              <CheckInStatusBadge status={reviewStatus} />
             </div>
             <p className="mt-1 text-muted-foreground flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Submitted {new Date(mockCheckIn.submittedAt).toLocaleDateString('en-GB', {
+              Submitted {new Date(checkIn.created_at).toLocaleDateString('en-GB', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
@@ -133,14 +122,14 @@ export default function CheckInDetailPage({
             </p>
           </div>
 
-          {mockCheckIn.coachRating && (
+          {coachRating && (
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
                   className={cn(
                     'h-5 w-5',
-                    i < mockCheckIn.coachRating
+                    i < coachRating
                       ? 'text-amber-400 fill-amber-400'
                       : 'text-muted'
                   )}
@@ -155,243 +144,182 @@ export default function CheckInDetailPage({
         {/* Main Content */}
         <div className="lg:col-span-8 space-y-6">
           {/* Weight Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
-                <Scale className="h-5 w-5 text-blue-600" />
+          {weight != null && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-border bg-card p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10">
+                  <Scale className="h-5 w-5 text-blue-600" />
+                </div>
+                <h2 className="text-lg font-semibold">Weight</h2>
               </div>
-              <h2 className="text-lg font-semibold">Weight</h2>
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">Current</p>
-                <p className="text-3xl font-bold">{mockCheckIn.weight.current} kg</p>
+              <div className="rounded-lg bg-muted/50 p-4 inline-block">
+                <p className="text-sm text-muted-foreground">Current Weight</p>
+                <p className="text-3xl font-bold">{weight} kg</p>
               </div>
-              <div className="rounded-lg bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">Previous</p>
-                <p className="text-3xl font-bold">{mockCheckIn.weight.previous} kg</p>
-              </div>
-              <div className="rounded-lg bg-muted/50 p-4">
-                <p className="text-sm text-muted-foreground">Change</p>
-                <div className="flex items-center gap-2">
-                  <p className={cn(
-                    'text-3xl font-bold',
-                    mockCheckIn.weight.change < 0 ? 'text-green-500' : 'text-amber-500'
-                  )}>
-                    {mockCheckIn.weight.change > 0 ? '+' : ''}{mockCheckIn.weight.change} kg
-                  </p>
-                  {mockCheckIn.weight.trend === 'down' && <TrendingDown className="h-5 w-5 text-green-500" />}
-                  {mockCheckIn.weight.trend === 'up' && <TrendingUp className="h-5 w-5 text-amber-500" />}
-                  {mockCheckIn.weight.trend === 'stable' && <Minus className="h-5 w-5 text-muted-foreground" />}
+            </motion.div>
+          )}
+
+          {/* Steps Card */}
+          {(stepsAverage != null || stepsTotal != null) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-xl border border-border bg-card p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
+                    <Footprints className="h-5 w-5 text-green-600" />
+                  </div>
+                  <h2 className="text-lg font-semibold">Steps</h2>
                 </div>
               </div>
-            </div>
-          </motion.div>
 
-          {/* Steps Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10">
-                  <Footprints className="h-5 w-5 text-green-600" />
-                </div>
-                <h2 className="text-lg font-semibold">Daily Steps</h2>
+              <div className="grid gap-4 md:grid-cols-2">
+                {stepsAverage != null && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Average Daily Steps</p>
+                    <p className="text-3xl font-bold">{stepsAverage.toLocaleString()}</p>
+                  </div>
+                )}
+                {stepsTotal != null && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Total Steps</p>
+                    <p className="text-3xl font-bold">{stepsTotal.toLocaleString()}</p>
+                  </div>
+                )}
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold">{mockCheckIn.steps.average.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">avg/day (target: {mockCheckIn.steps.target.toLocaleString()})</p>
-              </div>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockCheckIn.steps.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Bar dataKey="steps" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Sleep Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
+          {/* Sleep Card */}
+          {sleepHours != null && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-xl border border-border bg-card p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-500/10">
                   <Moon className="h-5 w-5 text-indigo-600" />
                 </div>
                 <h2 className="text-lg font-semibold">Sleep</h2>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold">{mockCheckIn.sleep.average}h</p>
-                <p className="text-sm text-muted-foreground">avg/night • {mockCheckIn.sleep.avgQuality}% quality</p>
-              </div>
-            </div>
 
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={mockCheckIn.sleep.daily}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" domain={[5, 10]} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="hours"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    dot={{ fill: '#6366f1', r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </motion.div>
-
-          {/* Supplements */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
-                  <Pill className="h-5 w-5 text-purple-600" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-lg bg-muted/50 p-4">
+                  <p className="text-sm text-muted-foreground">Average Sleep</p>
+                  <p className="text-3xl font-bold">{sleepHours}h</p>
                 </div>
-                <h2 className="text-lg font-semibold">Supplement Compliance</h2>
+                {sleepQuality && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Sleep Quality</p>
+                    <p className="text-3xl font-bold capitalize">{sleepQuality}</p>
+                  </div>
+                )}
               </div>
-              <div className="text-2xl font-bold">{mockCheckIn.overallCompliance}%</div>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="space-y-4">
-              {mockCheckIn.supplements.map((supplement) => (
-                <div key={supplement.name}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{supplement.name}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {supplement.daysCompliant}/{supplement.totalDays} days • {supplement.compliance}%
-                    </span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <motion.div
-                      className={cn(
-                        'h-full rounded-full',
-                        supplement.compliance >= 90 ? 'bg-green-500' :
-                        supplement.compliance >= 70 ? 'bg-amber-500' : 'bg-red-500'
-                      )}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${supplement.compliance}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                    />
-                  </div>
+          {/* Training Card */}
+          {(sessionQuality || muscleGroup) && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="rounded-xl border border-border bg-card p-6"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10">
+                  <Dumbbell className="h-5 w-5 text-amber-600" />
                 </div>
-              ))}
-            </div>
-          </motion.div>
+                <h2 className="text-lg font-semibold">Training</h2>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {sessionQuality && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Session Quality</p>
+                    <p className="text-3xl font-bold capitalize">{sessionQuality}</p>
+                  </div>
+                )}
+                {muscleGroup && (
+                  <div className="rounded-lg bg-muted/50 p-4">
+                    <p className="text-sm text-muted-foreground">Muscle Group</p>
+                    <p className="text-xl font-bold">{muscleGroup}</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {/* Sidebar */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Coach Feedback */}
+          {/* Check-in Type */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="rounded-xl border border-green-500/30 bg-green-500/5 p-6"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <MessageSquare className="h-5 w-5 text-green-600" />
-              <h3 className="font-semibold text-green-600">Coach Feedback</h3>
-            </div>
-            <p className="text-sm text-green-600/90 leading-relaxed">{mockCheckIn.coachFeedback}</p>
-          </motion.div>
-
-          {/* Athlete Notes */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
             className="rounded-xl border border-border bg-card p-6"
           >
-            <h3 className="font-semibold mb-4">Your Notes</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{mockCheckIn.athleteNotes}</p>
+            <h3 className="font-semibold mb-3">Check-in Type</h3>
+            <span className="rounded-full bg-muted px-3 py-1 text-sm capitalize">
+              {checkInType?.replace('_', ' ') || 'General'}
+            </span>
           </motion.div>
 
-          {/* Progress Photos */}
+          {/* Coach Feedback */}
+          {coachFeedback && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-xl border border-green-500/30 bg-green-500/5 p-6"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <MessageSquare className="h-5 w-5 text-green-600" />
+                <h3 className="font-semibold text-green-600">Coach Feedback</h3>
+              </div>
+              <p className="text-sm text-green-600/90 leading-relaxed">{coachFeedback}</p>
+            </motion.div>
+          )}
+
+          {/* Athlete Notes */}
+          {athleteNotes && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-xl border border-border bg-card p-6"
+            >
+              <h3 className="font-semibold mb-4">Your Notes</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{athleteNotes}</p>
+            </motion.div>
+          )}
+
+          {/* Progress Photos Placeholder */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0.3 }}
             className="rounded-xl border border-border bg-card p-6"
           >
             <div className="flex items-center gap-2 mb-4">
               <ImageIcon className="h-5 w-5" />
               <h3 className="font-semibold">Progress Photos</h3>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {mockCheckIn.progressPhotos.map((photo) => (
-                <div
-                  key={photo.id}
-                  className="aspect-[3/4] rounded-lg bg-muted flex items-center justify-center"
-                >
-                  <p className="text-xs text-muted-foreground capitalize">{photo.type}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* 4 Week Comparison */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-xl border border-border bg-card p-6"
-          >
-            <h3 className="font-semibold mb-4">4 Week Progress</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Weight Change</span>
-                <span className="font-medium text-green-500">{mockCheckIn.comparison.weightChange4Weeks} kg</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Avg Steps</span>
-                <span className="font-medium text-green-500">{mockCheckIn.comparison.avgStepsChange}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Avg Sleep</span>
-                <span className="font-medium text-green-500">{mockCheckIn.comparison.avgSleepChange}</span>
-              </div>
-            </div>
+            {checkIn.photo_data ? (
+              <p className="text-sm text-muted-foreground">Photos attached to this check-in.</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No photos attached to this check-in.</p>
+            )}
           </motion.div>
         </div>
       </div>

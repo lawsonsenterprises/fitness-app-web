@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
+  HeadphonesIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Coaches', href: '/admin/coaches', icon: Users },
   { name: 'Athletes', href: '/admin/athletes', icon: UserCircle },
   { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+  { name: 'Support', href: '/admin/support', icon: HeadphonesIcon },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
 ]
 

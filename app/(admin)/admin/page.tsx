@@ -8,6 +8,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   PoundSterling,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -28,51 +30,19 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { TopBar } from '@/components/dashboard/top-bar'
+import {
+  usePlatformStats,
+  useSubscriptionStats,
+  usePlatformAnalytics,
+} from '@/hooks/admin'
 
-// Mock data
-const mockStats = {
-  totalCoaches: 127,
-  coachesChange: 12,
-  totalAthletes: 1842,
-  athletesChange: 156,
-  activeSubscriptions: 98,
-  subscriptionsChange: 8,
-  monthlyRevenue: 24750,
-  revenueChange: 18.5,
+// Subscription breakdown colors
+const SUBSCRIPTION_COLORS = {
+  professional: '#22c55e',
+  starter: '#f59e0b',
+  enterprise: '#6366f1',
+  free: '#94a3b8',
 }
-
-const mockRevenueData = [
-  { month: 'Jul', revenue: 18500 },
-  { month: 'Aug', revenue: 19200 },
-  { month: 'Sep', revenue: 20100 },
-  { month: 'Oct', revenue: 21800 },
-  { month: 'Nov', revenue: 23200 },
-  { month: 'Dec', revenue: 24750 },
-]
-
-const mockUserGrowth = [
-  { month: 'Jul', coaches: 95, athletes: 1200 },
-  { month: 'Aug', coaches: 102, athletes: 1380 },
-  { month: 'Sep', coaches: 108, athletes: 1520 },
-  { month: 'Oct', coaches: 115, athletes: 1650 },
-  { month: 'Nov', coaches: 121, athletes: 1780 },
-  { month: 'Dec', coaches: 127, athletes: 1842 },
-]
-
-const mockSubscriptionBreakdown = [
-  { name: 'Pro Monthly', value: 45, color: '#f59e0b' },
-  { name: 'Pro Annual', value: 32, color: '#22c55e' },
-  { name: 'Enterprise', value: 15, color: '#6366f1' },
-  { name: 'Trial', value: 8, color: '#94a3b8' },
-]
-
-const mockRecentActivity = [
-  { id: '1', type: 'coach_signup', name: 'James Wilson', time: '5 min ago' },
-  { id: '2', type: 'subscription', name: 'Sarah Parker upgraded to Pro', time: '12 min ago' },
-  { id: '3', type: 'athlete_signup', name: '3 new athletes joined', time: '25 min ago' },
-  { id: '4', type: 'payment', name: '£450 payment received', time: '1 hour ago' },
-  { id: '5', type: 'coach_signup', name: 'Mike Thompson', time: '2 hours ago' },
-]
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -83,8 +53,48 @@ function getGreeting() {
 
 export default function AdminDashboardPage() {
   const { user, displayName } = useAuth()
-  // Extract first name from display_name (split on space) or fall back to metadata
   const firstName = displayName?.split(' ')[0] || user?.user_metadata?.first_name || 'Admin'
+
+  // Fetch real data
+  const { data: platformStats, isLoading: statsLoading, error: statsError } = usePlatformStats()
+  const { data: subscriptionStats, isLoading: subStatsLoading } = useSubscriptionStats()
+  const { data: analytics, isLoading: analyticsLoading } = usePlatformAnalytics(90)
+
+  const isLoading = statsLoading || subStatsLoading || analyticsLoading
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <TopBar title="Dashboard" />
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
+  }
+
+  if (statsError) {
+    return (
+      <div className="min-h-screen">
+        <TopBar title="Dashboard" />
+        <div className="flex flex-col items-center justify-center p-8 gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <p className="text-muted-foreground">Failed to load dashboard data</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Prepare chart data from analytics
+  const userGrowthData = analytics?.dauData?.slice(-6).map(d => ({
+    month: new Date(d.date).toLocaleDateString('en-GB', { month: 'short' }),
+    dau: d.dau,
+  })) || []
+
+  // Subscription breakdown for pie chart
+  const subscriptionBreakdown = [
+    { name: 'Professional', value: platformStats?.activeSubscriptions || 0, color: SUBSCRIPTION_COLORS.professional },
+  ]
 
   return (
     <div className="min-h-screen">
@@ -101,208 +111,212 @@ export default function AdminDashboardPage() {
           </p>
         </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatCard
-          icon={Users}
-          label="Total Coaches"
-          value={mockStats.totalCoaches}
-          change={mockStats.coachesChange}
-          changeLabel="this month"
-          color="amber"
-        />
-        <StatCard
-          icon={UserCircle}
-          label="Total Athletes"
-          value={mockStats.totalAthletes.toLocaleString()}
-          change={mockStats.athletesChange}
-          changeLabel="this month"
-          color="blue"
-        />
-        <StatCard
-          icon={CreditCard}
-          label="Active Subscriptions"
-          value={mockStats.activeSubscriptions}
-          change={mockStats.subscriptionsChange}
-          changeLabel="this month"
-          color="green"
-        />
-        <StatCard
-          icon={PoundSterling}
-          label="Monthly Revenue"
-          value={`£${mockStats.monthlyRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-          change={mockStats.revenueChange}
-          changeLabel="vs last month"
-          color="purple"
-          isPercentage
-        />
-      </div>
+        {/* Stats Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <StatCard
+            icon={Users}
+            label="Total Coaches"
+            value={platformStats?.totalCoaches || 0}
+            change={0}
+            changeLabel="all time"
+            color="amber"
+            subLabel={`${platformStats?.activeCoaches || 0} active this week`}
+          />
+          <StatCard
+            icon={UserCircle}
+            label="Total Athletes"
+            value={(platformStats?.totalAthletes || 0).toLocaleString()}
+            change={0}
+            changeLabel="all time"
+            color="blue"
+            subLabel={`${platformStats?.activeAthletes || 0} active this week`}
+          />
+          <StatCard
+            icon={CreditCard}
+            label="Active Subscriptions"
+            value={subscriptionStats?.activeSubscriptions || 0}
+            change={0}
+            changeLabel="currently"
+            color="green"
+            subLabel={`${subscriptionStats?.cancelledLast30Days || 0} cancelled (30d)`}
+          />
+          <StatCard
+            icon={PoundSterling}
+            label="Monthly Revenue"
+            value={`£${(subscriptionStats?.mrr || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            change={0}
+            changeLabel="MRR"
+            color="purple"
+            subLabel={`${subscriptionStats?.churnRate || 0}% churn rate`}
+          />
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Revenue Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="lg:col-span-2 rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Revenue Trend</h2>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockRevenueData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  tickFormatter={(value) => `£${value / 1000}k`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                  formatter={(value) => [`£${Number(value).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'Revenue']}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  fill="url(#revenueGradient)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Subscription Breakdown */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Subscription Plans</h2>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockSubscriptionBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {mockSubscriptionBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 space-y-2">
-            {mockSubscriptionBreakdown.map((item) => (
-              <div key={item.name} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span>{item.name}</span>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Daily Active Users Chart */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="lg:col-span-2 rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Daily Active Users (Last 90 Days)</h2>
+            <div className="h-[300px]">
+              {userGrowthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={userGrowthData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="dauGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="month"
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value) => [value, 'Active Users']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="dau"
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      fill="url(#dauGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <p>No activity data yet</p>
                 </div>
-                <span className="font-medium">{item.value}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
+              )}
+            </div>
+            {analytics?.avgDau !== undefined && (
+              <p className="mt-4 text-sm text-muted-foreground">
+                Average: {analytics.avgDau} users/day
+              </p>
+            )}
+          </motion.div>
 
-      <div className="grid gap-6 lg:grid-cols-2 mt-6">
-        {/* User Growth */}
+          {/* Platform Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Platform Summary</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10">
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-amber-600" />
+                  <span className="text-sm font-medium">Coaches</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{platformStats?.totalCoaches || 0}</p>
+                  <p className="text-xs text-muted-foreground">{platformStats?.activeCoaches || 0} active</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10">
+                <div className="flex items-center gap-3">
+                  <UserCircle className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium">Athletes</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{platformStats?.totalAthletes || 0}</p>
+                  <p className="text-xs text-muted-foreground">{platformStats?.activeAthletes || 0} active</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10">
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium">Subscriptions</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{subscriptionStats?.activeSubscriptions || 0}</p>
+                  <p className="text-xs text-muted-foreground">active plans</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-lg bg-purple-500/10">
+                <div className="flex items-center gap-3">
+                  <PoundSterling className="h-5 w-5 text-purple-600" />
+                  <span className="text-sm font-medium">MRR</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">£{(subscriptionStats?.mrr || 0).toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">{subscriptionStats?.churnRate || 0}% churn</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Quick Links */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="rounded-xl border border-border bg-card p-6"
+          className="mt-6 rounded-xl border border-border bg-card p-6"
         >
-          <h2 className="text-lg font-semibold mb-4">User Growth</h2>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockUserGrowth} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="coaches" name="Coaches" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="athletes" name="Athletes" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {mockRecentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-center gap-3">
-                <div className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                  activity.type === 'coach_signup' && 'bg-amber-500/10',
-                  activity.type === 'athlete_signup' && 'bg-blue-500/10',
-                  activity.type === 'subscription' && 'bg-green-500/10',
-                  activity.type === 'payment' && 'bg-purple-500/10'
-                )}>
-                  {activity.type === 'coach_signup' && <Users className="h-4 w-4 text-amber-500" />}
-                  {activity.type === 'athlete_signup' && <UserCircle className="h-4 w-4 text-blue-500" />}
-                  {activity.type === 'subscription' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                  {activity.type === 'payment' && <PoundSterling className="h-4 w-4 text-purple-500" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{activity.name}</p>
-                  <p className="text-xs text-muted-foreground">{activity.time}</p>
-                </div>
+          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+          <div className="grid gap-4 md:grid-cols-4">
+            <a
+              href="/admin/coaches"
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
+            >
+              <Users className="h-5 w-5 text-amber-500" />
+              <div>
+                <p className="font-medium">Manage Coaches</p>
+                <p className="text-xs text-muted-foreground">{platformStats?.totalCoaches || 0} total</p>
               </div>
-            ))}
+            </a>
+            <a
+              href="/admin/athletes"
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
+            >
+              <UserCircle className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="font-medium">Manage Athletes</p>
+                <p className="text-xs text-muted-foreground">{platformStats?.totalAthletes || 0} total</p>
+              </div>
+            </a>
+            <a
+              href="/admin/subscriptions"
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-green-500/30 hover:bg-green-500/5 transition-all"
+            >
+              <CreditCard className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="font-medium">Subscriptions</p>
+                <p className="text-xs text-muted-foreground">{subscriptionStats?.activeSubscriptions || 0} active</p>
+              </div>
+            </a>
+            <a
+              href="/admin/support"
+              className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-red-500/30 hover:bg-red-500/5 transition-all"
+            >
+              <TrendingUp className="h-5 w-5 text-red-500" />
+              <div>
+                <p className="font-medium">Support Tickets</p>
+                <p className="text-xs text-muted-foreground">View all tickets</p>
+              </div>
+            </a>
           </div>
         </motion.div>
-      </div>
       </div>
     </div>
   )
@@ -315,10 +329,11 @@ interface StatCardProps {
   change: number
   changeLabel: string
   color: 'amber' | 'blue' | 'green' | 'purple'
+  subLabel?: string
   isPercentage?: boolean
 }
 
-function StatCard({ icon: Icon, label, value, change, changeLabel, color, isPercentage }: StatCardProps) {
+function StatCard({ icon: Icon, label, value, change, changeLabel, color, subLabel, isPercentage }: StatCardProps) {
   const colorClasses = {
     amber: 'bg-amber-500/10 text-amber-600',
     blue: 'bg-blue-500/10 text-blue-600',
@@ -326,7 +341,7 @@ function StatCard({ icon: Icon, label, value, change, changeLabel, color, isPerc
     purple: 'bg-purple-500/10 text-purple-600',
   }
 
-  const isPositive = change > 0
+  const isPositive = change >= 0
 
   return (
     <motion.div
@@ -338,17 +353,23 @@ function StatCard({ icon: Icon, label, value, change, changeLabel, color, isPerc
         <div className={cn('p-2 rounded-lg', colorClasses[color])}>
           <Icon className="h-5 w-5" />
         </div>
-        <div className={cn(
-          'flex items-center gap-1 text-sm',
-          isPositive ? 'text-green-500' : 'text-red-500'
-        )}>
-          {isPositive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-          <span>{isPercentage ? `${change}%` : `+${change}`}</span>
-        </div>
+        {change !== 0 && (
+          <div className={cn(
+            'flex items-center gap-1 text-sm',
+            isPositive ? 'text-green-500' : 'text-red-500'
+          )}>
+            {isPositive ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+            <span>{isPercentage ? `${change}%` : `${isPositive ? '+' : ''}${change}`}</span>
+          </div>
+        )}
       </div>
       <p className="text-2xl font-bold mt-4">{value}</p>
       <p className="text-sm text-muted-foreground mt-1">{label}</p>
-      <p className="text-xs text-muted-foreground/70 mt-0.5">{changeLabel}</p>
+      {subLabel ? (
+        <p className="text-xs text-muted-foreground/70 mt-0.5">{subLabel}</p>
+      ) : (
+        <p className="text-xs text-muted-foreground/70 mt-0.5">{changeLabel}</p>
+      )}
     </motion.div>
   )
 }

@@ -12,8 +12,126 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_email: string | null
+          actor_id: string | null
+          actor_ip: unknown
+          actor_type: string
+          actor_user_agent: string | null
+          created_at: string
+          description: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          new_values: Json | null
+          old_values: Json | null
+          request_id: string | null
+          resource_id: string | null
+          resource_name: string | null
+          resource_type: string | null
+          session_id: string | null
+          severity: Database["public"]["Enums"]["audit_severity"]
+          success: boolean | null
+          target_user_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["audit_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_ip?: unknown
+          actor_type?: string
+          actor_user_agent?: string | null
+          created_at?: string
+          description?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          request_id?: string | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          severity?: Database["public"]["Enums"]["audit_severity"]
+          success?: boolean | null
+          target_user_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["audit_action"]
+          actor_email?: string | null
+          actor_id?: string | null
+          actor_ip?: unknown
+          actor_type?: string
+          actor_user_agent?: string | null
+          created_at?: string
+          description?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          new_values?: Json | null
+          old_values?: Json | null
+          request_id?: string | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string | null
+          session_id?: string | null
+          severity?: Database["public"]["Enums"]["audit_severity"]
+          success?: boolean | null
+          target_user_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blood_marker_definitions: {
         Row: {
           category: string
@@ -2115,6 +2233,51 @@ export type Database = {
           },
         ]
       }
+      platform_metrics: {
+        Row: {
+          breakdown: Json | null
+          change_percentage: number | null
+          created_at: string
+          id: string
+          metric_type: Database["public"]["Enums"]["metric_type"]
+          notes: string | null
+          period: Database["public"]["Enums"]["metric_period"]
+          period_end: string
+          period_start: string
+          previous_value: number | null
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          breakdown?: Json | null
+          change_percentage?: number | null
+          created_at?: string
+          id?: string
+          metric_type: Database["public"]["Enums"]["metric_type"]
+          notes?: string | null
+          period?: Database["public"]["Enums"]["metric_period"]
+          period_end: string
+          period_start: string
+          previous_value?: number | null
+          updated_at?: string
+          value?: number
+        }
+        Update: {
+          breakdown?: Json | null
+          change_percentage?: number | null
+          created_at?: string
+          id?: string
+          metric_type?: Database["public"]["Enums"]["metric_type"]
+          notes?: string | null
+          period?: Database["public"]["Enums"]["metric_period"]
+          period_end?: string
+          period_start?: string
+          previous_value?: number | null
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       preferences: {
         Row: {
           auto_open_messaging_app: boolean | null
@@ -2706,6 +2869,101 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at: string | null
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          cancellation_reason: string | null
+          created_at: string
+          currency: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          features: Json | null
+          id: string
+          last_payment_amount: number | null
+          last_payment_at: string | null
+          max_clients: number | null
+          max_meal_plans: number | null
+          max_programmes: number | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          stripe_subscription_id: string | null
+          tier: Database["public"]["Enums"]["subscription_tier"]
+          total_revenue: number | null
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          features?: Json | null
+          id?: string
+          last_payment_amount?: number | null
+          last_payment_at?: string | null
+          max_clients?: number | null
+          max_meal_plans?: number | null
+          max_programmes?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          total_revenue?: number | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          cancellation_reason?: string | null
+          created_at?: string
+          currency?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          features?: Json | null
+          id?: string
+          last_payment_amount?: number | null
+          last_payment_at?: string | null
+          max_clients?: number | null
+          max_meal_plans?: number | null
+          max_programmes?: number | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          stripe_subscription_id?: string | null
+          tier?: Database["public"]["Enums"]["subscription_tier"]
+          total_revenue?: number | null
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplement_intakes: {
         Row: {
           created_at: string | null
@@ -2847,6 +3105,154 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "supplement_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_messages: {
+        Row: {
+          attachments: Json | null
+          content: string
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          read_at: string | null
+          sender_id: string
+          ticket_id: string
+        }
+        Insert: {
+          attachments?: Json | null
+          content: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          read_at?: string | null
+          sender_id: string
+          ticket_id: string
+        }
+        Update: {
+          attachments?: Json | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          read_at?: string | null
+          sender_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          attachments: Json | null
+          category: Database["public"]["Enums"]["ticket_category"]
+          closed_at: string | null
+          created_at: string
+          description: string
+          first_response_at: string | null
+          id: string
+          internal_notes: string | null
+          priority: Database["public"]["Enums"]["ticket_priority"]
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          satisfaction_feedback: string | null
+          satisfaction_rating: number | null
+          sla_breached: boolean | null
+          sla_deadline: string | null
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags: string[] | null
+          ticket_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description: string
+          first_response_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
+          sla_breached?: boolean | null
+          sla_deadline?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          tags?: string[] | null
+          ticket_number?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          attachments?: Json | null
+          category?: Database["public"]["Enums"]["ticket_category"]
+          closed_at?: string | null
+          created_at?: string
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          internal_notes?: string | null
+          priority?: Database["public"]["Enums"]["ticket_priority"]
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          satisfaction_feedback?: string | null
+          satisfaction_rating?: number | null
+          sla_breached?: boolean | null
+          sla_deadline?: string | null
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          tags?: string[] | null
+          ticket_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3412,6 +3818,23 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_coach: { Args: never; Returns: boolean }
       is_coach_of: { Args: { client_uuid: string }; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          p_action: Database["public"]["Enums"]["audit_action"]
+          p_description?: string
+          p_error_message?: string
+          p_metadata?: Json
+          p_new_values?: Json
+          p_old_values?: Json
+          p_resource_id?: string
+          p_resource_name?: string
+          p_resource_type?: string
+          p_severity?: Database["public"]["Enums"]["audit_severity"]
+          p_success?: boolean
+          p_target_user_id?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       assignment_status:
@@ -3420,6 +3843,42 @@ export type Database = {
         | "paused"
         | "completed"
         | "cancelled"
+      audit_action:
+        | "auth.login"
+        | "auth.logout"
+        | "auth.password_change"
+        | "auth.password_reset"
+        | "auth.mfa_enable"
+        | "auth.mfa_disable"
+        | "user.create"
+        | "user.update"
+        | "user.delete"
+        | "user.role_change"
+        | "user.suspend"
+        | "user.reactivate"
+        | "subscription.create"
+        | "subscription.update"
+        | "subscription.cancel"
+        | "subscription.payment"
+        | "subscription.refund"
+        | "coach.client_add"
+        | "coach.client_remove"
+        | "coach.programme_create"
+        | "coach.programme_assign"
+        | "coach.meal_plan_create"
+        | "coach.meal_plan_assign"
+        | "coach.check_in_review"
+        | "admin.user_view"
+        | "admin.subscription_modify"
+        | "admin.ticket_assign"
+        | "admin.ticket_resolve"
+        | "admin.settings_change"
+        | "admin.data_export"
+        | "admin.data_delete"
+        | "system.error"
+        | "system.maintenance"
+        | "system.migration"
+      audit_severity: "debug" | "info" | "warning" | "error" | "critical"
       check_in_review_status: "pending" | "reviewed" | "flagged" | "archived"
       coach_client_status:
         | "pending"
@@ -3435,6 +3894,20 @@ export type Database = {
         | "health"
         | "custom"
       message_type: "text" | "image" | "file" | "voice" | "system"
+      metric_period: "hourly" | "daily" | "weekly" | "monthly" | "yearly"
+      metric_type:
+        | "user_count"
+        | "active_users"
+        | "new_signups"
+        | "coach_count"
+        | "athlete_count"
+        | "check_ins_submitted"
+        | "programmes_created"
+        | "meal_plans_created"
+        | "messages_sent"
+        | "revenue"
+        | "churn_rate"
+        | "retention_rate"
       note_category:
         | "general"
         | "progress"
@@ -3453,6 +3926,33 @@ export type Database = {
         | "rehabilitation"
         | "general_fitness"
         | "custom"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "unpaid"
+        | "incomplete"
+        | "incomplete_expired"
+        | "paused"
+      subscription_tier: "free" | "starter" | "professional" | "enterprise"
+      ticket_category:
+        | "account"
+        | "billing"
+        | "technical"
+        | "feature_request"
+        | "bug_report"
+        | "coaching"
+        | "data_privacy"
+        | "other"
+      ticket_priority: "low" | "medium" | "high" | "urgent"
+      ticket_status:
+        | "open"
+        | "in_progress"
+        | "waiting_on_user"
+        | "waiting_on_admin"
+        | "resolved"
+        | "closed"
       user_role: "client" | "coach" | "admin"
     }
     CompositeTypes: {
@@ -3579,6 +4079,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       assignment_status: [
@@ -3588,6 +4091,43 @@ export const Constants = {
         "completed",
         "cancelled",
       ],
+      audit_action: [
+        "auth.login",
+        "auth.logout",
+        "auth.password_change",
+        "auth.password_reset",
+        "auth.mfa_enable",
+        "auth.mfa_disable",
+        "user.create",
+        "user.update",
+        "user.delete",
+        "user.role_change",
+        "user.suspend",
+        "user.reactivate",
+        "subscription.create",
+        "subscription.update",
+        "subscription.cancel",
+        "subscription.payment",
+        "subscription.refund",
+        "coach.client_add",
+        "coach.client_remove",
+        "coach.programme_create",
+        "coach.programme_assign",
+        "coach.meal_plan_create",
+        "coach.meal_plan_assign",
+        "coach.check_in_review",
+        "admin.user_view",
+        "admin.subscription_modify",
+        "admin.ticket_assign",
+        "admin.ticket_resolve",
+        "admin.settings_change",
+        "admin.data_export",
+        "admin.data_delete",
+        "system.error",
+        "system.maintenance",
+        "system.migration",
+      ],
+      audit_severity: ["debug", "info", "warning", "error", "critical"],
       check_in_review_status: ["pending", "reviewed", "flagged", "archived"],
       coach_client_status: [
         "pending",
@@ -3605,6 +4145,21 @@ export const Constants = {
         "custom",
       ],
       message_type: ["text", "image", "file", "voice", "system"],
+      metric_period: ["hourly", "daily", "weekly", "monthly", "yearly"],
+      metric_type: [
+        "user_count",
+        "active_users",
+        "new_signups",
+        "coach_count",
+        "athlete_count",
+        "check_ins_submitted",
+        "programmes_created",
+        "meal_plans_created",
+        "messages_sent",
+        "revenue",
+        "churn_rate",
+        "retention_rate",
+      ],
       note_category: [
         "general",
         "progress",
@@ -3624,6 +4179,36 @@ export const Constants = {
         "rehabilitation",
         "general_fitness",
         "custom",
+      ],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "unpaid",
+        "incomplete",
+        "incomplete_expired",
+        "paused",
+      ],
+      subscription_tier: ["free", "starter", "professional", "enterprise"],
+      ticket_category: [
+        "account",
+        "billing",
+        "technical",
+        "feature_request",
+        "bug_report",
+        "coaching",
+        "data_privacy",
+        "other",
+      ],
+      ticket_priority: ["low", "medium", "high", "urgent"],
+      ticket_status: [
+        "open",
+        "in_progress",
+        "waiting_on_user",
+        "waiting_on_admin",
+        "resolved",
+        "closed",
       ],
       user_role: ["client", "coach", "admin"],
     },

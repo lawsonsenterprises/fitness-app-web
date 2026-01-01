@@ -6,8 +6,9 @@ import { AlertTriangle, Pause, Play, UserX, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
-import { ClientStatusBadge, SubscriptionBadge } from '@/components/clients/client-status-badge'
+import { ClientStatusBadge } from '@/components/clients/client-status-badge'
 import { useClient, useUpdateClientStatus, useRemoveClient } from '@/hooks/use-clients'
+import { getClientDisplayName } from '@/types'
 
 export default function ClientSettingsPage() {
   const params = useParams()
@@ -25,7 +26,7 @@ export default function ClientSettingsPage() {
   const handlePause = async () => {
     try {
       await updateStatus.mutateAsync({
-        clientId,
+        clientRelationshipId: clientId,
         status: 'paused',
       })
       toast.success('Client relationship paused')
@@ -37,7 +38,7 @@ export default function ClientSettingsPage() {
   const handleResume = async () => {
     try {
       await updateStatus.mutateAsync({
-        clientId,
+        clientRelationshipId: clientId,
         status: 'active',
       })
       toast.success('Client relationship resumed')
@@ -49,8 +50,8 @@ export default function ClientSettingsPage() {
   const handleEnd = async () => {
     try {
       await updateStatus.mutateAsync({
-        clientId,
-        status: 'ended',
+        clientRelationshipId: clientId,
+        status: 'completed',
       })
       toast.success('Client relationship ended')
       setShowEndConfirm(false)
@@ -86,9 +87,9 @@ export default function ClientSettingsPage() {
             </dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="text-sm text-muted-foreground">Subscription</dt>
-            <dd>
-              <SubscriptionBadge status={client.subscriptionStatus} />
+            <dt className="text-sm text-muted-foreground">Check-in Frequency</dt>
+            <dd className="text-sm font-medium">
+              {client.checkInFrequency ? `Every ${client.checkInFrequency} days` : 'Not set'}
             </dd>
           </div>
           <div className="flex items-center justify-between">
@@ -151,7 +152,7 @@ export default function ClientSettingsPage() {
           )}
 
           {/* End Relationship */}
-          {client.status !== 'ended' && (
+          {client.status !== 'completed' && client.status !== 'cancelled' && (
             <div className="rounded-lg border border-border p-4">
               <div className="flex items-start justify-between">
                 <div>
@@ -173,7 +174,7 @@ export default function ClientSettingsPage() {
             </div>
           )}
 
-          {client.status === 'ended' && (
+          {(client.status === 'completed' || client.status === 'cancelled') && (
             <div className="rounded-lg border border-zinc-500/20 bg-zinc-500/5 p-4">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <UserX className="h-4 w-4" />
@@ -227,7 +228,7 @@ export default function ClientSettingsPage() {
             <p className="mb-6 text-sm text-muted-foreground">
               Are you sure you want to end your coaching relationship with{' '}
               <span className="font-medium text-foreground">
-                {client.firstName} {client.lastName}
+                {getClientDisplayName(client)}
               </span>
               ? This action cannot be undone.
             </p>
@@ -265,7 +266,7 @@ export default function ClientSettingsPage() {
             <p className="mb-6 text-sm text-muted-foreground">
               Are you sure you want to permanently remove{' '}
               <span className="font-medium text-foreground">
-                {client.firstName} {client.lastName}
+                {getClientDisplayName(client)}
               </span>
               ? All their data will be deleted and this action cannot be undone.
             </p>

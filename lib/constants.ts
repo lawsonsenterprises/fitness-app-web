@@ -14,6 +14,13 @@ export const ROUTES = {
   CHECK_INS: '/check-ins',
   PROGRAMMES: '/programmes',
   MEAL_PLANS: '/meal-plans',
+  MESSAGES: '/messages',
+  // Admin routes
+  ADMIN: '/admin',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_SUBSCRIPTIONS: '/admin/subscriptions',
+  ADMIN_ANALYTICS: '/admin/analytics',
+  ADMIN_SUPPORT: '/admin/support',
 } as const
 
 // Navigation items for dashboard sidebar
@@ -23,4 +30,5 @@ export const DASHBOARD_NAV = [
   { label: 'Check-ins', href: ROUTES.CHECK_INS, icon: 'ClipboardCheck' },
   { label: 'Programmes', href: ROUTES.PROGRAMMES, icon: 'Dumbbell' },
   { label: 'Meal Plans', href: ROUTES.MEAL_PLANS, icon: 'UtensilsCrossed' },
+  { label: 'Messages', href: ROUTES.MESSAGES, icon: 'MessageCircle' },
 ] as const

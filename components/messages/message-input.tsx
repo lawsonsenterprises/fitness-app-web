@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, KeyboardEvent, ChangeEvent } from 'react'
 import { Send, Loader2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 
 interface MessageInputProps {
   onSend: (content: string) => Promise<void>
+  onTyping?: () => void
   isSending?: boolean
   disabled?: boolean
   placeholder?: string
@@ -15,6 +16,7 @@ interface MessageInputProps {
 
 export function MessageInput({
   onSend,
+  onTyping,
   isSending = false,
   disabled = false,
   placeholder = 'Type a message...',
@@ -30,6 +32,11 @@ export function MessageInput({
       textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`
     }
   }, [message])
+
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value)
+    onTyping?.()
+  }
 
   const handleSend = async () => {
     if (!message.trim() || isSending || disabled) return
@@ -58,7 +65,7 @@ export function MessageInput({
         <textarea
           ref={textareaRef}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           rows={1}

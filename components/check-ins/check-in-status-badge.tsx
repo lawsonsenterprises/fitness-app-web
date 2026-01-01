@@ -1,13 +1,13 @@
-import { CheckCircle2, Clock } from 'lucide-react'
+import { CheckCircle2, Clock, Flag, Archive } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CheckInStatus } from '@/types'
+import type { CheckInReviewStatus } from '@/types'
 
 interface CheckInStatusBadgeProps {
-  status: CheckInStatus
+  status: CheckInReviewStatus | null | undefined
   size?: 'sm' | 'md'
 }
 
-const statusConfig: Record<CheckInStatus, {
+const statusConfig: Record<CheckInReviewStatus, {
   label: string
   icon: typeof CheckCircle2
   className: string
@@ -22,10 +22,26 @@ const statusConfig: Record<CheckInStatus, {
     icon: CheckCircle2,
     className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
   },
+  flagged: {
+    label: 'Flagged',
+    icon: Flag,
+    className: 'bg-red-500/10 text-red-600 border-red-500/20',
+  },
+  archived: {
+    label: 'Archived',
+    icon: Archive,
+    className: 'bg-muted text-muted-foreground border-border',
+  },
+}
+
+const defaultConfig = {
+  label: 'Unknown',
+  icon: Clock,
+  className: 'bg-muted text-muted-foreground border-border',
 }
 
 export function CheckInStatusBadge({ status, size = 'md' }: CheckInStatusBadgeProps) {
-  const config = statusConfig[status]
+  const config = status ? statusConfig[status] ?? defaultConfig : defaultConfig
   const Icon = config.icon
 
   return (

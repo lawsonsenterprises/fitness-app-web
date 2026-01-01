@@ -6,6 +6,8 @@ import {
   TrendingUp,
   Users,
   Activity,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -27,51 +29,79 @@ import {
 
 import { cn } from '@/lib/utils'
 import { TopBar } from '@/components/dashboard/top-bar'
+import {
+  usePlatformStats,
+  usePlatformAnalytics,
+  useSubscriptionStats,
+} from '@/hooks/admin'
 
-// Mock data
-const mockDailyActiveUsers = [
-  { date: 'Mon', coaches: 85, athletes: 1250 },
-  { date: 'Tue', coaches: 92, athletes: 1340 },
-  { date: 'Wed', coaches: 88, athletes: 1280 },
-  { date: 'Thu', coaches: 95, athletes: 1420 },
-  { date: 'Fri', coaches: 90, athletes: 1380 },
-  { date: 'Sat', coaches: 45, athletes: 820 },
-  { date: 'Sun', coaches: 38, athletes: 680 },
-]
-
-const mockCheckInTrends = [
-  { week: 'W1', submitted: 450, reviewed: 420 },
-  { week: 'W2', submitted: 480, reviewed: 465 },
-  { week: 'W3', submitted: 520, reviewed: 505 },
-  { week: 'W4', submitted: 495, reviewed: 488 },
-]
-
-const mockRetention = [
-  { month: 'Jul', retention: 92 },
-  { month: 'Aug', retention: 94 },
-  { month: 'Sep', retention: 91 },
-  { month: 'Oct', retention: 95 },
-  { month: 'Nov', retention: 93 },
-  { month: 'Dec', retention: 96 },
-]
-
-const mockFeatureUsage = [
-  { name: 'Check-ins', usage: 95 },
-  { name: 'Messaging', usage: 88 },
-  { name: 'Programmes', usage: 82 },
-  { name: 'Meal Plans', usage: 65 },
-  { name: 'Blood Work', usage: 42 },
-]
-
-const mockGeography = [
-  { region: 'UK', value: 65, color: '#f59e0b' },
-  { region: 'USA', value: 20, color: '#6366f1' },
-  { region: 'Europe', value: 10, color: '#22c55e' },
-  { region: 'Other', value: 5, color: '#94a3b8' },
-]
+// Color palette for charts
+const CHART_COLORS = {
+  primary: '#6366f1',
+  secondary: '#f59e0b',
+  success: '#22c55e',
+  muted: '#94a3b8',
+}
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
+
+  // Map time range to days
+  const daysMap = { '7d': 7, '30d': 30, '90d': 90 }
+  const days = daysMap[timeRange]
+
+  // Fetch real data
+  const { data: platformStats, isLoading: statsLoading, error: statsError } = usePlatformStats()
+  const { data: analytics, isLoading: analyticsLoading } = usePlatformAnalytics(days)
+  const { data: subStats, isLoading: subStatsLoading } = useSubscriptionStats()
+
+  const isLoading = statsLoading || analyticsLoading || subStatsLoading
+
+  if (isLoading) {
+    return (
+      <>
+        <TopBar title="Analytics" />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
+    )
+  }
+
+  if (statsError) {
+    return (
+      <>
+        <TopBar title="Analytics" />
+        <div className="flex flex-col items-center justify-center p-8 gap-4">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <p className="text-muted-foreground">Failed to load analytics data</p>
+        </div>
+      </>
+    )
+  }
+
+  // Prepare DAU chart data
+  const dauChartData = analytics?.dauData?.slice(-30).map(d => ({
+    date: new Date(d.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
+    dau: d.dau,
+  })) || []
+
+  // Calculate metrics
+  const totalUsers = (platformStats?.totalCoaches || 0) + (platformStats?.totalAthletes || 0)
+  const activeUsers = (platformStats?.activeCoaches || 0) + (platformStats?.activeAthletes || 0)
+  const activeRate = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : '0'
+
+  // User breakdown for pie chart
+  const userBreakdown = [
+    { name: 'Coaches', value: platformStats?.totalCoaches || 0, color: CHART_COLORS.secondary },
+    { name: 'Athletes', value: platformStats?.totalAthletes || 0, color: CHART_COLORS.primary },
+  ]
+
+  // Active vs Inactive breakdown
+  const activityBreakdown = [
+    { name: 'Active (7d)', value: activeUsers, color: CHART_COLORS.success },
+    { name: 'Inactive', value: totalUsers - activeUsers, color: CHART_COLORS.muted },
+  ]
 
   return (
     <>
@@ -81,268 +111,299 @@ export default function AnalyticsPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
           <div>
             <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Analytics</h1>
-          <p className="mt-1 text-muted-foreground">
-            Platform usage and performance metrics
-          </p>
+            <p className="mt-1 text-muted-foreground">
+              Platform usage and performance metrics
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {(['7d', '30d', '90d'] as const).map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={cn(
+                  'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  timeRange === range
+                    ? 'bg-foreground text-background'
+                    : 'bg-muted hover:bg-muted/80'
+                )}
+              >
+                {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {(['7d', '30d', '90d'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={cn(
-                'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                timeRange === range
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted hover:bg-muted/80'
+
+        {/* Key Metrics */}
+        <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <MetricCard
+            icon={Activity}
+            label="Daily Active Users (Avg)"
+            value={analytics?.avgDau?.toString() || '0'}
+            subLabel={`Based on last ${days} days`}
+          />
+          <MetricCard
+            icon={Users}
+            label="Total Users"
+            value={totalUsers.toLocaleString()}
+            subLabel={`${platformStats?.totalCoaches || 0} coaches, ${platformStats?.totalAthletes || 0} athletes`}
+          />
+          <MetricCard
+            icon={TrendingUp}
+            label="Active Rate"
+            value={`${activeRate}%`}
+            subLabel={`${activeUsers} active in last 7 days`}
+            positive={Number(activeRate) > 50}
+          />
+          <MetricCard
+            icon={BarChart3}
+            label="Churn Rate"
+            value={`${subStats?.churnRate || 0}%`}
+            subLabel={`${subStats?.cancelledLast30Days || 0} cancelled (30d)`}
+            positive={Number(subStats?.churnRate || 0) < 5}
+          />
+        </div>
+
+        {/* Charts Row 1 */}
+        <div className="grid gap-6 lg:grid-cols-2 mb-6">
+          {/* Daily Active Users */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Daily Active Users</h2>
+            <div className="h-[250px]">
+              {dauChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={dauChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="dauGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis
+                      dataKey="date"
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    />
+                    <YAxis
+                      stroke="hsl(var(--muted-foreground))"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                      formatter={(value) => [value, 'Active Users']}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="dau"
+                      stroke="#6366f1"
+                      strokeWidth={2}
+                      fill="url(#dauGradient)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <p>No activity data available</p>
+                </div>
               )}
-            >
-              {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
-            </button>
-          ))}
+            </div>
+          </motion.div>
+
+          {/* User Composition */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">User Composition</h2>
+            <div className="h-[250px] flex items-center justify-center">
+              {totalUsers > 0 ? (
+                <div className="flex items-center gap-8">
+                  <ResponsiveContainer width={150} height={150}>
+                    <PieChart>
+                      <Pie
+                        data={userBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={60}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {userBreakdown.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="space-y-3">
+                    {userBreakdown.map((item) => (
+                      <div key={item.name} className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <div>
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.value.toLocaleString()} ({totalUsers > 0 ? ((item.value / totalUsers) * 100).toFixed(1) : 0}%)
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">No users yet</p>
+              )}
+            </div>
+          </motion.div>
         </div>
-      </div>
 
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
-        <MetricCard
-          icon={Activity}
-          label="Daily Active Users"
-          value="1,842"
-          change="+12.5%"
-          positive
-        />
-        <MetricCard
-          icon={Users}
-          label="Coach Retention"
-          value="96%"
-          change="+2%"
-          positive
-        />
-        <MetricCard
-          icon={BarChart3}
-          label="Avg Session Duration"
-          value="12m 34s"
-          change="+8%"
-          positive
-        />
-        <MetricCard
-          icon={TrendingUp}
-          label="Check-in Rate"
-          value="89%"
-          change="-2%"
-          positive={false}
-        />
-      </div>
+        {/* Charts Row 2 */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Activity Breakdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Activity Status</h2>
+            <div className="h-[150px]">
+              {totalUsers > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={activityBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={60}
+                      paddingAngle={4}
+                      dataKey="value"
+                    >
+                      {activityBreakdown.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  <p>No users yet</p>
+                </div>
+              )}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {activityBreakdown.map((item) => (
+                <div key={item.name} className="flex items-center gap-2 text-sm">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span>{item.name}: {item.value}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
 
-      {/* Charts Row 1 */}
-      <div className="grid gap-6 lg:grid-cols-2 mb-6">
-        {/* Daily Active Users */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Daily Active Users</h2>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockDailyActiveUsers} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="coachGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="athleteGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="date"
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="athletes"
-                  stroke="#6366f1"
-                  fill="url(#athleteGradient)"
-                  name="Athletes"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="coaches"
-                  stroke="#f59e0b"
-                  fill="url(#coachGradient)"
-                  name="Coaches"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
+          {/* Platform Summary */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Platform Summary</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-amber-500/10">
+                <span className="text-sm font-medium">Coaches</span>
+                <div className="text-right">
+                  <p className="font-bold">{platformStats?.totalCoaches || 0}</p>
+                  <p className="text-xs text-muted-foreground">{platformStats?.activeCoaches || 0} active</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-indigo-500/10">
+                <span className="text-sm font-medium">Athletes</span>
+                <div className="text-right">
+                  <p className="font-bold">{platformStats?.totalAthletes || 0}</p>
+                  <p className="text-xs text-muted-foreground">{platformStats?.activeAthletes || 0} active</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10">
+                <span className="text-sm font-medium">Subscriptions</span>
+                <div className="text-right">
+                  <p className="font-bold">{subStats?.activeSubscriptions || 0}</p>
+                  <p className="text-xs text-muted-foreground">active plans</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
-        {/* Retention Rate */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Coach Retention Rate</h2>
-          <div className="h-[250px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockRetention} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  domain={[85, 100]}
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                  tickFormatter={(value) => `${value}%`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                  formatter={(value) => [`${value}%`, 'Retention']}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="retention"
-                  stroke="#22c55e"
-                  strokeWidth={2}
-                  dot={{ fill: '#22c55e', r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Charts Row 2 */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Feature Usage */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Feature Usage</h2>
-          <div className="space-y-4">
-            {mockFeatureUsage.map((feature) => (
-              <div key={feature.name}>
+          {/* Subscription Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="rounded-xl border border-border bg-card p-6"
+          >
+            <h2 className="text-lg font-semibold mb-4">Subscription Health</h2>
+            <div className="space-y-4">
+              <div>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">{feature.name}</span>
-                  <span className="text-sm text-muted-foreground">{feature.usage}%</span>
+                  <span className="text-sm font-medium">Active Subscriptions</span>
+                  <span className="text-sm text-green-500 font-bold">{subStats?.activeSubscriptions || 0}</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-amber-500"
-                    style={{ width: `${feature.usage}%` }}
+                    className="h-full rounded-full bg-green-500"
+                    style={{ width: '100%' }}
                   />
                 </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Check-in Trends */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Check-in Activity</h2>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockCheckInTrends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis
-                  dataKey="week"
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-                <Bar dataKey="submitted" name="Submitted" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="reviewed" name="Reviewed" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Geography */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="rounded-xl border border-border bg-card p-6"
-        >
-          <h2 className="text-lg font-semibold mb-4">Users by Region</h2>
-          <div className="h-[150px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockGeography}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={60}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {mockGeography.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {mockGeography.map((item) => (
-              <div key={item.region} className="flex items-center gap-2 text-sm">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span>{item.region}: {item.value}%</span>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Cancelled (30d)</span>
+                  <span className="text-sm text-red-500 font-bold">{subStats?.cancelledLast30Days || 0}</span>
+                </div>
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-red-500"
+                    style={{
+                      width: `${(subStats?.activeSubscriptions || 0) > 0
+                        ? ((subStats?.cancelledLast30Days || 0) / (subStats?.activeSubscriptions || 1)) * 100
+                        : 0}%`
+                    }}
+                  />
+                </div>
               </div>
-            ))}
-          </div>
-        </motion.div>
+              <div className="pt-2 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">MRR</span>
+                  <span className="text-lg font-bold">£{(subStats?.mrr || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Monthly Recurring Revenue</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </>
@@ -353,11 +414,11 @@ interface MetricCardProps {
   icon: React.ElementType
   label: string
   value: string
-  change: string
-  positive: boolean
+  subLabel: string
+  positive?: boolean
 }
 
-function MetricCard({ icon: Icon, label, value, change, positive }: MetricCardProps) {
+function MetricCard({ icon: Icon, label, value, subLabel, positive }: MetricCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -369,14 +430,13 @@ function MetricCard({ icon: Icon, label, value, change, positive }: MetricCardPr
         <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
       </div>
       <div className="flex items-baseline justify-between">
-        <p className="text-2xl font-bold">{value}</p>
-        <span className={cn(
-          'text-sm font-medium',
-          positive ? 'text-green-500' : 'text-red-500'
-        )}>
-          {change}
-        </span>
+        <p className={cn(
+          'text-2xl font-bold',
+          positive === true && 'text-green-500',
+          positive === false && 'text-red-500'
+        )}>{value}</p>
       </div>
+      <p className="text-xs text-muted-foreground mt-1">{subLabel}</p>
     </motion.div>
   )
 }

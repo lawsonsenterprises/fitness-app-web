@@ -6,8 +6,11 @@ import {
   Search,
   Clock,
   CheckCircle2,
+  Flag,
+  Archive,
   Filter,
   ChevronDown,
+  AlertCircle,
 } from 'lucide-react'
 
 import { TopBar } from '@/components/dashboard/top-bar'
@@ -16,14 +19,16 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useCheckIns, useCheckInStats } from '@/hooks/use-check-ins'
 import { cn } from '@/lib/utils'
-import type { CheckInStatus } from '@/types'
+import type { CheckInReviewStatus } from '@/types'
 
-type StatusFilter = CheckInStatus | 'all'
+type StatusFilter = CheckInReviewStatus | 'all'
 
 const statusFilters: { value: StatusFilter; label: string; icon: typeof Clock }[] = [
   { value: 'all', label: 'All', icon: ClipboardCheck },
   { value: 'pending', label: 'Pending', icon: Clock },
   { value: 'reviewed', label: 'Reviewed', icon: CheckCircle2 },
+  { value: 'flagged', label: 'Flagged', icon: Flag },
+  { value: 'archived', label: 'Archived', icon: Archive },
 ]
 
 export default function CheckInsPage() {
@@ -46,6 +51,8 @@ export default function CheckInsPage() {
       all: stats?.total || 0,
       pending: stats?.pending || 0,
       reviewed: stats?.reviewed || 0,
+      flagged: stats?.flagged || 0,
+      archived: 0, // Not tracked in stats
     }
   }, [stats])
 
@@ -100,13 +107,27 @@ export default function CheckInsPage() {
               </div>
             </div>
 
-            {/* Average rating */}
-            {stats && stats.averageRating > 0 && (
-              <div className="rounded-xl border border-border bg-card p-4 text-center">
-                <p className="text-sm text-muted-foreground">Avg Rating</p>
-                <p className="mt-1 text-2xl font-bold">{stats.averageRating.toFixed(1)}</p>
-              </div>
-            )}
+            {/* Stats cards */}
+            <div className="flex gap-3">
+              {/* Follow-up required */}
+              {stats && stats.requiresFollowUp > 0 && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center">
+                  <div className="flex items-center justify-center gap-2 text-amber-600">
+                    <AlertCircle className="h-4 w-4" />
+                    <p className="text-sm font-medium">Follow-up</p>
+                  </div>
+                  <p className="mt-1 text-2xl font-bold text-amber-600">{stats.requiresFollowUp}</p>
+                </div>
+              )}
+
+              {/* Average rating */}
+              {stats && stats.averageRating > 0 && (
+                <div className="rounded-xl border border-border bg-card p-4 text-center">
+                  <p className="text-sm text-muted-foreground">Avg Rating</p>
+                  <p className="mt-1 text-2xl font-bold">{stats.averageRating.toFixed(1)}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

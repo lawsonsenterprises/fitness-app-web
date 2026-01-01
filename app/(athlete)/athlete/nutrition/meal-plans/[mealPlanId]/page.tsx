@@ -21,163 +21,33 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useMealPlanAssignment } from '@/hooks/use-meal-plans'
 
-// Mock meal plan data
-const mockMealPlan = {
-  id: '1',
-  name: 'Cutting Phase Meal Plan',
-  description: 'High protein, moderate carb meal plan optimised for fat loss while preserving muscle mass.',
-  coach: 'Andy Lawson',
-  startDate: '2024-12-01',
-  trainingDayPlan: {
-    calories: 2400,
-    protein: 180,
-    carbs: 250,
-    fat: 70,
-    meals: [
-      {
-        name: 'Breakfast',
-        time: '07:00',
-        calories: 520,
-        protein: 40,
-        carbs: 55,
-        fat: 15,
-        foods: [
-          { name: 'Oats', amount: '80g', calories: 300, protein: 10, carbs: 52, fat: 6 },
-          { name: 'Whey Protein', amount: '30g', calories: 120, protein: 25, carbs: 2, fat: 1 },
-          { name: 'Banana', amount: '1 medium', calories: 100, protein: 1, carbs: 25, fat: 0 },
-          { name: 'Blueberries', amount: '50g', calories: 30, protein: 0, carbs: 7, fat: 0 },
-        ],
-      },
-      {
-        name: 'Pre-Workout',
-        time: '11:00',
-        calories: 380,
-        protein: 35,
-        carbs: 45,
-        fat: 8,
-        foods: [
-          { name: 'Chicken Breast', amount: '150g', calories: 230, protein: 35, carbs: 0, fat: 5 },
-          { name: 'Rice', amount: '100g cooked', calories: 130, protein: 3, carbs: 28, fat: 0 },
-          { name: 'Mixed Vegetables', amount: '100g', calories: 40, protein: 2, carbs: 8, fat: 0 },
-        ],
-      },
-      {
-        name: 'Post-Workout',
-        time: '15:00',
-        calories: 600,
-        protein: 50,
-        carbs: 75,
-        fat: 12,
-        foods: [
-          { name: 'Lean Beef Mince', amount: '200g', calories: 340, protein: 40, carbs: 0, fat: 10 },
-          { name: 'Sweet Potato', amount: '200g', calories: 180, protein: 4, carbs: 40, fat: 0 },
-          { name: 'Broccoli', amount: '150g', calories: 50, protein: 4, carbs: 10, fat: 0 },
-          { name: 'Olive Oil', amount: '5ml', calories: 45, protein: 0, carbs: 0, fat: 5 },
-        ],
-      },
-      {
-        name: 'Dinner',
-        time: '19:00',
-        calories: 580,
-        protein: 45,
-        carbs: 50,
-        fat: 20,
-        foods: [
-          { name: 'Salmon Fillet', amount: '180g', calories: 350, protein: 40, carbs: 0, fat: 18 },
-          { name: 'Basmati Rice', amount: '120g cooked', calories: 150, protein: 3, carbs: 33, fat: 0 },
-          { name: 'Asparagus', amount: '100g', calories: 20, protein: 2, carbs: 4, fat: 0 },
-        ],
-      },
-      {
-        name: 'Evening Snack',
-        time: '21:00',
-        calories: 320,
-        protein: 35,
-        carbs: 25,
-        fat: 10,
-        foods: [
-          { name: 'Greek Yogurt 0%', amount: '200g', calories: 130, protein: 20, carbs: 8, fat: 0 },
-          { name: 'Almonds', amount: '20g', calories: 120, protein: 4, carbs: 2, fat: 10 },
-          { name: 'Honey', amount: '15g', calories: 45, protein: 0, carbs: 12, fat: 0 },
-        ],
-      },
-    ],
-  },
-  nonTrainingDayPlan: {
-    calories: 2000,
-    protein: 180,
-    carbs: 150,
-    fat: 75,
-    meals: [
-      {
-        name: 'Breakfast',
-        time: '08:00',
-        calories: 450,
-        protein: 40,
-        carbs: 25,
-        fat: 22,
-        foods: [
-          { name: 'Whole Eggs', amount: '3', calories: 210, protein: 18, carbs: 0, fat: 15 },
-          { name: 'Egg Whites', amount: '100g', calories: 50, protein: 10, carbs: 0, fat: 0 },
-          { name: 'Avocado', amount: '50g', calories: 80, protein: 1, carbs: 4, fat: 7 },
-          { name: 'Spinach', amount: '50g', calories: 12, protein: 1, carbs: 1, fat: 0 },
-        ],
-      },
-      {
-        name: 'Lunch',
-        time: '12:00',
-        calories: 520,
-        protein: 45,
-        carbs: 35,
-        fat: 22,
-        foods: [
-          { name: 'Chicken Thighs', amount: '200g', calories: 340, protein: 40, carbs: 0, fat: 18 },
-          { name: 'Mixed Salad', amount: '150g', calories: 30, protein: 2, carbs: 5, fat: 0 },
-          { name: 'Olive Oil Dressing', amount: '15ml', calories: 120, protein: 0, carbs: 0, fat: 14 },
-          { name: 'Cherry Tomatoes', amount: '100g', calories: 20, protein: 1, carbs: 4, fat: 0 },
-        ],
-      },
-      {
-        name: 'Afternoon Snack',
-        time: '15:30',
-        calories: 280,
-        protein: 30,
-        carbs: 15,
-        fat: 12,
-        foods: [
-          { name: 'Cottage Cheese', amount: '200g', calories: 180, protein: 28, carbs: 6, fat: 4 },
-          { name: 'Walnuts', amount: '15g', calories: 100, protein: 2, carbs: 2, fat: 10 },
-        ],
-      },
-      {
-        name: 'Dinner',
-        time: '19:00',
-        calories: 550,
-        protein: 50,
-        carbs: 40,
-        fat: 20,
-        foods: [
-          { name: 'White Fish', amount: '200g', calories: 200, protein: 42, carbs: 0, fat: 2 },
-          { name: 'Quinoa', amount: '100g cooked', calories: 120, protein: 4, carbs: 22, fat: 2 },
-          { name: 'Green Beans', amount: '150g', calories: 50, protein: 3, carbs: 10, fat: 0 },
-          { name: 'Butter', amount: '10g', calories: 75, protein: 0, carbs: 0, fat: 8 },
-        ],
-      },
-      {
-        name: 'Evening Snack',
-        time: '21:00',
-        calories: 200,
-        protein: 25,
-        carbs: 8,
-        fat: 8,
-        foods: [
-          { name: 'Casein Protein', amount: '30g', calories: 120, protein: 24, carbs: 3, fat: 1 },
-          { name: 'Peanut Butter', amount: '10g', calories: 60, protein: 2, carbs: 2, fat: 5 },
-        ],
-      },
-    ],
-  },
+interface MealFood {
+  name: string
+  amount: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
+interface Meal {
+  name: string
+  time?: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  foods: MealFood[]
+}
+
+interface DayPlan {
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  meals: Meal[]
 }
 
 export default function MealPlanDetailPage({
@@ -185,11 +55,68 @@ export default function MealPlanDetailPage({
 }: {
   params: Promise<{ mealPlanId: string }>
 }) {
-  const _resolvedParams = use(params)
+  const resolvedParams = use(params)
+  const { data: assignment, isLoading } = useMealPlanAssignment(resolvedParams.mealPlanId)
   const [selectedDay, setSelectedDay] = useState<'training' | 'non-training'>('training')
   const [expandedMeals, setExpandedMeals] = useState<string[]>(['Breakfast'])
 
-  const currentPlan = selectedDay === 'training' ? mockMealPlan.trainingDayPlan : mockMealPlan.nonTrainingDayPlan
+  if (isLoading) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="mb-8">
+          <div className="h-6 w-32 animate-pulse rounded bg-muted mb-4" />
+          <div className="h-8 w-64 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8 space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-48 animate-pulse rounded-xl bg-muted" />
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!assignment) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="flex flex-col items-center justify-center py-24">
+          <UtensilsCrossed className="h-16 w-16 text-muted-foreground/30 mb-4" />
+          <h2 className="text-lg font-semibold mb-2">Meal plan not found</h2>
+          <p className="text-muted-foreground mb-6">This meal plan may have been removed or doesn&apos;t exist.</p>
+          <Link
+            href="/athlete/nutrition"
+            className="text-amber-600 hover:text-amber-700"
+          >
+            Back to Nutrition
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Parse content from the meal plan assignment
+  const content = assignment.content as Record<string, unknown>
+  const trainingDayPlan = (content?.trainingDayPlan as DayPlan) || null
+  const nonTrainingDayPlan = (content?.nonTrainingDayPlan as DayPlan) || null
+
+  // Get macro targets from template or assignment
+  const template = assignment.template
+  const targetCalories = template?.targetCalories || 2000
+  const targetProtein = template?.targetProtein || 150
+  const targetCarbs = template?.targetCarbs || 200
+  const targetFat = template?.targetFat || 70
+
+  // Use content-based plan if available, otherwise use template targets
+  const currentPlan = selectedDay === 'training'
+    ? trainingDayPlan || { calories: targetCalories, protein: targetProtein, carbs: targetCarbs, fat: targetFat, meals: [] }
+    : nonTrainingDayPlan || { calories: targetCalories, protein: targetProtein, carbs: targetCarbs, fat: targetFat, meals: [] }
 
   const macroData = [
     { name: 'Protein', value: currentPlan.protein * 4, color: '#8b5cf6' },
@@ -205,6 +132,8 @@ export default function MealPlanDetailPage({
     )
   }
 
+  const hasMeals = currentPlan.meals && currentPlan.meals.length > 0
+
   return (
     <div className="p-6 lg:p-8">
       {/* Header */}
@@ -219,8 +148,15 @@ export default function MealPlanDetailPage({
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">{mockMealPlan.name}</h1>
-            <p className="mt-1 text-muted-foreground max-w-2xl">{mockMealPlan.description}</p>
+            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">{assignment.name}</h1>
+            {template?.description && (
+              <p className="mt-1 text-muted-foreground max-w-2xl">{template.description}</p>
+            )}
+            {template?.goal && (
+              <span className="mt-2 inline-block rounded-full bg-muted px-3 py-1 text-sm capitalize">
+                {template.goal.replace('_', ' ')}
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -266,85 +202,99 @@ export default function MealPlanDetailPage({
       <div className="grid gap-6 lg:grid-cols-12">
         {/* Main Content - Meals */}
         <div className="lg:col-span-8 space-y-4">
-          {currentPlan.meals.map((meal) => {
-            const isExpanded = expandedMeals.includes(meal.name)
+          {hasMeals ? (
+            currentPlan.meals.map((meal) => {
+              const isExpanded = expandedMeals.includes(meal.name)
 
-            return (
-              <motion.div
-                key={meal.name}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-border bg-card overflow-hidden"
-              >
-                <button
-                  onClick={() => toggleMeal(meal.name)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+              return (
+                <motion.div
+                  key={meal.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-border bg-card overflow-hidden"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
-                      <UtensilsCrossed className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <div className="text-left">
-                      <p className="font-semibold">{meal.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>{meal.time}</span>
-                        <span>•</span>
-                        <span>{meal.calories} kcal</span>
+                  <button
+                    onClick={() => toggleMeal(meal.name)}
+                    className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
+                        <UtensilsCrossed className="h-6 w-6 text-amber-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-semibold">{meal.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          {meal.time && (
+                            <>
+                              <Clock className="h-3 w-3" />
+                              <span>{meal.time}</span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span>{meal.calories} kcal</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-3 text-sm">
-                      <span className="text-purple-500">P: {meal.protein}g</span>
-                      <span className="text-green-500">C: {meal.carbs}g</span>
-                      <span className="text-amber-500">F: {meal.fat}g</span>
+                    <div className="flex items-center gap-4">
+                      <div className="hidden md:flex items-center gap-3 text-sm">
+                        <span className="text-purple-500">P: {meal.protein}g</span>
+                        <span className="text-green-500">C: {meal.carbs}g</span>
+                        <span className="text-amber-500">F: {meal.fat}g</span>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      )}
                     </div>
-                    {isExpanded ? (
-                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  </button>
+
+                  <AnimatePresence>
+                    {isExpanded && meal.foods && meal.foods.length > 0 && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="border-t border-border"
+                      >
+                        <div className="p-4 space-y-2">
+                          {meal.foods.map((food, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
+                            >
+                              <div>
+                                <p className="font-medium">{food.name}</p>
+                                <p className="text-sm text-muted-foreground">{food.amount}</p>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs">
+                                <span className="flex items-center gap-1">
+                                  <Flame className="h-3 w-3 text-orange-500" />
+                                  {food.calories}
+                                </span>
+                                <span className="text-purple-500">P: {food.protein}g</span>
+                                <span className="text-green-500">C: {food.carbs}g</span>
+                                <span className="text-amber-500">F: {food.fat}g</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
                     )}
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-border"
-                    >
-                      <div className="p-4 space-y-2">
-                        {meal.foods.map((food, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
-                          >
-                            <div>
-                              <p className="font-medium">{food.name}</p>
-                              <p className="text-sm text-muted-foreground">{food.amount}</p>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs">
-                              <span className="flex items-center gap-1">
-                                <Flame className="h-3 w-3 text-orange-500" />
-                                {food.calories}
-                              </span>
-                              <span className="text-purple-500">P: {food.protein}g</span>
-                              <span className="text-green-500">C: {food.carbs}g</span>
-                              <span className="text-amber-500">F: {food.fat}g</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            )
-          })}
+                  </AnimatePresence>
+                </motion.div>
+              )
+            })
+          ) : (
+            <div className="rounded-xl border border-dashed border-border p-12 text-center">
+              <UtensilsCrossed className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+              <h3 className="font-semibold mb-2">No meals configured</h3>
+              <p className="text-muted-foreground">
+                Your coach hasn&apos;t added specific meals to this plan yet. Use the daily targets as a guide.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Sidebar - Daily Totals */}
@@ -463,6 +413,19 @@ export default function MealPlanDetailPage({
               )}
             </ul>
           </motion.div>
+
+          {/* Coach Notes */}
+          {assignment.coachNotes && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="rounded-xl border border-green-500/30 bg-green-500/5 p-6"
+            >
+              <h3 className="font-semibold text-green-600 mb-3">Coach Notes</h3>
+              <p className="text-sm text-green-600/80">{assignment.coachNotes}</p>
+            </motion.div>
+          )}
         </div>
       </div>
     </div>

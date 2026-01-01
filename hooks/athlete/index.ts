@@ -77,6 +77,68 @@ export function useBloodMarkerTrends(athleteId: string, markerCodes: string[]) {
   })
 }
 
+export interface BloodMarkerInput {
+  name: string
+  code?: string
+  value: number
+  unit: string
+  reference: { low: number; high: number }
+  category?: string
+}
+
+export function useCreateBloodTest() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: {
+      athleteId: string
+      date: string
+      labName: string
+      notes?: string
+      markers: BloodMarkerInput[]
+    }) => {
+      // Create the blood panel first
+      const { data: panel, error: panelError } = await supabase
+        .from('blood_panels')
+        .insert({
+          user_id: data.athleteId,
+          date: data.date,
+          lab_name: data.labName,
+          notes: data.notes,
+        })
+        .select('id')
+        .single()
+
+      if (panelError) throw panelError
+
+      // Create the blood markers
+      if (data.markers.length > 0) {
+        const markersToInsert = data.markers.map(marker => ({
+          blood_panel_id: panel.id,
+          name: marker.name,
+          code: marker.code || marker.name.toLowerCase().replace(/\s+/g, '_'),
+          value: marker.value,
+          unit: marker.unit,
+          reference_low: marker.reference.low,
+          reference_high: marker.reference.high,
+          category: marker.category || 'General',
+        }))
+
+        const { error: markersError } = await supabase
+          .from('blood_markers')
+          .insert(markersToInsert)
+
+        if (markersError) throw markersError
+      }
+
+      return { panelId: panel.id }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['blood-tests', variables.athleteId] })
+    },
+  })
+}
+
 // ============================================================================
 // Check-In Hooks
 // ============================================================================
@@ -146,6 +208,136 @@ export function useSubmitCheckIn() {
 // ============================================================================
 // Training Hooks
 // ============================================================================
+
+// Fetch a single programme assignment for the athlete (from coach)
+export function useProgrammeAssignment(assignmentId: string) {
+  return useQuery({
+    queryKey: ['athlete-programme-assignment', assignmentId],
+    queryFn: async () => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.error('Auth error:', authError)
+        return null
+      }
+
+      const { data, error } = await supabase
+        .from('programme_assignments')
+        .select(`
+          *,
+          template:programme_templates (*)
+        `)
+        .eq('id', assignmentId)
+        .eq('client_id', user.id) // Ensure athlete can only access their own assignments
+        .single()
+
+      if (error) {
+        console.error('Error fetching programme assignment:', error)
+        return null
+      }
+
+      // Transform to frontend format
+      return {
+        id: data.id,
+        clientId: data.client_id,
+        coachId: data.coach_id,
+        templateId: data.template_id,
+        name: data.name,
+        content: data.content,
+        startDate: data.start_date,
+        endDate: data.end_date,
+        status: data.status ?? 'scheduled',
+        currentWeek: data.current_week,
+        currentDay: data.current_day,
+        progressPercentage: data.progress_percentage,
+        lastWorkoutAt: data.last_workout_at,
+        coachNotes: data.coach_notes,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+        template: data.template ? {
+          id: data.template.id,
+          coachId: data.template.coach_id,
+          name: data.template.name,
+          description: data.template.description,
+          type: data.template.type,
+          difficulty: data.template.difficulty,
+          durationWeeks: data.template.duration_weeks,
+          daysPerWeek: data.template.days_per_week,
+          isTemplate: data.template.is_template ?? true,
+          isPublic: data.template.is_public ?? false,
+          tags: data.template.tags,
+          content: data.template.content,
+          createdAt: data.template.created_at,
+          updatedAt: data.template.updated_at,
+        } : undefined,
+      }
+    },
+    enabled: !!assignmentId,
+  })
+}
+
+// Fetch all programme assignments for the athlete
+export function useProgrammeAssignments(athleteId?: string) {
+  return useQuery({
+    queryKey: ['athlete-programme-assignments', athleteId],
+    queryFn: async () => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.error('Auth error:', authError)
+        return []
+      }
+
+      const { data, error } = await supabase
+        .from('programme_assignments')
+        .select(`
+          *,
+          template:programme_templates (*)
+        `)
+        .eq('client_id', athleteId || user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching programme assignments:', error)
+        return []
+      }
+
+      return (data || []).map(row => ({
+        id: row.id,
+        clientId: row.client_id,
+        coachId: row.coach_id,
+        templateId: row.template_id,
+        name: row.name,
+        content: row.content,
+        startDate: row.start_date,
+        endDate: row.end_date,
+        status: row.status ?? 'scheduled',
+        currentWeek: row.current_week,
+        currentDay: row.current_day,
+        progressPercentage: row.progress_percentage,
+        lastWorkoutAt: row.last_workout_at,
+        coachNotes: row.coach_notes,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        template: row.template ? {
+          id: row.template.id,
+          coachId: row.template.coach_id,
+          name: row.template.name,
+          description: row.template.description,
+          type: row.template.type,
+          difficulty: row.template.difficulty,
+          durationWeeks: row.template.duration_weeks,
+          daysPerWeek: row.template.days_per_week,
+          isTemplate: row.template.is_template ?? true,
+          isPublic: row.template.is_public ?? false,
+          tags: row.template.tags,
+          content: row.template.content,
+          createdAt: row.template.created_at,
+          updatedAt: row.template.updated_at,
+        } : undefined,
+      }))
+    },
+    enabled: !!athleteId,
+  })
+}
 
 export function useCurrentProgramme(athleteId?: string) {
   return useQuery({
@@ -327,6 +519,401 @@ export function useDailyMacros(athleteId?: string, date?: string) {
   })
 }
 
+// Nutrition log hooks
+export interface FoodItem {
+  id: string
+  name: string
+  brand: string | null
+  servingSize: number | null
+  servingUnit: string | null
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  fibre: number | null
+  isFavourite: boolean
+  isRecent: boolean
+}
+
+export interface LoggedFood {
+  id: string
+  mealId: string
+  mealType: string
+  name: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  quantity: number
+  servingUnit: string | null
+  loggedAt: string
+}
+
+export function useFoodDatabase(athleteId?: string, searchQuery?: string) {
+  return useQuery({
+    queryKey: ['food-database', athleteId, searchQuery],
+    queryFn: async () => {
+      let query = supabase
+        .from('nutrition_food_items')
+        .select('*')
+        .eq('user_id', athleteId!)
+        .order('use_count', { ascending: false, nullsFirst: false })
+        .limit(50)
+
+      if (searchQuery && searchQuery.trim()) {
+        query = query.or(`name.ilike.%${searchQuery}%,brand.ilike.%${searchQuery}%`)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching food database:', error)
+        return []
+      }
+
+      const sevenDaysAgo = new Date()
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+      return (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        brand: item.brand,
+        servingSize: item.serving_size,
+        servingUnit: item.serving_unit,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbohydrates,
+        fat: item.fat,
+        fibre: item.fibre,
+        isFavourite: item.is_favourite ?? false,
+        isRecent: item.last_used ? new Date(item.last_used) > sevenDaysAgo : false,
+      })) as FoodItem[]
+    },
+    enabled: !!athleteId,
+  })
+}
+
+export function useDailyNutritionLog(athleteId?: string, date?: string) {
+  return useQuery({
+    queryKey: ['daily-nutrition-log', athleteId, date],
+    queryFn: async () => {
+      // First get the daily summary for this date
+      const { data: summary, error: summaryError } = await supabase
+        .from('nutrition_daily_summaries')
+        .select('*')
+        .eq('user_id', athleteId!)
+        .eq('date', date!)
+        .maybeSingle()
+
+      if (summaryError) {
+        console.error('Error fetching daily summary:', summaryError)
+      }
+
+      if (!summary) {
+        return {
+          summary: null,
+          meals: [],
+          targets: {
+            calories: 2500,
+            protein: 180,
+            carbs: 280,
+            fat: 80,
+          },
+        }
+      }
+
+      // Get meals for this summary
+      const { data: meals, error: mealsError } = await supabase
+        .from('nutrition_meals')
+        .select(`
+          *,
+          entries:nutrition_food_entries(*)
+        `)
+        .eq('daily_summary_id', summary.id)
+        .order('order_index', { ascending: true })
+
+      if (mealsError) {
+        console.error('Error fetching meals:', mealsError)
+      }
+
+      // Transform meals and entries
+      const transformedMeals = (meals || []).map(meal => ({
+        id: meal.id,
+        mealType: meal.meal_type,
+        name: meal.name,
+        entries: (meal.entries || []).map((entry: {
+          id: string
+          name: string | null
+          calories: number | null
+          protein: number | null
+          carbohydrates: number | null
+          fat: number | null
+          quantity: number | null
+          serving_unit: string | null
+          created_at: string | null
+        }) => ({
+          id: entry.id,
+          mealId: meal.id,
+          mealType: meal.meal_type,
+          name: entry.name || 'Unknown Food',
+          calories: entry.calories || 0,
+          protein: entry.protein || 0,
+          carbs: entry.carbohydrates || 0,
+          fat: entry.fat || 0,
+          quantity: entry.quantity || 1,
+          servingUnit: entry.serving_unit,
+          loggedAt: entry.created_at || new Date().toISOString(),
+        })),
+      }))
+
+      return {
+        summary: {
+          id: summary.id,
+          date: summary.date,
+          actualCalories: summary.actual_calories || 0,
+          actualProtein: summary.actual_protein || 0,
+          actualCarbs: summary.actual_carbs || 0,
+          actualFat: summary.actual_fat || 0,
+        },
+        meals: transformedMeals,
+        targets: {
+          calories: summary.target_calories || 2500,
+          protein: summary.target_protein || 180,
+          carbs: summary.target_carbs || 280,
+          fat: summary.target_fat || 80,
+        },
+      }
+    },
+    enabled: !!athleteId && !!date,
+  })
+}
+
+export function useAddFoodEntry() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: {
+      athleteId: string
+      date: string
+      mealType: string
+      foodItem: FoodItem
+      quantity: number
+    }) => {
+      // First, ensure we have a daily summary for this date
+      let { data: summary, error: summaryError } = await supabase
+        .from('nutrition_daily_summaries')
+        .select('id')
+        .eq('user_id', data.athleteId)
+        .eq('date', data.date)
+        .maybeSingle()
+
+      if (summaryError) throw summaryError
+
+      // Create daily summary if it doesn't exist
+      if (!summary) {
+        const { data: newSummary, error: createError } = await supabase
+          .from('nutrition_daily_summaries')
+          .insert({
+            user_id: data.athleteId,
+            date: data.date,
+            actual_calories: 0,
+            actual_protein: 0,
+            actual_carbs: 0,
+            actual_fat: 0,
+          })
+          .select('id')
+          .single()
+
+        if (createError) throw createError
+        summary = newSummary
+      }
+
+      // Find or create meal for this meal type
+      let { data: meal, error: mealError } = await supabase
+        .from('nutrition_meals')
+        .select('id')
+        .eq('daily_summary_id', summary.id)
+        .eq('meal_type', data.mealType)
+        .maybeSingle()
+
+      if (mealError) throw mealError
+
+      if (!meal) {
+        const { data: newMeal, error: createMealError } = await supabase
+          .from('nutrition_meals')
+          .insert({
+            user_id: data.athleteId,
+            daily_summary_id: summary.id,
+            meal_type: data.mealType,
+            name: data.mealType.charAt(0).toUpperCase() + data.mealType.slice(1),
+          })
+          .select('id')
+          .single()
+
+        if (createMealError) throw createMealError
+        meal = newMeal
+      }
+
+      // Add the food entry
+      const calories = Math.round(data.foodItem.calories * data.quantity)
+      const protein = Math.round(data.foodItem.protein * data.quantity)
+      const carbs = Math.round(data.foodItem.carbs * data.quantity)
+      const fat = Math.round(data.foodItem.fat * data.quantity)
+
+      const { error: entryError } = await supabase
+        .from('nutrition_food_entries')
+        .insert({
+          user_id: data.athleteId,
+          meal_id: meal.id,
+          nutrition_food_item_id: data.foodItem.id,
+          name: data.foodItem.name,
+          quantity: data.quantity,
+          serving_unit: data.foodItem.servingUnit,
+          calories,
+          protein,
+          carbohydrates: carbs,
+          fat,
+        })
+
+      if (entryError) throw entryError
+
+      // Update daily summary totals
+      const { data: currentSummary } = await supabase
+        .from('nutrition_daily_summaries')
+        .select('actual_calories, actual_protein, actual_carbs, actual_fat')
+        .eq('id', summary.id)
+        .single()
+
+      await supabase
+        .from('nutrition_daily_summaries')
+        .update({
+          actual_calories: (currentSummary?.actual_calories || 0) + calories,
+          actual_protein: (currentSummary?.actual_protein || 0) + protein,
+          actual_carbs: (currentSummary?.actual_carbs || 0) + carbs,
+          actual_fat: (currentSummary?.actual_fat || 0) + fat,
+        })
+        .eq('id', summary.id)
+
+      // Update food item usage
+      await supabase
+        .from('nutrition_food_items')
+        .update({
+          last_used: new Date().toISOString(),
+          use_count: (data.foodItem as { useCount?: number }).useCount ? ((data.foodItem as { useCount?: number }).useCount || 0) + 1 : 1,
+        })
+        .eq('id', data.foodItem.id)
+
+      return { success: true }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['daily-nutrition-log', variables.athleteId, variables.date] })
+      queryClient.invalidateQueries({ queryKey: ['daily-macros', variables.athleteId, variables.date] })
+      queryClient.invalidateQueries({ queryKey: ['food-database', variables.athleteId] })
+    },
+  })
+}
+
+export function useRemoveFoodEntry() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: {
+      entryId: string
+      athleteId: string
+      date: string
+      calories: number
+      protein: number
+      carbs: number
+      fat: number
+      summaryId: string
+    }) => {
+      // Delete the entry
+      const { error: deleteError } = await supabase
+        .from('nutrition_food_entries')
+        .delete()
+        .eq('id', data.entryId)
+
+      if (deleteError) throw deleteError
+
+      // Update daily summary totals
+      const { data: currentSummary } = await supabase
+        .from('nutrition_daily_summaries')
+        .select('actual_calories, actual_protein, actual_carbs, actual_fat')
+        .eq('id', data.summaryId)
+        .single()
+
+      await supabase
+        .from('nutrition_daily_summaries')
+        .update({
+          actual_calories: Math.max(0, (currentSummary?.actual_calories || 0) - data.calories),
+          actual_protein: Math.max(0, (currentSummary?.actual_protein || 0) - data.protein),
+          actual_carbs: Math.max(0, (currentSummary?.actual_carbs || 0) - data.carbs),
+          actual_fat: Math.max(0, (currentSummary?.actual_fat || 0) - data.fat),
+        })
+        .eq('id', data.summaryId)
+
+      return { success: true }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['daily-nutrition-log', variables.athleteId, variables.date] })
+      queryClient.invalidateQueries({ queryKey: ['daily-macros', variables.athleteId, variables.date] })
+    },
+  })
+}
+
+// ============================================================================
+// User Profile Hooks
+// ============================================================================
+
+export interface UserDietaryProfile {
+  id: string
+  targetWeightKg: number | null
+  currentWeightKg: number | null
+  targetCalories: number | null
+  targetProtein: number | null
+  targetCarbs: number | null
+  targetFat: number | null
+  primaryGoal: string | null
+  activityLevel: string | null
+  heightCm: number | null
+  mealsPerDay: number | null
+}
+
+export function useUserDietaryProfile(athleteId?: string) {
+  return useQuery({
+    queryKey: ['user-dietary-profile', athleteId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_dietary_profiles')
+        .select('*')
+        .eq('user_id', athleteId!)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching user dietary profile:', error)
+        return null
+      }
+
+      if (!data) return null
+
+      return {
+        id: data.id,
+        targetWeightKg: data.target_weight_kg,
+        currentWeightKg: data.current_weight_kg,
+        targetCalories: data.target_calories,
+        targetProtein: data.target_protein,
+        targetCarbs: data.target_carbs,
+        targetFat: data.target_fat,
+        primaryGoal: data.primary_goal,
+        activityLevel: data.activity_level,
+        heightCm: data.height_cm,
+        mealsPerDay: data.meals_per_day,
+      } as UserDietaryProfile
+    },
+    enabled: !!athleteId,
+  })
+}
+
 // ============================================================================
 // Progress Hooks
 // ============================================================================
@@ -404,33 +991,68 @@ export function useReadinessScore(athleteId?: string) {
 }
 
 // ============================================================================
-// Messages Hooks (disabled until messages table exists)
+// Coach Relationship Hooks
 // ============================================================================
 
-export function useCoachMessages(athleteId?: string) {
-  return useQuery({
-    queryKey: ['coach-messages', athleteId],
-    queryFn: async () => {
-      // messages table doesn't exist - return empty array
-      console.warn('Messages table not implemented')
-      return []
-    },
-    enabled: !!athleteId,
-  })
+export interface CoachRelationship {
+  id: string // coach_clients.id - used for messaging
+  coachId: string
+  coach: {
+    id: string
+    displayName: string | null
+    avatarUrl: string | null
+    email: string | null
+  } | null
+  status: string
+  createdAt: string
 }
 
-export function useSendMessage() {
-  const queryClient = useQueryClient()
+export function useCoachRelationship(athleteId?: string) {
+  return useQuery({
+    queryKey: ['coach-relationship', athleteId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coach_clients')
+        .select(`
+          id,
+          coach_id,
+          status,
+          created_at,
+          coach:profiles!coach_clients_coach_id_fkey(
+            id,
+            display_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('client_id', athleteId!)
+        .eq('status', 'active')
+        .maybeSingle()
 
-  return useMutation({
-    mutationFn: async (_messageData: { recipientId: string; content: string; senderId: string }) => {
-      // messages table doesn't exist
-      console.warn('Messages table not implemented')
-      throw new Error('Messages feature not available')
+      if (error) {
+        console.error('Error fetching coach relationship:', error)
+        return null
+      }
+
+      if (!data) return null
+
+      // Handle coach data - could be array or single object from Supabase
+      const coachData = Array.isArray(data.coach) ? data.coach[0] : data.coach
+
+      return {
+        id: data.id,
+        coachId: data.coach_id,
+        coach: coachData ? {
+          id: coachData.id,
+          displayName: coachData.display_name,
+          avatarUrl: coachData.avatar_url,
+          email: coachData.email,
+        } : null,
+        status: data.status,
+        createdAt: data.created_at,
+      } as CoachRelationship
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['coach-messages'] })
-    },
+    enabled: !!athleteId,
   })
 }
 
@@ -668,3 +1290,58 @@ export {
   useStrainRecovery,
   useWeeklyActivity,
 } from './use-healthkit'
+
+// ============================================================================
+// Exercise Library Hooks
+// ============================================================================
+
+// Note: Exercise library functionality is coming soon.
+// The database currently stores exercises within training programmes (training_day_id)
+// but doesn't have a global exercise library table yet.
+
+export interface ExerciseLibraryItem {
+  id: string
+  name: string
+  muscleGroup: string
+  secondaryMuscles: string[]
+  equipment: string[]
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  type: 'compound' | 'isolation'
+  description: string
+  instructions: string[]
+  tips: string[]
+  videoUrl?: string
+  imageUrl?: string
+  isFavourite?: boolean
+}
+
+export function useExerciseLibrary(_athleteId?: string) {
+  // Exercise library is coming soon - return empty array for now
+  // When a global exercise library table is added, this will query it
+  return useQuery({
+    queryKey: ['exercise-library'],
+    queryFn: async () => {
+      // Return empty array - exercise library feature is coming soon
+      return [] as ExerciseLibraryItem[]
+    },
+  })
+}
+
+export function useToggleExerciseFavourite() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (_data: {
+      athleteId: string
+      exerciseId: string
+      isFavourite: boolean
+    }) => {
+      // Exercise favourites feature is coming soon
+      // When implemented, this will update the user's exercise favourites
+      return { success: true }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exercise-library'] })
+    },
+  })
+}

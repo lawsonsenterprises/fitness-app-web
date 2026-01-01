@@ -7,11 +7,13 @@ import { toast } from 'sonner'
 import { MessageBubble } from './message-bubble'
 import { MessageInput } from './message-input'
 import { TypingIndicator } from './typing-indicator'
-import { useMessages, useSendMessage, useMarkMessagesRead } from '@/hooks/use-messages'
+import { useMessages, useSendMessage, useMarkMessagesRead, useMessageSubscription } from '@/hooks/use-messages'
+import { useTypingIndicator } from '@/hooks/use-typing-indicator'
+import { useAuth } from '@/contexts/auth-context'
 import type { Message } from '@/types'
 
 interface MessageThreadProps {
-  clientId: string
+  clientId: string // This is the coach_clients.id (relationship ID)
   clientName?: string
 }
 
@@ -19,10 +21,19 @@ const EMPTY_MESSAGES: Message[] = []
 
 export function MessageThread({ clientId, clientName }: MessageThreadProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth()
 
-  const { data: messagesData, isLoading } = useMessages({ clientId })
+  const { data: messagesData, isLoading } = useMessages({ coachClientId: clientId })
   const sendMessage = useSendMessage()
   const markRead = useMarkMessagesRead()
+
+  // Subscribe to realtime message updates
+  useMessageSubscription(clientId)
+
+  // Typing indicator
+  const { handleTyping, isOtherUserTyping, typingUserName } = useTypingIndicator({
+    coachClientId: clientId,
+  })
 
   // Memoize the messages array to prevent reference changes
   const messages = useMemo(
@@ -51,22 +62,24 @@ export function MessageThread({ clientId, clientName }: MessageThreadProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Mark unread client messages as read
+  // Mark unread messages from others as read
   useEffect(() => {
-    const unreadClientMessages = messages.filter(
-      (msg) => msg.senderType === 'client' && !msg.readAt
+    if (!user?.id) return
+
+    const unreadMessages = messages.filter(
+      (msg) => msg.senderId !== user.id && !msg.isRead
     )
-    if (unreadClientMessages.length > 0) {
+    if (unreadMessages.length > 0) {
       markRead.mutate({
-        clientId,
-        messageIds: unreadClientMessages.map((m) => m.id),
+        coachClientId: clientId,
+        messageIds: unreadMessages.map((m) => m.id),
       })
     }
-  }, [messages, clientId, markRead])
+  }, [messages, clientId, user?.id, markRead])
 
   const handleSendMessage = async (content: string) => {
     try {
-      await sendMessage.mutateAsync({ clientId, content })
+      await sendMessage.mutateAsync({ coachClientId: clientId, content })
     } catch {
       toast.error('Failed to send message', {
         description: 'Please try again.',
@@ -111,7 +124,7 @@ export function MessageThread({ clientId, clientName }: MessageThreadProps) {
                   <MessageBubble
                     key={message.id}
                     message={message}
-                    isCoach={message.senderType === 'coach'}
+                    isCoach={message.senderId === user?.id}
                   />
                 ))}
               </div>
@@ -119,13 +132,14 @@ export function MessageThread({ clientId, clientName }: MessageThreadProps) {
           ))
         )}
 
-        <TypingIndicator isTyping={false} name={clientName} />
+        <TypingIndicator isTyping={isOtherUserTyping} name={typingUserName || clientName} />
         <div ref={messagesEndRef} />
       </div>
 
       {/* Message input */}
       <MessageInput
         onSend={handleSendMessage}
+        onTyping={handleTyping}
         isSending={sendMessage.isPending}
       />
     </div>

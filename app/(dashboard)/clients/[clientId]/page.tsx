@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -23,110 +23,54 @@ import {
   Flame,
   Timer,
 } from 'lucide-react'
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts'
 
 import { Button } from '@/components/ui/button'
-import { ClientStatusBadge, SubscriptionBadge } from '@/components/clients/client-status-badge'
+import { ClientStatusBadge } from '@/components/clients/client-status-badge'
 import { ExportModal } from '@/components/exports/export-modal'
 import { useClient } from '@/hooks/use-clients'
-import { useClientReadiness } from '@/hooks/coach'
+import { useClientReadiness, useClientWorkoutStats } from '@/hooks/coach'
+import { useClientCheckIns } from '@/hooks/use-check-ins'
+import { useClientProgrammeAssignments } from '@/hooks/use-programmes'
+import { useClientMealPlanAssignments } from '@/hooks/use-meal-plans'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { cn } from '@/lib/utils'
-
-// Mock data for charts
-const adherenceData = [
-  { day: 'Mon', training: 100, nutrition: 85 },
-  { day: 'Tue', training: 100, nutrition: 90 },
-  { day: 'Wed', training: 0, nutrition: 75 },
-  { day: 'Thu', training: 100, nutrition: 95 },
-  { day: 'Fri', training: 100, nutrition: 88 },
-  { day: 'Sat', training: 100, nutrition: 70 },
-  { day: 'Sun', training: 0, nutrition: 80 },
-]
-
-const weightData = [
-  { date: 'Week 1', weight: 82.5 },
-  { date: 'Week 2', weight: 82.1 },
-  { date: 'Week 3', weight: 81.8 },
-  { date: 'Week 4', weight: 81.3 },
-]
-
-// Mock recent check-ins
-const mockCheckIns = [
-  {
-    id: '1',
-    weekStartDate: '2024-12-23',
-    weight: 81.3,
-    weightChange: -0.5,
-    averageSteps: 9500,
-    sleepHours: 7.5,
-    status: 'reviewed',
-  },
-  {
-    id: '2',
-    weekStartDate: '2024-12-16',
-    weight: 81.8,
-    weightChange: -0.3,
-    averageSteps: 8800,
-    sleepHours: 7.2,
-    status: 'reviewed',
-  },
-  {
-    id: '3',
-    weekStartDate: '2024-12-09',
-    weight: 82.1,
-    weightChange: -0.4,
-    averageSteps: 9200,
-    sleepHours: 7.8,
-    status: 'reviewed',
-  },
-]
-
-// Mock current programme
-const mockProgramme = {
-  id: '1',
-  name: 'Hypertrophy Block - Phase 2',
-  type: 'hypertrophy',
-  startDate: '2024-12-02',
-  endDate: '2025-01-26',
-  completionPercentage: 45,
-}
-
-// Mock current meal plan
-const mockMealPlan = {
-  id: '1',
-  name: 'Lean Bulk - 2800kcal',
-  type: 'bulking',
-  trainingDayCalories: 2800,
-  trainingDayProtein: 180,
-  trainingDayCarbs: 320,
-  trainingDayFat: 80,
-  nonTrainingDayCalories: 2400,
-  nonTrainingDayProtein: 180,
-  nonTrainingDayCarbs: 240,
-  nonTrainingDayFat: 75,
-}
+import { getClientDisplayName } from '@/types'
 
 export default function ClientOverviewPage() {
   const params = useParams()
   const clientId = params.clientId as string
   const { data: client, isLoading } = useClient(clientId)
   const { data: readinessData } = useClientReadiness(clientId)
+  const { data: checkInsData } = useClientCheckIns(clientId, { pageSize: 3 })
+  const { data: programmeAssignmentsData } = useClientProgrammeAssignments(clientId)
+  const { data: mealPlanAssignmentsData } = useClientMealPlanAssignments(clientId)
+  const { data: workoutStats } = useClientWorkoutStats(clientId, 30) // Last 30 days
   const [showExportModal, setShowExportModal] = useState(false)
+
+  // Get recent check-ins
+  const recentCheckIns = checkInsData?.data || []
+
+  // Get active programme assignment
+  const programmeAssignments = programmeAssignmentsData?.data || []
+  const activeProgramme = programmeAssignments.find((a) => a.status === 'active')
+
+  // Get active meal plan assignment
+  const mealPlanAssignments = mealPlanAssignmentsData?.data || []
+  const activeMealPlan = mealPlanAssignments.find((a) => a.status === 'active')
+
+  // Calculate stats from check-ins
+  const stats = useMemo(() => {
+    if (!recentCheckIns.length) return { avgRating: 0, streak: 0 }
+    const withRating = recentCheckIns.filter((c) => c.coachRating != null)
+    const avgRating = withRating.length
+      ? withRating.reduce((sum, c) => sum + (c.coachRating || 0), 0) / withRating.length
+      : 0
+    return { avgRating, streak: recentCheckIns.length }
+  }, [recentCheckIns])
 
   // HealthKit readiness data
   const hasHealthKitData = readinessData?.hasData || false
   const recoveryScore = readinessData?.recoveryScore || 0
-  const readinessBand = readinessData?.readinessBand || 'moderate'
   const dayMode = readinessData?.mode === 'training_day' ? 'Training Day' : 'Rest Day'
 
   if (isLoading) {
@@ -181,7 +125,7 @@ export default function ClientOverviewPage() {
         onClose={() => setShowExportModal(false)}
         defaultType="client_progress"
         entityId={clientId}
-        entityTitle={`${client.firstName}-${client.lastName}-progress`}
+        entityTitle={`${getClientDisplayName(client).replace(/\s+/g, '-')}-progress`}
       />
 
       {/* Main content grid */}
@@ -199,41 +143,59 @@ export default function ClientOverviewPage() {
                 View Details
               </Link>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
+            {activeProgramme ? (
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium">{activeProgramme.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(activeProgramme.startDate).toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'short',
+                      })}
+                      {activeProgramme.endDate && (
+                        <>
+                          {' - '}
+                          {new Date(activeProgramme.endDate).toLocaleDateString('en-GB', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                  {activeProgramme.template?.type && (
+                    <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 capitalize">
+                      {activeProgramme.template.type}
+                    </span>
+                  )}
+                </div>
+                {/* Progress bar */}
                 <div>
-                  <p className="font-medium">{mockProgramme.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {new Date(mockProgramme.startDate).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                    })}{' '}
-                    -{' '}
-                    {new Date(mockProgramme.endDate).toLocaleDateString('en-GB', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-                <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600">
-                  {mockProgramme.type}
-                </span>
-              </div>
-              {/* Progress bar */}
-              <div>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Progress</span>
-                  <span className="font-medium">{mockProgramme.completionPercentage}%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
-                    style={{ width: `${mockProgramme.completionPercentage}%` }}
-                  />
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{activeProgramme.progressPercentage || 0}%</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all"
+                      style={{ width: `${activeProgramme.progressPercentage || 0}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="py-6 text-center">
+                <Dumbbell className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No active programme</p>
+                <Link href="/programmes">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    Assign Programme
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Current Meal Plan Card */}
@@ -247,42 +209,74 @@ export default function ClientOverviewPage() {
                 View Details
               </Link>
             </div>
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium">{mockMealPlan.name}</p>
-                  <p className="text-sm text-muted-foreground capitalize">{mockMealPlan.type}</p>
-                </div>
-              </div>
-              {/* Macro breakdown */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Training Day
-                  </p>
-                  <p className="text-lg font-semibold">{mockMealPlan.trainingDayCalories} kcal</p>
-                  <div className="mt-1 flex gap-2 text-xs text-muted-foreground">
-                    <span>P: {mockMealPlan.trainingDayProtein}g</span>
-                    <span>C: {mockMealPlan.trainingDayCarbs}g</span>
-                    <span>F: {mockMealPlan.trainingDayFat}g</span>
+            {activeMealPlan ? (
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium">{activeMealPlan.name}</p>
+                    {activeMealPlan.template?.goal && (
+                      <p className="text-sm text-muted-foreground capitalize">
+                        {activeMealPlan.template.goal.replace('_', ' ')}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Rest Day
-                  </p>
-                  <p className="text-lg font-semibold">{mockMealPlan.nonTrainingDayCalories} kcal</p>
-                  <div className="mt-1 flex gap-2 text-xs text-muted-foreground">
-                    <span>P: {mockMealPlan.nonTrainingDayProtein}g</span>
-                    <span>C: {mockMealPlan.nonTrainingDayCarbs}g</span>
-                    <span>F: {mockMealPlan.nonTrainingDayFat}g</span>
+                {/* Macro breakdown */}
+                {activeMealPlan.template && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Daily Targets
+                      </p>
+                      {activeMealPlan.template.targetCalories && (
+                        <p className="text-lg font-semibold">{activeMealPlan.template.targetCalories} kcal</p>
+                      )}
+                      <div className="mt-1 flex gap-2 text-xs text-muted-foreground">
+                        {activeMealPlan.template.targetProtein && (
+                          <span>P: {activeMealPlan.template.targetProtein}g</span>
+                        )}
+                        {activeMealPlan.template.targetCarbs && (
+                          <span>C: {activeMealPlan.template.targetCarbs}g</span>
+                        )}
+                        {activeMealPlan.template.targetFat && (
+                          <span>F: {activeMealPlan.template.targetFat}g</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Duration
+                      </p>
+                      <p className="text-lg font-semibold">
+                        {activeMealPlan.template.durationWeeks
+                          ? `${activeMealPlan.template.durationWeeks} weeks`
+                          : 'Ongoing'}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Started{' '}
+                        {new Date(activeMealPlan.startDate).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="py-6 text-center">
+                <Target className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No active meal plan</p>
+                <Link href="/meal-plans">
+                  <Button variant="outline" size="sm" className="mt-3">
+                    Assign Meal Plan
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Adherence Chart */}
+          {/* Adherence Chart Placeholder */}
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-semibold">Weekly Adherence</h3>
@@ -297,97 +291,23 @@ export default function ClientOverviewPage() {
                 </div>
               </div>
             </div>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={adherenceData}>
-                  <defs>
-                    <linearGradient id="colorTraining" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorNutrition" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="day"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#71717a' }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#71717a' }}
-                    domain={[0, 100]}
-                    ticks={[0, 50, 100]}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="training"
-                    stroke="#f59e0b"
-                    fill="url(#colorTraining)"
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="nutrition"
-                    stroke="#10b981"
-                    fill="url(#colorNutrition)"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-48 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground text-center">
+                Adherence data syncs from the athlete&apos;s app once they start logging workouts and meals.
+              </p>
             </div>
           </div>
 
-          {/* Weight Trend Chart */}
+          {/* Weight Trend Placeholder */}
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-semibold">Weight Trend</h3>
               <span className="text-sm text-muted-foreground">Last 4 weeks</span>
             </div>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={weightData}>
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#71717a' }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#71717a' }}
-                    domain={['dataMin - 1', 'dataMax + 1']}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                    }}
-                    formatter={(value) => [`${value} kg`, 'Weight']}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="weight"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    dot={{ fill: '#f59e0b', strokeWidth: 0, r: 4 }}
-                    activeDot={{ r: 6, fill: '#f59e0b' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="h-48 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground text-center">
+                Weight data will appear here as the athlete submits check-ins with weight measurements.
+              </p>
             </div>
           </div>
         </div>
@@ -501,14 +421,14 @@ export default function ClientOverviewPage() {
                   <ClientStatusBadge status={client.status} />
                 </dd>
               </div>
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Subscription
-                </dt>
-                <dd className="mt-1">
-                  <SubscriptionBadge status={client.subscriptionStatus} />
-                </dd>
-              </div>
+              {client.checkInFrequency && (
+                <div>
+                  <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Check-in Frequency
+                  </dt>
+                  <dd className="mt-1 text-sm">Every {client.checkInFrequency} days</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Member Since
@@ -521,13 +441,13 @@ export default function ClientOverviewPage() {
                   })}
                 </dd>
               </div>
-              {client.lastActiveAt && (
+              {client.nextCheckInDue && (
                 <div>
                   <dt className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                    Last Active
+                    Next Check-in Due
                   </dt>
                   <dd className="mt-1 text-sm">
-                    {new Date(client.lastActiveAt).toLocaleDateString('en-GB', {
+                    {new Date(client.nextCheckInDue).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'long',
                       year: 'numeric',
@@ -541,34 +461,50 @@ export default function ClientOverviewPage() {
           {/* Stats Card */}
           <div className="rounded-xl border border-border bg-card p-6">
             <h3 className="mb-4 font-semibold">Performance Stats</h3>
+            <p className="text-xs text-muted-foreground mb-3">Last 30 days</p>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <Target className="h-4 w-4 text-amber-500" />
-                  <span className="text-2xl font-bold">92%</span>
+                  <Dumbbell className="h-4 w-4 text-amber-500" />
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    workoutStats?.totalWorkouts ? "" : "text-muted-foreground"
+                  )}>
+                    {workoutStats?.totalWorkouts || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Training</p>
+                <p className="text-xs text-muted-foreground">Workouts</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <Target className="h-4 w-4 text-emerald-500" />
-                  <span className="text-2xl font-bold">85%</span>
+                  <Timer className="h-4 w-4 text-emerald-500" />
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    workoutStats?.avgDuration ? "" : "text-muted-foreground"
+                  )}>
+                    {workoutStats?.avgDuration || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Nutrition</p>
+                <p className="text-xs text-muted-foreground">Avg Mins</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
                   <Calendar className="h-4 w-4 text-blue-500" />
-                  <span className="text-2xl font-bold">8</span>
+                  <span className="text-2xl font-bold">{stats.streak}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Check-In Streak</p>
+                <p className="text-xs text-muted-foreground">Check-Ins</p>
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <Award className="h-4 w-4 text-purple-500" />
-                  <span className="text-2xl font-bold">12</span>
+                  <Flame className="h-4 w-4 text-orange-500" />
+                  <span className={cn(
+                    "text-2xl font-bold",
+                    workoutStats?.avgCalories ? "" : "text-muted-foreground"
+                  )}>
+                    {workoutStats?.avgCalories || 0}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">PRs This Month</p>
+                <p className="text-xs text-muted-foreground">Avg Kcal</p>
               </div>
             </div>
           </div>
@@ -584,48 +520,42 @@ export default function ClientOverviewPage() {
                 View All
               </Link>
             </div>
-            <div className="space-y-3">
-              {mockCheckIns.map((checkIn) => (
-                <div
-                  key={checkIn.id}
-                  className="flex items-center justify-between rounded-lg bg-muted/30 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {new Date(checkIn.weekStartDate).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'short',
-                      })}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {checkIn.averageSteps.toLocaleString()} steps · {checkIn.sleepHours}h sleep
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{checkIn.weight} kg</p>
-                    <p
-                      className={cn(
-                        'flex items-center justify-end gap-0.5 text-xs',
-                        checkIn.weightChange < 0
-                          ? 'text-emerald-600'
-                          : checkIn.weightChange > 0
-                          ? 'text-red-600'
-                          : 'text-muted-foreground'
-                      )}
-                    >
-                      {checkIn.weightChange < 0 ? (
-                        <TrendingDown className="h-3 w-3" />
-                      ) : checkIn.weightChange > 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <Minus className="h-3 w-3" />
-                      )}
-                      {Math.abs(checkIn.weightChange)} kg
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {recentCheckIns.length > 0 ? (
+              <div className="space-y-3">
+                {recentCheckIns.map((checkIn) => (
+                  <Link
+                    key={checkIn.id}
+                    href={`/check-ins/${checkIn.id}`}
+                    className="flex items-center justify-between rounded-lg bg-muted/30 p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium">
+                        {new Date(checkIn.date).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {checkIn.stepsAverage
+                          ? `${checkIn.stepsAverage.toLocaleString()} steps`
+                          : 'No step data'}
+                        {checkIn.sleepHours && ` · ${checkIn.sleepHours}h sleep`}
+                      </p>
+                    </div>
+                    {checkIn.weight && (
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{checkIn.weight} kg</p>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center">
+                <ClipboardList className="mx-auto h-8 w-8 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No check-ins yet</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
