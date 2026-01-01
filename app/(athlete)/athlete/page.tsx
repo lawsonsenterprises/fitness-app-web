@@ -189,7 +189,7 @@ export default function AthleteDashboardPage() {
                         <Flame className="h-4 w-4 text-orange-500" />
                         <span className="text-sm font-medium">Active Energy</span>
                       </div>
-                      <span className="text-lg font-bold">{readinessData?.activeEnergy || 0} kcal</span>
+                      <span className="text-lg font-bold">{Math.round(readinessData?.activeEnergy || 0)} kcal</span>
                     </div>
 
                     {/* Exercise Minutes */}
