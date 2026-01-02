@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { ROUTES } from '@/lib/constants'
+import { type UserRole } from '@/lib/roles'
 
 async function handleCallback(request: Request) {
   const { origin } = new URL(request.url)
@@ -9,7 +10,7 @@ async function handleCallback(request: Request) {
   let code: string | null = null
   let error: string | null = null
   let errorDescription: string | null = null
-  let next: string = ROUTES.DASHBOARD
+  let next: string | null = null
 
   if (request.method === 'POST') {
     // Apple sends callback as POST with form data
@@ -23,7 +24,7 @@ async function handleCallback(request: Request) {
     code = searchParams.get('code')
     error = searchParams.get('error')
     errorDescription = searchParams.get('error_description')
-    next = searchParams.get('next') ?? ROUTES.DASHBOARD
+    next = searchParams.get('next')
   }
 
   // Handle OAuth errors (e.g., user cancelled Apple sign in)
@@ -38,7 +39,24 @@ async function handleCallback(request: Request) {
     const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!sessionError && data?.session) {
-      return NextResponse.redirect(`${origin}${next}`)
+      // Check user's roles to determine redirect
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('roles')
+        .eq('id', data.session.user.id)
+        .single()
+
+      const userRoles = (profile?.roles as UserRole[]) || []
+
+      // If user has multiple roles, show role selector
+      // Otherwise redirect to appropriate dashboard or specified 'next' URL
+      if (userRoles.length > 1) {
+        return NextResponse.redirect(`${origin}/select-role`)
+      }
+
+      // Use explicit next param if provided, otherwise go to default dashboard
+      const redirectTo = next || ROUTES.DASHBOARD
+      return NextResponse.redirect(`${origin}${redirectTo}`)
     }
 
     console.error('Session exchange error:', sessionError)
