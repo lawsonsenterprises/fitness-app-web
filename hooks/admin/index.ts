@@ -250,7 +250,7 @@ export function useAllAthletes(options?: {
     queryFn: async () => {
       let query = supabase
         .from('profiles')
-        .select('*, clients!inner(coach_id, status)', { count: 'exact' })
+        .select('*, clients:coach_clients!coach_clients_client_id_fkey(coach_id, status)', { count: 'exact' })
         .contains('roles', ['athlete'])
         .range((page - 1) * limit, page * limit - 1)
         .order('created_at', { ascending: false })
