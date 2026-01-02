@@ -404,16 +404,74 @@ export default function AthleteSettingsPage() {
           animate={{ opacity: 1 }}
           className="space-y-6"
         >
-          {/* Change Password */}
+          {/* Sign-in Methods - Show for OAuth users */}
+          {!isAuthLoading && (isOAuthOnly || hasBothMethods) && (
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="mb-6 flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Sign-in Methods</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Ways you can access your account
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {providers.includes('apple') && (
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Apple className="h-5 w-5" />
+                      <span className="font-medium">Apple</span>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm text-emerald-600">
+                      <Check className="h-4 w-4" />
+                      Connected
+                    </span>
+                  </div>
+                )}
+                {providers.includes('email') ? (
+                  <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Key className="h-5 w-5" />
+                      <span className="font-medium">Email & Password</span>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm text-emerald-600">
+                      <Check className="h-4 w-4" />
+                      Connected
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between rounded-lg border border-dashed border-border px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Key className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-medium text-muted-foreground">Email & Password</span>
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Not set up
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Add/Change Password */}
           <div className="rounded-xl border border-border bg-card p-6">
             <div className="mb-6 flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
                 <Key className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold">Change Password</h2>
+                <h2 className="text-lg font-semibold">
+                  {isOAuthOnly ? 'Add Password' : 'Change Password'}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Update your password to keep your account secure
+                  {isOAuthOnly
+                    ? 'Add a password to sign in with email as an alternative to Apple'
+                    : 'Update your password to keep your account secure'}
                 </p>
               </div>
             </div>
