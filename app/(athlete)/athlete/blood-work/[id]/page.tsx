@@ -20,6 +20,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useBloodTest } from '@/hooks/athlete'
+import { getMarkerReferenceRanges } from '@/lib/blood-markers'
 
 // Helper to determine marker status based on value and reference ranges
 function getMarkerStatus(value: number, refLow: number | null, refHigh: number | null): 'optimal' | 'low' | 'high' | 'borderline' {
@@ -30,6 +31,29 @@ function getMarkerStatus(value: number, refLow: number | null, refHigh: number |
   const range = refHigh - refLow
   if (value < refLow + range * 0.15 || value > refHigh - range * 0.15) return 'borderline'
   return 'optimal'
+}
+
+// Get effective reference ranges - use stored values if valid, otherwise look up from definitions
+function getEffectiveReferenceRanges(
+  marker: { name: string; code: string; reference_low: number | null; reference_high: number | null }
+): { low: number | null; high: number | null } {
+  // If stored references are valid (not null and not both 0), use them
+  const hasValidStoredRefs =
+    marker.reference_low !== null &&
+    marker.reference_high !== null &&
+    !(marker.reference_low === 0 && marker.reference_high === 0)
+
+  if (hasValidStoredRefs) {
+    return { low: marker.reference_low, high: marker.reference_high }
+  }
+
+  // Look up from standard definitions
+  const standardRefs = getMarkerReferenceRanges(marker.name) || getMarkerReferenceRanges(marker.code)
+  if (standardRefs) {
+    return { low: standardRefs.low, high: standardRefs.high }
+  }
+
+  return { low: null, high: null }
 }
 
 // Group markers by category
@@ -68,8 +92,9 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
   const totalMarkers = bloodTest?.blood_markers?.length || 0
   const flaggedMarkers = useMemo(() => {
     if (!bloodTest?.blood_markers) return 0
-    return bloodTest.blood_markers.filter((m: { value: number; reference_low: number | null; reference_high: number | null }) => {
-      const status = getMarkerStatus(m.value, m.reference_low, m.reference_high)
+    return bloodTest.blood_markers.filter((m: { name: string; code: string; value: number; reference_low: number | null; reference_high: number | null }) => {
+      const refs = getEffectiveReferenceRanges(m)
+      const status = getMarkerStatus(m.value, refs.low, refs.high)
       return status !== 'optimal'
     }).length
   }, [bloodTest])
@@ -243,7 +268,9 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
               <div className="divide-y divide-border">
                 {category.markers.map((marker) => {
                   const isExpanded = expandedMarker === marker.id
-                  const status = getMarkerStatus(marker.value, marker.reference_low, marker.reference_high)
+                  const refs = getEffectiveReferenceRanges(marker)
+                  const status = getMarkerStatus(marker.value, refs.low, refs.high)
+                  const hasValidRefs = refs.low !== null && refs.high !== null
 
                   return (
                     <div key={marker.id}>
@@ -267,9 +294,9 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
 
                         <div className="flex-1 text-left">
                           <p className="font-medium">{marker.name}</p>
-                          {marker.reference_low !== null && marker.reference_high !== null && (
+                          {hasValidRefs && (
                             <p className="text-sm text-muted-foreground">
-                              Reference: {marker.reference_low} - {marker.reference_high} {marker.unit}
+                              Reference: {refs.low} - {refs.high} {marker.unit}
                             </p>
                           )}
                         </div>
@@ -285,7 +312,7 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
                       </button>
 
                       {/* Expanded View */}
-                      {isExpanded && marker.reference_low !== null && marker.reference_high !== null && (
+                      {isExpanded && hasValidRefs && refs.low !== null && refs.high !== null && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
@@ -312,14 +339,14 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
                                   status === 'optimal' ? 'bg-green-500' : status === 'high' ? 'bg-red-500' : 'bg-amber-500'
                                 )}
                                 style={{
-                                  left: `${Math.min(Math.max((marker.value - marker.reference_low) / (marker.reference_high - marker.reference_low) * 80 + 10, 2), 98)}%`,
+                                  left: `${Math.min(Math.max((marker.value - refs.low) / (refs.high - refs.low) * 80 + 10, 2), 98)}%`,
                                 }}
                               />
                             </div>
                             <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                              <span>{marker.reference_low} {marker.unit}</span>
+                              <span>{refs.low} {marker.unit}</span>
                               <span className="text-green-600">Optimal Range</span>
-                              <span>{marker.reference_high} {marker.unit}</span>
+                              <span>{refs.high} {marker.unit}</span>
                             </div>
 
                             {status !== 'optimal' && (

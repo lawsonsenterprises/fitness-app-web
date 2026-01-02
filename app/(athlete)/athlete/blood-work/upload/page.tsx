@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
 import { useCreateBloodTest, type BloodMarkerInput } from '@/hooks/athlete'
+import { BLOOD_MARKER_DEFINITIONS, getCategories } from '@/lib/blood-markers'
 
 interface MarkerEntry {
   name: string
@@ -53,26 +54,6 @@ const suggestedTags = [
   'Thyroid Panel',
   'Hormones',
   'Full Panel',
-]
-
-// Common blood markers for manual entry with reference ranges
-const commonMarkers = [
-  { name: 'Testosterone', unit: 'nmol/L', refLow: 8.64, refHigh: 29 },
-  { name: 'Free Testosterone', unit: 'nmol/L', refLow: 0.2, refHigh: 0.62 },
-  { name: 'SHBG', unit: 'nmol/L', refLow: 18.3, refHigh: 54.1 },
-  { name: 'Oestradiol', unit: 'pmol/L', refLow: 41, refHigh: 159 },
-  { name: 'TSH', unit: 'mU/L', refLow: 0.27, refHigh: 4.2 },
-  { name: 'Free T4', unit: 'pmol/L', refLow: 12, refHigh: 22 },
-  { name: 'Free T3', unit: 'pmol/L', refLow: 3.1, refHigh: 6.8 },
-  { name: 'Vitamin D', unit: 'nmol/L', refLow: 50, refHigh: 175 },
-  { name: 'Ferritin', unit: 'ug/L', refLow: 30, refHigh: 400 },
-  { name: 'HbA1c', unit: 'mmol/mol', refLow: 20, refHigh: 42 },
-  { name: 'Total Cholesterol', unit: 'mmol/L', refLow: 0, refHigh: 5 },
-  { name: 'LDL Cholesterol', unit: 'mmol/L', refLow: 0, refHigh: 3 },
-  { name: 'HDL Cholesterol', unit: 'mmol/L', refLow: 1, refHigh: 2.1 },
-  { name: 'Triglycerides', unit: 'mmol/L', refLow: 0, refHigh: 1.7 },
-  { name: 'Haemoglobin', unit: 'g/L', refLow: 130, refHigh: 170 },
-  { name: 'Haematocrit', unit: '%', refLow: 37, refHigh: 50 },
 ]
 
 export default function BloodWorkUploadPage() {
@@ -146,7 +127,7 @@ export default function BloodWorkUploadPage() {
     setExtractedMarkers(markers => markers.filter((_, i) => i !== index))
   }
 
-  const addCommonMarker = (marker: typeof commonMarkers[0]) => {
+  const addCommonMarker = (marker: typeof BLOOD_MARKER_DEFINITIONS[0]) => {
     const newEntry: MarkerEntry = {
       name: marker.name,
       value: 0,
@@ -488,23 +469,32 @@ export default function BloodWorkUploadPage() {
                         </Button>
                       </div>
                       <div className="p-4 max-h-[50vh] overflow-y-auto">
-                        <p className="text-sm font-medium mb-2">Common Markers</p>
-                        <div className="grid grid-cols-2 gap-2 mb-6">
-                          {commonMarkers
-                            .filter(m => !extractedMarkers.some(em => em.name === m.name))
-                            .map((marker) => (
-                              <button
-                                key={marker.name}
-                                onClick={() => addCommonMarker(marker)}
-                                className="text-left p-3 rounded-lg border border-border hover:border-amber-500/50 hover:bg-muted/50 transition-colors"
-                              >
-                                <p className="font-medium text-sm">{marker.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {marker.refLow}-{marker.refHigh} {marker.unit}
-                                </p>
-                              </button>
-                            ))}
-                        </div>
+                        {getCategories().map((category) => {
+                          const categoryMarkers = BLOOD_MARKER_DEFINITIONS
+                            .filter(m => m.category === category && !extractedMarkers.some(em => em.name === m.name))
+
+                          if (categoryMarkers.length === 0) return null
+
+                          return (
+                            <div key={category} className="mb-6">
+                              <p className="text-sm font-medium mb-2">{category}</p>
+                              <div className="grid grid-cols-2 gap-2">
+                                {categoryMarkers.map((marker) => (
+                                  <button
+                                    key={marker.name}
+                                    onClick={() => addCommonMarker(marker)}
+                                    className="text-left p-3 rounded-lg border border-border hover:border-amber-500/50 hover:bg-muted/50 transition-colors"
+                                  >
+                                    <p className="font-medium text-sm">{marker.name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {marker.refLow}-{marker.refHigh} {marker.unit}
+                                    </p>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
 
                         <p className="text-sm font-medium mb-2">Custom Marker</p>
                         <div className="space-y-3">
