@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { Dumbbell, ClipboardList, Shield, ChevronDown, Check } from 'lucide-react'
+import { Dumbbell, ClipboardList, Shield, Crown, ChevronDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { ROLE_LABELS, type UserRole } from '@/lib/roles'
+import { ROLE_LABELS, SWITCHABLE_ROLES, type UserRole } from '@/lib/roles'
 import { useAuth } from '@/contexts/auth-context'
 
 const ROLE_ICONS = {
   athlete: Dumbbell,
   coach: ClipboardList,
   admin: Shield,
+  super_admin: Crown,
 } as const
 
 interface RoleSwitcherProps {
@@ -73,7 +74,7 @@ export function RoleSwitcher({ className, variant = 'default' }: RoleSwitcherPro
             'animate-in fade-in-0 zoom-in-95 duration-150'
           )}>
             <div className="p-1">
-              {roles.map((role) => {
+              {roles.filter(role => SWITCHABLE_ROLES.includes(role)).map((role) => {
                 const Icon = ROLE_ICONS[role]
                 const isActive = role === activeRole
 

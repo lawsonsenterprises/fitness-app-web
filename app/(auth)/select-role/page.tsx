@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Dumbbell, ClipboardList, Shield, ArrowRight, Sparkles } from 'lucide-react'
+import { Dumbbell, ClipboardList, Shield, Crown, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
-import { type UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/roles'
+import { type UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS, SWITCHABLE_ROLES } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 const roleConfig: Record<UserRole, {
@@ -35,6 +35,13 @@ const roleConfig: Record<UserRole, {
     bgGlow: 'bg-violet-500/20',
     borderColor: 'border-violet-500/30 hover:border-violet-500/60',
     iconBg: 'bg-violet-500/10',
+  },
+  super_admin: {
+    icon: Crown,
+    gradient: 'from-purple-500 to-pink-600',
+    bgGlow: 'bg-purple-500/20',
+    borderColor: 'border-purple-500/30 hover:border-purple-500/60',
+    iconBg: 'bg-purple-500/10',
   },
 }
 
@@ -119,7 +126,7 @@ export default function SelectRolePage() {
         {/* Role Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           <AnimatePresence mode="wait">
-            {roles.map((role, index) => {
+            {roles.filter(role => SWITCHABLE_ROLES.includes(role)).map((role, index) => {
               const config = roleConfig[role]
               const Icon = config.icon
               const isSelected = selectedRole === role

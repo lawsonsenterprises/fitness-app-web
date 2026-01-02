@@ -1,28 +1,35 @@
 // Role-based access control utilities
-export type UserRole = 'athlete' | 'coach' | 'admin'
+export type UserRole = 'athlete' | 'coach' | 'admin' | 'super_admin'
+
+// Roles that can be switched between in the UI (excludes super_admin as it's a privilege, not a dashboard)
+export const SWITCHABLE_ROLES: UserRole[] = ['athlete', 'coach', 'admin']
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   athlete: 'Athlete',
   coach: 'Coach',
   admin: 'Admin',
+  super_admin: 'Super Admin',
 }
 
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   athlete: 'View your training, nutrition, and progress',
   coach: 'Manage clients, programmes, and check-ins',
   admin: 'Platform administration and analytics',
+  super_admin: 'Full platform control with elevated privileges',
 }
 
 export const ROLE_ICONS: Record<UserRole, string> = {
   athlete: 'dumbbell',
   coach: 'clipboard',
   admin: 'shield',
+  super_admin: 'crown',
 }
 
 export const ROLE_ROUTES: Record<UserRole, string> = {
   athlete: '/athlete',
   coach: '/dashboard',
   admin: '/admin',
+  super_admin: '/admin',
 }
 
 export function hasRole(userRoles: UserRole[] | null | undefined, role: UserRole): boolean {
@@ -52,7 +59,7 @@ export function canAccessRoute(userRoles: UserRole[] | null | undefined, pathnam
     return hasRole(userRoles, 'coach')
   }
   if (pathname.startsWith('/admin')) {
-    return hasRole(userRoles, 'admin')
+    return hasRole(userRoles, 'admin') || hasRole(userRoles, 'super_admin')
   }
   return true
 }

@@ -2,15 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Dumbbell, ClipboardList, Shield, ChevronRight, Loader2 } from 'lucide-react'
+import { Dumbbell, ClipboardList, Shield, Crown, ChevronRight, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { type UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_ROUTES } from '@/lib/roles'
+import { type UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS, ROLE_ROUTES, SWITCHABLE_ROLES } from '@/lib/roles'
 import { useAuth } from '@/contexts/auth-context'
 
 const ROLE_ICONS = {
   athlete: Dumbbell,
   coach: ClipboardList,
   admin: Shield,
+  super_admin: Crown,
 } as const
 
 interface RoleSelectorProps {
@@ -46,7 +47,7 @@ export function RoleSelector({ className }: RoleSelectorProps) {
       </div>
 
       <div className="space-y-3">
-        {roles.map((role) => {
+        {roles.filter(role => SWITCHABLE_ROLES.includes(role)).map((role) => {
           const Icon = ROLE_ICONS[role]
           const isLoading = isSelecting === role
 
