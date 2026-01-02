@@ -38,8 +38,36 @@ export default function ChangePasswordPage() {
 
       if (result.success) {
         toast.success('Password changed successfully')
-        // Redirect to dashboard after successful change
-        router.push('/dashboard')
+
+        // Get user's roles to determine redirect
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('roles')
+            .eq('id', user.id)
+            .single()
+
+          const userRoles = profile?.roles || []
+
+          // Redirect based on roles
+          if (userRoles.length > 1) {
+            router.push('/select-role')
+          } else if (userRoles.includes('admin')) {
+            router.push('/admin')
+          } else if (userRoles.includes('coach')) {
+            router.push('/dashboard')
+          } else if (userRoles.includes('athlete')) {
+            router.push('/athlete')
+          } else {
+            router.push('/dashboard')
+          }
+        } else {
+          router.push('/dashboard')
+        }
+
         router.refresh()
       } else {
         toast.error('Failed to change password', {
