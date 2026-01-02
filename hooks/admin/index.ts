@@ -1072,28 +1072,15 @@ export function usePromoteToAdmin() {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      // First get current roles
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('roles')
-        .eq('id', userId)
-        .single()
+      // Use server action to bypass RLS
+      const { promoteAdmin } = await import('@/app/actions/promote-admin')
+      const result = await promoteAdmin(userId)
 
-      if (fetchError) throw fetchError
-
-      const currentRoles = profile?.roles || []
-      if (currentRoles.includes('admin')) {
-        throw new Error('User is already an admin')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to promote user to admin')
       }
 
-      const newRoles = [...currentRoles, 'admin']
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ roles: newRoles })
-        .eq('id', userId)
-
-      if (error) throw error
+      return result
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admins'] })
