@@ -127,7 +127,9 @@ export const BLOOD_MARKER_DEFINITIONS: BloodMarkerDefinition[] = [
  * Look up reference ranges for a marker by name or code
  * Returns null if no match found
  */
-export function getMarkerReferenceRanges(nameOrCode: string): { low: number; high: number } | null {
+export function getMarkerReferenceRanges(nameOrCode: string | null | undefined): { low: number; high: number } | null {
+  if (!nameOrCode) return null
+
   const normalised = nameOrCode.toLowerCase().replace(/[\s-]+/g, '_')
 
   const marker = BLOOD_MARKER_DEFINITIONS.find(
