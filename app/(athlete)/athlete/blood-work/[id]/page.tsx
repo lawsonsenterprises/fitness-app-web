@@ -35,7 +35,7 @@ function getMarkerStatus(value: number, refLow: number | null, refHigh: number |
 
 // Get effective reference ranges - use stored values if valid, otherwise look up from definitions
 function getEffectiveReferenceRanges(
-  marker: { name?: string | null; code?: string | null; reference_low: number | null; reference_high: number | null }
+  marker: { label: string; code?: string | null; reference_low: number | null; reference_high: number | null }
 ): { low: number | null; high: number | null } {
   // If stored references are valid (not null and not both 0), use them
   const hasValidStoredRefs =
@@ -47,8 +47,8 @@ function getEffectiveReferenceRanges(
     return { low: marker.reference_low, high: marker.reference_high }
   }
 
-  // Look up from standard definitions by name first, then by code if available
-  let standardRefs = marker.name ? getMarkerReferenceRanges(marker.name) : null
+  // Look up from standard definitions by label first, then by code if available
+  let standardRefs = getMarkerReferenceRanges(marker.label)
   if (!standardRefs && marker.code) {
     standardRefs = getMarkerReferenceRanges(marker.code)
   }
@@ -60,20 +60,20 @@ function getEffectiveReferenceRanges(
   return { low: null, high: null }
 }
 
-// Group markers by category
+// Group markers by category (using definitions lookup since DB doesn't store category)
 function groupMarkersByCategory(markers: Array<{
   id: string
   code?: string | null
-  name: string
+  label: string
   value: number
   unit: string
   reference_low: number | null
   reference_high: number | null
-  category: string | null
 }>) {
   const groups: Record<string, typeof markers> = {}
   markers.forEach(marker => {
-    const category = marker.category || 'Other'
+    // Default to 'Other' - category lookup could be added from BLOOD_MARKER_DEFINITIONS if needed
+    const category = 'Blood Markers'
     if (!groups[category]) groups[category] = []
     groups[category].push(marker)
   })
@@ -96,7 +96,7 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
   const totalMarkers = bloodTest?.blood_markers?.length || 0
   const flaggedMarkers = useMemo(() => {
     if (!bloodTest?.blood_markers) return 0
-    return bloodTest.blood_markers.filter((m: { name?: string | null; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
+    return bloodTest.blood_markers.filter((m: { label: string; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
       const refs = getEffectiveReferenceRanges(m)
       const status = getMarkerStatus(m.value, refs.low, refs.high)
       return status !== 'optimal'
@@ -297,7 +297,7 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
                         </div>
 
                         <div className="flex-1 text-left">
-                          <p className="font-medium">{marker.name}</p>
+                          <p className="font-medium">{marker.label}</p>
                           {hasValidRefs && (
                             <p className="text-sm text-muted-foreground">
                               Reference: {refs.low} - {refs.high} {marker.unit}
