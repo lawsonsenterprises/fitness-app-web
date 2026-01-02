@@ -245,7 +245,7 @@ export default function CheckInDetailPage() {
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                       Weight
                     </p>
-                    <p className="mt-1 text-2xl font-semibold">{checkIn.weight} kg</p>
+                    <p className="mt-1 text-2xl font-semibold">{checkIn.weight?.toFixed(1)} kg</p>
                   </div>
                 )}
 

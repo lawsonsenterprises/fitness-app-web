@@ -156,7 +156,7 @@ export default function CheckInDetailPage({
 
               <div className="rounded-lg bg-muted/50 p-4 inline-block">
                 <p className="text-sm text-muted-foreground">Current Weight</p>
-                <p className="text-3xl font-bold">{weight} kg</p>
+                <p className="text-3xl font-bold">{weight?.toFixed(1)} kg</p>
               </div>
             </motion.div>
           )}

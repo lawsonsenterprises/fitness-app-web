@@ -167,7 +167,7 @@ export default function ClientCheckInsPage() {
                     <div className="hidden items-center gap-6 md:flex">
                       {checkIn.weight != null && (
                         <div className="text-right">
-                          <p className="text-sm font-medium">{checkIn.weight} kg</p>
+                          <p className="text-sm font-medium">{checkIn.weight.toFixed(1)} kg</p>
                           <p className="text-xs text-muted-foreground">weight</p>
                         </div>
                       )}
@@ -220,7 +220,7 @@ export default function ClientCheckInsPage() {
                                 <Scale className="h-3.5 w-3.5" />
                                 Weight
                               </p>
-                              <p className="mt-1 text-xl font-semibold">{checkIn.weight} kg</p>
+                              <p className="mt-1 text-xl font-semibold">{checkIn.weight.toFixed(1)} kg</p>
                             </div>
                           )}
                           {checkIn.sleepHours != null && (
