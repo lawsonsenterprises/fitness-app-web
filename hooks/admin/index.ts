@@ -1162,6 +1162,7 @@ export function useInviteAdmin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] })
       queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
     },
   })
