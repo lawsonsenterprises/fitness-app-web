@@ -116,11 +116,15 @@ export function useTodaysReadiness(userId?: string) {
 
       // Merge data from all tables, preferring specific tables over readiness summary
       const strainScore = raw?.strain_score || 0
-      const recoveryScore = recoveryData?.recovery_score ?? raw?.recovery_score ?? 0
-      const sleepScore = sleepData?.sleep_score ?? raw?.sleep_score ?? 0
+      const recoveryScoreRaw = recoveryData?.recovery_score ?? raw?.recovery_score ?? 0
+      const sleepScoreRaw = sleepData?.sleep_score ?? raw?.sleep_score ?? 0
       const steps = raw?.steps || 0
       const activeEnergy = raw?.active_energy_kcal || 0
       const exerciseMinutes = raw?.exercise_minutes || 0
+
+      // Round scores to integers for display
+      const recoveryScore = Math.round(recoveryScoreRaw)
+      const sleepScore = Math.round(sleepScoreRaw)
 
       // Calculate strain percentage - if strain_score > 21, it's already a percentage
       // WHOOP uses 0-21 scale, but iOS app might send as percentage
