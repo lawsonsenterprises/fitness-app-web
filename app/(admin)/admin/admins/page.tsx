@@ -10,6 +10,8 @@ import {
   Loader2,
   AlertCircle,
   UserPlus,
+  RefreshCw,
+  Mail,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -19,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
-import { useAdmins, useDemoteAdmin } from '@/hooks/admin'
+import { useAdmins, useDemoteAdmin, usePendingInvites, useResendInvite } from '@/hooks/admin'
 import { useAuth } from '@/contexts/auth-context'
 import { AddAdminDialog } from '@/components/admin/admins/add-admin-dialog'
 
@@ -67,9 +69,27 @@ export default function AdminsPage() {
   const { data: adminsData, isLoading, error } = useAdmins({
     search: searchQuery || undefined,
   })
+  const { data: pendingInvites = [] } = usePendingInvites()
   const demoteAdmin = useDemoteAdmin(user?.id || '')
+  const resendInvite = useResendInvite()
 
   const admins = adminsData?.admins || []
+
+  // Cross-reference admins with pending invites to mark who hasn't confirmed
+  const pendingAdminIds = new Set(pendingInvites.map(p => p.userId))
+
+  const handleResendInvite = async (userId: string, email: string) => {
+    try {
+      await resendInvite.mutateAsync(userId)
+      toast.success('Invite resent', {
+        description: `A new invitation email has been sent to ${email}.`,
+      })
+    } catch (error) {
+      toast.error('Failed to resend invite', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    }
+  }
 
   const handleRemoveAdmin = async () => {
     if (!adminToRemove) return
@@ -199,7 +219,8 @@ export default function AdminsPage() {
                 <tbody className="divide-y divide-border">
                   {admins.map((admin) => {
                     const isCurrentUser = admin.id === user?.id
-                    const isActiveToday = admin.updated_at &&
+                    const isPending = pendingAdminIds.has(admin.id)
+                    const isActiveToday = !isPending && admin.updated_at &&
                       new Date(admin.updated_at) >= new Date(new Date().setHours(0, 0, 0, 0))
                     const otherRoles = admin.roles.filter(r => r !== 'admin')
 
@@ -207,7 +228,10 @@ export default function AdminsPage() {
                       <tr key={admin.id} className="hover:bg-muted/30 transition-colors">
                         <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white font-bold">
+                            <div className={cn(
+                              'flex h-10 w-10 items-center justify-center rounded-full text-white font-bold',
+                              isPending ? 'bg-amber-500' : 'bg-red-500'
+                            )}>
                               {getInitials(admin.display_name, admin.contact_email)}
                             </div>
                             <div>
@@ -246,25 +270,32 @@ export default function AdminsPage() {
                           </div>
                         </td>
                         <td className="p-4">
-                          <span className={cn(
-                            'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
-                            isActiveToday ? 'bg-green-500/10 text-green-600' : 'bg-zinc-500/10 text-zinc-600'
-                          )}>
-                            {isActiveToday ? (
-                              <>
-                                <CheckCircle2 className="h-3 w-3" />
-                                Active
-                              </>
-                            ) : (
-                              <>
-                                <Clock className="h-3 w-3" />
-                                Away
-                              </>
-                            )}
-                          </span>
+                          {isPending ? (
+                            <span className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-amber-500/10 text-amber-600">
+                              <Mail className="h-3 w-3" />
+                              Pending Invite
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              'inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium',
+                              isActiveToday ? 'bg-green-500/10 text-green-600' : 'bg-zinc-500/10 text-zinc-600'
+                            )}>
+                              {isActiveToday ? (
+                                <>
+                                  <CheckCircle2 className="h-3 w-3" />
+                                  Active
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3 w-3" />
+                                  Away
+                                </>
+                              )}
+                            </span>
+                          )}
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
-                          {getRelativeTime(admin.updated_at)}
+                          {isPending ? 'Never' : getRelativeTime(admin.updated_at)}
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {admin.created_at ? new Date(admin.created_at).toLocaleDateString('en-GB', {
@@ -280,16 +311,32 @@ export default function AdminsPage() {
                                 Cannot modify yourself
                               </span>
                             ) : (
-                              <button
-                                onClick={() => setAdminToRemove({
-                                  id: admin.id,
-                                  name: getDisplayName(admin.display_name, admin.contact_email),
-                                })}
-                                className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
-                                title="Remove admin access"
-                              >
-                                <UserMinus className="h-4 w-4 text-muted-foreground group-hover:text-red-500" />
-                              </button>
+                              <>
+                                {isPending && (
+                                  <button
+                                    onClick={() => handleResendInvite(admin.id, admin.contact_email || '')}
+                                    disabled={resendInvite.isPending}
+                                    className="p-2 rounded-lg hover:bg-amber-500/10 transition-colors group"
+                                    title="Resend invite email"
+                                  >
+                                    {resendInvite.isPending ? (
+                                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4 text-muted-foreground group-hover:text-amber-500" />
+                                    )}
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => setAdminToRemove({
+                                    id: admin.id,
+                                    name: getDisplayName(admin.display_name, admin.contact_email),
+                                  })}
+                                  className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
+                                  title="Remove admin access"
+                                >
+                                  <UserMinus className="h-4 w-4 text-muted-foreground group-hover:text-red-500" />
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

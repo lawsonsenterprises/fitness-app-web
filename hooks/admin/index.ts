@@ -1165,3 +1165,36 @@ export function useInviteAdmin() {
     },
   })
 }
+
+export function useResendInvite() {
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Dynamic import to avoid bundling server code in client
+      const { resendInvite } = await import('@/app/actions/resend-invite')
+      const result = await resendInvite(userId)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to resend invite')
+      }
+
+      return result
+    },
+  })
+}
+
+export function usePendingInvites() {
+  return useQuery({
+    queryKey: ['pending-invites'],
+    queryFn: async () => {
+      // Dynamic import to avoid bundling server code in client
+      const { getPendingInvites } = await import('@/app/actions/get-pending-invites')
+      const result = await getPendingInvites()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get pending invites')
+      }
+
+      return result.pendingInvites || []
+    },
+  })
+}
