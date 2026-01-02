@@ -14,10 +14,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
-  Shield,
-  CreditCard,
-  BarChart3,
-  HeadphonesIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -40,23 +36,14 @@ const secondaryNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
-const adminNavigation = [
-  { name: 'Admin', href: ROUTES.ADMIN, icon: Shield },
-  { name: 'Users', href: ROUTES.ADMIN_USERS, icon: Users },
-  { name: 'Subscriptions', href: ROUTES.ADMIN_SUBSCRIPTIONS, icon: CreditCard },
-  { name: 'Analytics', href: ROUTES.ADMIN_ANALYTICS, icon: BarChart3 },
-  { name: 'Support', href: ROUTES.ADMIN_SUPPORT, icon: HeadphonesIcon },
-]
-
 export function Sidebar() {
   const pathname = usePathname()
-  const { signOut, user, roles } = useAuth()
+  const { signOut, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const { data: unreadData } = useUnreadCount()
 
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Coach'
   const unreadCount = unreadData?.total || 0
-  const isAdmin = roles.includes('admin')
 
   return (
     <>
@@ -171,46 +158,6 @@ export function Sidebar() {
             </ul>
           </div>
 
-          {/* Admin navigation - only visible to admins */}
-          {isAdmin && (
-            <div className="mt-6 border-t border-border pt-6">
-              {!collapsed && (
-                <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Admin
-                </p>
-              )}
-              <ul className="space-y-1">
-                {adminNavigation.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                  return (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                          isActive
-                            ? 'bg-red-500/10 text-red-600 dark:text-red-400'
-                            : 'text-muted-foreground hover:bg-red-500/5 hover:text-red-600 dark:hover:text-red-400',
-                          collapsed && 'justify-center px-2'
-                        )}
-                        title={collapsed ? item.name : undefined}
-                      >
-                        <item.icon
-                          className={cn(
-                            'h-5 w-5 shrink-0 transition-colors',
-                            isActive
-                              ? 'text-red-500'
-                              : 'text-muted-foreground group-hover:text-red-500'
-                          )}
-                        />
-                        {!collapsed && <span>{item.name}</span>}
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            </div>
-          )}
         </nav>
 
         {/* User section */}
