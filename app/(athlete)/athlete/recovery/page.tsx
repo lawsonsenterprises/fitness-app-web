@@ -135,12 +135,6 @@ export default function RecoveryPage() {
             {/* Readiness Breakdown */}
             <div className="mt-6 space-y-3">
               <ReadinessBar
-                label="Sleep Score"
-                value={readinessData?.sleepScore || 0}
-                icon={Moon}
-                colour="indigo"
-              />
-              <ReadinessBar
                 label="Strain"
                 value={readinessData?.strainPercentage || 0}
                 icon={Zap}
@@ -151,6 +145,12 @@ export default function RecoveryPage() {
                 value={readinessData?.recoveryScore || 0}
                 icon={Heart}
                 colour="green"
+              />
+              <ReadinessBar
+                label="Sleep Score"
+                value={readinessData?.sleepScore || 0}
+                icon={Moon}
+                colour="indigo"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function RecoveryPage() {
                     <span className="text-xs font-medium uppercase tracking-wider">Respiratory Rate</span>
                   </div>
                   <p className="text-2xl font-bold">
-                    {recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate}
+                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate)}
                     <span className="text-sm text-muted-foreground font-normal"> br/min</span>
                   </p>
                 </div>
@@ -215,12 +215,13 @@ export default function RecoveryPage() {
                     <span className="text-xs font-medium uppercase tracking-wider">SpO2</span>
                   </div>
                   <p className="text-2xl font-bold">
-                    {recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation}
+                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation)}
                     <span className="text-sm text-muted-foreground font-normal">%</span>
                   </p>
                 </div>
               )}
-              {recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== null && (
+              {recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== null &&
+               recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== 0 && (
                 <div className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <Thermometer className="h-4 w-4 text-orange-500" />
