@@ -229,7 +229,7 @@ export default function ClientCheckInsPage() {
                                 <Moon className="h-3.5 w-3.5" />
                                 Sleep
                               </p>
-                              <p className="mt-1 text-xl font-semibold">{checkIn.sleepHours}h avg</p>
+                              <p className="mt-1 text-xl font-semibold">{checkIn.sleepHours.toFixed(1)}h avg</p>
                               {checkIn.sleepQuality && (
                                 <p className="mt-1 text-sm capitalize text-muted-foreground">
                                   Quality: {checkIn.sleepQuality}

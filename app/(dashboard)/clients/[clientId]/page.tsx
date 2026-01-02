@@ -535,7 +535,7 @@ export default function ClientOverviewPage() {
                         {checkIn.stepsAverage
                           ? `${checkIn.stepsAverage.toLocaleString()} steps`
                           : 'No step data'}
-                        {checkIn.sleepHours && ` · ${checkIn.sleepHours}h sleep`}
+                        {checkIn.sleepHours && ` · ${checkIn.sleepHours.toFixed(1)}h sleep`}
                       </p>
                     </div>
                     {checkIn.weight && (

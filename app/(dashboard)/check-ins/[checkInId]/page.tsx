@@ -256,7 +256,7 @@ export default function CheckInDetailPage() {
                       <Moon className="h-3.5 w-3.5" />
                       Sleep
                     </p>
-                    <p className="mt-1 text-2xl font-semibold">{checkIn.sleepHours}h</p>
+                    <p className="mt-1 text-2xl font-semibold">{checkIn.sleepHours?.toFixed(1)}h</p>
                     {checkIn.sleepQuality && (
                       <p className="mt-1 text-sm capitalize text-muted-foreground">
                         Quality: {checkIn.sleepQuality}

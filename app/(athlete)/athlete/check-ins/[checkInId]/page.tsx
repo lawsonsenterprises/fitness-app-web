@@ -213,7 +213,7 @@ export default function CheckInDetailPage({
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-lg bg-muted/50 p-4">
                   <p className="text-sm text-muted-foreground">Average Sleep</p>
-                  <p className="text-3xl font-bold">{sleepHours}h</p>
+                  <p className="text-3xl font-bold">{sleepHours?.toFixed(1)}h</p>
                 </div>
                 {sleepQuality && (
                   <div className="rounded-lg bg-muted/50 p-4">

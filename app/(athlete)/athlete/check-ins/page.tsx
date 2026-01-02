@@ -157,7 +157,7 @@ export default function CheckInsPage() {
                       {checkIn.sleep_hours && (
                         <>
                           <span>•</span>
-                          <span>{checkIn.sleep_hours}h sleep</span>
+                          <span>{checkIn.sleep_hours.toFixed(1)}h sleep</span>
                         </>
                       )}
                     </div>
