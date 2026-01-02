@@ -196,26 +196,26 @@ export default function RecoveryPage() {
           {/* Additional Metrics */}
           {recoveryResult?.data && recoveryResult.data.length > 0 && (
             <div className="grid gap-4 md:grid-cols-3 lg:col-span-2">
-              {recoveryResult.data[recoveryResult.data.length - 1]?.respiratory_rate && (
+              {recoveryResult.data[recoveryResult.data.length - 1]?.respiratory_rate != null && (
                 <div className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <Wind className="h-4 w-4" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Respiratory Rate</span>
+                    <span className="text-xs font-medium tracking-wider">Respiratory Rate</span>
                   </div>
                   <p className="text-2xl font-bold">
-                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate)}
+                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate!)}
                     <span className="text-sm text-muted-foreground font-normal"> br/min</span>
                   </p>
                 </div>
               )}
-              {recoveryResult.data[recoveryResult.data.length - 1]?.oxygen_saturation && (
+              {recoveryResult.data[recoveryResult.data.length - 1]?.oxygen_saturation != null && (
                 <div className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <Droplets className="h-4 w-4 text-blue-500" />
-                    <span className="text-xs font-medium uppercase tracking-wider">SpO2</span>
+                    <span className="text-xs font-medium tracking-wider">SpO2</span>
                   </div>
                   <p className="text-2xl font-bold">
-                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation)}
+                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation!)}
                     <span className="text-sm text-muted-foreground font-normal">%</span>
                   </p>
                 </div>
@@ -225,7 +225,7 @@ export default function RecoveryPage() {
                 <div className="rounded-xl border border-border bg-card p-4">
                   <div className="flex items-center gap-2 text-muted-foreground mb-2">
                     <Thermometer className="h-4 w-4 text-orange-500" />
-                    <span className="text-xs font-medium uppercase tracking-wider">Wrist Temp</span>
+                    <span className="text-xs font-medium tracking-wider">Wrist Temp</span>
                   </div>
                   <p className="text-2xl font-bold">
                     {recoveryResult.data[recoveryResult.data.length - 1].wrist_temperature! > 0 ? '+' : ''}

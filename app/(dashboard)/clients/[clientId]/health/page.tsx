@@ -585,7 +585,7 @@ export default function ClientHealthPage() {
                         <div className="rounded-lg bg-muted/50 p-4 text-center">
                           <Droplets className="h-5 w-5 mx-auto text-red-500 mb-2" />
                           <p className="text-sm text-muted-foreground">Blood Oxygen</p>
-                          <p className="text-xl font-bold">{latestRecovery.oxygen_saturation}%</p>
+                          <p className="text-xl font-bold">{Math.round(latestRecovery.oxygen_saturation)}%</p>
                           <p className="text-xs text-muted-foreground">SpO2</p>
                         </div>
                       )}
