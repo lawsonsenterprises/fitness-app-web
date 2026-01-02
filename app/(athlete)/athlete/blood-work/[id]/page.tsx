@@ -35,7 +35,7 @@ function getMarkerStatus(value: number, refLow: number | null, refHigh: number |
 
 // Get effective reference ranges - use stored values if valid, otherwise look up from definitions
 function getEffectiveReferenceRanges(
-  marker: { name: string; code: string; reference_low: number | null; reference_high: number | null }
+  marker: { name: string; code?: string | null; reference_low: number | null; reference_high: number | null }
 ): { low: number | null; high: number | null } {
   // If stored references are valid (not null and not both 0), use them
   const hasValidStoredRefs =
@@ -47,8 +47,12 @@ function getEffectiveReferenceRanges(
     return { low: marker.reference_low, high: marker.reference_high }
   }
 
-  // Look up from standard definitions
-  const standardRefs = getMarkerReferenceRanges(marker.name) || getMarkerReferenceRanges(marker.code)
+  // Look up from standard definitions by name first, then by code if available
+  let standardRefs = getMarkerReferenceRanges(marker.name)
+  if (!standardRefs && marker.code) {
+    standardRefs = getMarkerReferenceRanges(marker.code)
+  }
+
   if (standardRefs) {
     return { low: standardRefs.low, high: standardRefs.high }
   }
@@ -92,7 +96,7 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
   const totalMarkers = bloodTest?.blood_markers?.length || 0
   const flaggedMarkers = useMemo(() => {
     if (!bloodTest?.blood_markers) return 0
-    return bloodTest.blood_markers.filter((m: { name: string; code: string; value: number; reference_low: number | null; reference_high: number | null }) => {
+    return bloodTest.blood_markers.filter((m: { name: string; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
       const refs = getEffectiveReferenceRanges(m)
       const status = getMarkerStatus(m.value, refs.low, refs.high)
       return status !== 'optimal'
