@@ -995,3 +995,153 @@ export function useMessageStats() {
     },
   })
 }
+
+// ============================================================================
+// Admin Management Hooks
+// ============================================================================
+
+export interface AdminUser {
+  id: string
+  display_name: string | null
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+  avatar_url: string | null
+  roles: string[]
+  status: string | null
+  last_sign_in_at: string | null
+  created_at: string
+}
+
+export function useAdmins(options?: { search?: string }) {
+  const { search } = options || {}
+
+  return useQuery({
+    queryKey: ['admins', search],
+    queryFn: async () => {
+      let query = supabase
+        .from('profiles')
+        .select('id, display_name, first_name, last_name, email, avatar_url, roles, status, last_sign_in_at, created_at', { count: 'exact' })
+        .contains('roles', ['admin'])
+        .order('created_at', { ascending: false })
+
+      if (search) {
+        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_name.ilike.%${search}%,email.ilike.%${search}%`)
+      }
+
+      const { data, error, count } = await query
+
+      if (error) throw error
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const activeToday = (data || []).filter(admin =>
+        admin.last_sign_in_at && new Date(admin.last_sign_in_at) >= today
+      ).length
+
+      return {
+        admins: data as AdminUser[],
+        total: count || 0,
+        activeToday,
+      }
+    },
+  })
+}
+
+export function useSearchUsersForPromotion(search: string) {
+  return useQuery({
+    queryKey: ['users-for-promotion', search],
+    queryFn: async () => {
+      if (!search || search.length < 2) return []
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, display_name, first_name, last_name, email, avatar_url, roles')
+        .not('roles', 'cs', '{"admin"}')
+        .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_name.ilike.%${search}%,email.ilike.%${search}%`)
+        .limit(10)
+
+      if (error) throw error
+      return data
+    },
+    enabled: search.length >= 2,
+  })
+}
+
+export function usePromoteToAdmin() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // First get current roles
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('roles')
+        .eq('id', userId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      const currentRoles = profile?.roles || []
+      if (currentRoles.includes('admin')) {
+        throw new Error('User is already an admin')
+      }
+
+      const newRoles = [...currentRoles, 'admin']
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ roles: newRoles })
+        .eq('id', userId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['users-for-promotion'] })
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+    },
+  })
+}
+
+export function useDemoteAdmin(currentUserId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Prevent self-demotion
+      if (userId === currentUserId) {
+        throw new Error('You cannot remove your own admin access')
+      }
+
+      // First get current roles
+      const { data: profile, error: fetchError } = await supabase
+        .from('profiles')
+        .select('roles')
+        .eq('id', userId)
+        .single()
+
+      if (fetchError) throw fetchError
+
+      const currentRoles = profile?.roles || []
+      const newRoles = currentRoles.filter((role: string) => role !== 'admin')
+
+      if (newRoles.length === 0) {
+        // Ensure user has at least athlete role
+        newRoles.push('athlete')
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ roles: newRoles })
+        .eq('id', userId)
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+    },
+  })
+}
