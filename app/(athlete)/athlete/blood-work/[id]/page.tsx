@@ -80,28 +80,46 @@ function groupMarkersByCategory(markers: Array<{
   return Object.entries(groups).map(([name, markers]) => ({ name, markers }))
 }
 
+type FilterType = 'all' | 'attention' | 'optimal'
+
 export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const [expandedMarker, setExpandedMarker] = useState<string | null>(null)
+  const [filter, setFilter] = useState<FilterType>('all')
 
   const { data: bloodTest, isLoading, error } = useBloodTest(resolvedParams.id)
 
-  // Process markers into categories
-  const categories = useMemo(() => {
-    if (!bloodTest?.blood_markers) return []
-    return groupMarkersByCategory(bloodTest.blood_markers)
-  }, [bloodTest])
-
   // Calculate summary stats
   const totalMarkers = bloodTest?.blood_markers?.length || 0
-  const flaggedMarkers = useMemo(() => {
-    if (!bloodTest?.blood_markers) return 0
-    return bloodTest.blood_markers.filter((m: { label: string; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
+
+  const { optimalCount, flaggedCount } = useMemo(() => {
+    if (!bloodTest?.blood_markers) return { optimalCount: 0, flaggedCount: 0 }
+    let optimal = 0
+    let flagged = 0
+    bloodTest.blood_markers.forEach((m: { label: string; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
       const refs = getEffectiveReferenceRanges(m)
       const status = getMarkerStatus(m.value, refs.low, refs.high)
-      return status !== 'optimal'
-    }).length
+      if (status === 'optimal') optimal++
+      else flagged++
+    })
+    return { optimalCount: optimal, flaggedCount: flagged }
   }, [bloodTest])
+
+  // Process markers into categories with filtering
+  const categories = useMemo(() => {
+    if (!bloodTest?.blood_markers) return []
+
+    // Filter markers based on selected filter
+    const filtered = bloodTest.blood_markers.filter((m: { label: string; code?: string | null; value: number; reference_low: number | null; reference_high: number | null }) => {
+      if (filter === 'all') return true
+      const refs = getEffectiveReferenceRanges(m)
+      const status = getMarkerStatus(m.value, refs.low, refs.high)
+      if (filter === 'attention') return status !== 'optimal'
+      return status === 'optimal'
+    })
+
+    return groupMarkersByCategory(filtered)
+  }, [bloodTest, filter])
 
   if (isLoading) {
     return (
@@ -181,12 +199,18 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Clickable Filters */}
       <div className="grid gap-4 md:grid-cols-3 mb-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-border bg-card p-6"
+          onClick={() => setFilter(filter === 'optimal' ? 'all' : 'optimal')}
+          className={cn(
+            'rounded-xl border p-6 cursor-pointer transition-all',
+            filter === 'optimal'
+              ? 'border-green-500 bg-green-500/10 ring-2 ring-green-500/20'
+              : 'border-border bg-card hover:border-green-500/50'
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
@@ -194,16 +218,25 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Optimal</p>
-              <p className="text-2xl font-bold">{totalMarkers - flaggedMarkers}</p>
+              <p className="text-2xl font-bold">{optimalCount}</p>
             </div>
           </div>
+          {filter === 'optimal' && (
+            <p className="text-xs text-green-600 mt-2">Showing optimal only</p>
+          )}
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-6"
+          onClick={() => setFilter(filter === 'attention' ? 'all' : 'attention')}
+          className={cn(
+            'rounded-xl border p-6 cursor-pointer transition-all',
+            filter === 'attention'
+              ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/20'
+              : 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50'
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10">
@@ -211,16 +244,25 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Needs Attention</p>
-              <p className="text-2xl font-bold">{flaggedMarkers}</p>
+              <p className="text-2xl font-bold">{flaggedCount}</p>
             </div>
           </div>
+          {filter === 'attention' && (
+            <p className="text-xs text-amber-600 mt-2">Showing flagged only</p>
+          )}
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-xl border border-border bg-card p-6"
+          onClick={() => setFilter('all')}
+          className={cn(
+            'rounded-xl border p-6 cursor-pointer transition-all',
+            filter === 'all'
+              ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/20'
+              : 'border-border bg-card hover:border-blue-500/50'
+          )}
         >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10">
@@ -231,6 +273,9 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
               <p className="text-2xl font-bold">{totalMarkers}</p>
             </div>
           </div>
+          {filter === 'all' && (
+            <p className="text-xs text-blue-600 mt-2">Showing all</p>
+          )}
         </motion.div>
       </div>
 
@@ -376,11 +421,43 @@ export default function BloodWorkDetailPage({ params }: { params: Promise<{ id: 
           animate={{ opacity: 1, y: 0 }}
           className="rounded-xl border border-border bg-card p-12 text-center"
         >
-          <Droplets className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <h2 className="text-lg font-semibold mb-2">No Markers Found</h2>
-          <p className="text-sm text-muted-foreground">
-            No blood markers have been recorded for this test.
-          </p>
+          {filter !== 'all' ? (
+            <>
+              {filter === 'attention' ? (
+                <>
+                  <CheckCircle2 className="h-12 w-12 mx-auto text-green-500/50 mb-4" />
+                  <h2 className="text-lg font-semibold mb-2">All Clear</h2>
+                  <p className="text-sm text-muted-foreground">
+                    No markers need attention - everything is in the optimal range.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-12 w-12 mx-auto text-amber-500/50 mb-4" />
+                  <h2 className="text-lg font-semibold mb-2">None in Optimal Range</h2>
+                  <p className="text-sm text-muted-foreground">
+                    No markers are currently in the optimal range.
+                  </p>
+                </>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-4"
+                onClick={() => setFilter('all')}
+              >
+                Show All Markers
+              </Button>
+            </>
+          ) : (
+            <>
+              <Droplets className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+              <h2 className="text-lg font-semibold mb-2">No Markers Found</h2>
+              <p className="text-sm text-muted-foreground">
+                No blood markers have been recorded for this test.
+              </p>
+            </>
+          )}
         </motion.div>
       )}
     </div>
