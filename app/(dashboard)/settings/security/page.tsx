@@ -110,9 +110,10 @@ export default function SecuritySettingsPage() {
   const onAddPassword = addPasswordForm.handleSubmit(async (formData) => {
     setIsSubmitting(true)
     try {
-      // For OAuth users, we can directly set a password without verifying current
+      // For OAuth users, set password and mark has_password flag in metadata
       const { error: updateError } = await supabase.auth.updateUser({
         password: formData.newPassword,
+        data: { has_password: true }
       })
 
       if (updateError) throw updateError

@@ -57,14 +57,21 @@ export function useAuthProvider(): AuthProviderState {
 
         // Check identities array for all providers
         const identities = user.identities || []
-        console.log('User identities:', identities.map(id => ({ provider: id.provider, id: id.id })))
 
         const oauthIdentities = identities.filter(id => id.provider !== 'email')
         const emailIdentity = identities.find(id => id.provider === 'email')
 
+        // Check for password set via user_metadata flag (for OAuth users who added a password)
+        const hasPasswordFromMetadata = user.user_metadata?.has_password === true
+
         const hasOAuth = oauthIdentities.length > 0
-        const hasEmail = !!emailIdentity
+        const hasEmail = !!emailIdentity || hasPasswordFromMetadata
+
+        // Build providers list including password if set
         const providers = identities.map(id => id.provider)
+        if (hasPasswordFromMetadata && !providers.includes('email')) {
+          providers.push('email')
+        }
 
         setState({
           isOAuth: hasOAuth,

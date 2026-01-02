@@ -594,17 +594,23 @@ export default function AthleteSettingsPage() {
                     if (!passwordValidation.valid || !passwordsMatch) return
                     setIsChangingPassword(true)
                     try {
-                      const result = await changePassword(newPassword)
-                      if (result.success) {
-                        toast.success('Password added successfully', {
-                          description: 'You can now sign in with either Apple or email/password.',
-                        })
-                        setNewPassword('')
-                        setConfirmPassword('')
-                        window.location.reload()
-                      } else {
-                        toast.error('Failed to add password', { description: result.error })
+                      // Set password and mark that user has a password in metadata
+                      const { error: updateError } = await supabase.auth.updateUser({
+                        password: newPassword,
+                        data: { has_password: true }
+                      })
+
+                      if (updateError) {
+                        toast.error('Failed to add password', { description: updateError.message })
+                        return
                       }
+
+                      toast.success('Password added successfully', {
+                        description: 'You can now sign in with either Apple or email/password.',
+                      })
+                      setNewPassword('')
+                      setConfirmPassword('')
+                      window.location.reload()
                     } catch {
                       toast.error('An error occurred')
                     } finally {
