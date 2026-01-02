@@ -1,9 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import {
-  ChevronLeft,
   Target,
   Scale,
   Flame,
@@ -82,23 +80,7 @@ export default function GoalsSettingsPage() {
   const tdee = calculateTDEE()
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <Link
-          href="/athlete/settings"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Settings
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Goals & Targets</h1>
-        <p className="mt-1 text-muted-foreground">
-          Set your fitness goals and calorie targets
-        </p>
-      </div>
-
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Body Metrics */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -365,7 +347,6 @@ export default function GoalsSettingsPage() {
             )}
           </Button>
         </div>
-      </div>
     </div>
   )
 }
