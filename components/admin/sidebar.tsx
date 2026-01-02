@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { RoleSwitcher } from '@/components/auth/role-switcher'
+import { ROLE_LABELS } from '@/lib/roles'
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -38,10 +39,13 @@ const secondaryNavigation = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const { signOut, user } = useAuth()
+  const { signOut, user, roles } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
-  const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'
+  const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'
+  const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
+  // Determine the admin role label - super_admin takes priority
+  const adminRoleLabel = roles.includes('super_admin') ? ROLE_LABELS.super_admin : ROLE_LABELS.admin
 
   return (
     <>
@@ -146,7 +150,7 @@ export function AdminSidebar() {
           {!collapsed && (
             <div className="mb-3 rounded-lg bg-red-500/10 px-3 py-2">
               <p className="text-sm font-medium">{userName}</p>
-              <p className="text-xs text-muted-foreground">Super Admin</p>
+              <p className="text-xs text-muted-foreground">{adminRoleLabel}</p>
             </div>
           )}
 
