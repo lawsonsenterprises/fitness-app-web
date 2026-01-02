@@ -7,7 +7,6 @@ import {
   Search,
   Mail,
   Calendar,
-  UserCircle,
   CheckCircle2,
   XCircle,
   Eye,
@@ -74,7 +73,7 @@ export default function CoachesPage() {
   const coaches = coachesData?.coaches || []
 
   // Filter coaches based on status
-  const filteredCoaches = coaches.filter((coach) => {
+  const filteredCoaches = coaches.filter(() => {
     if (statusFilter === 'all') return true
     // TODO: Add proper status filtering based on subscription status
     return true

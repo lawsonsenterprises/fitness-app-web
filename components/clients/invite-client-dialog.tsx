@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { X, Loader2, Mail, Send, CheckCircle2, Search, UserPlus } from 'lucide-react'
+import { X, Loader2, Mail, CheckCircle2, Search, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'

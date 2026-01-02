@@ -40,7 +40,7 @@ const secondaryNavigation = [
 
 export function AthleteSidebar() {
   const pathname = usePathname()
-  const { signOut, user, roles } = useAuth()
+  const { signOut, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'

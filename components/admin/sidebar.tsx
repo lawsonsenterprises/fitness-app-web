@@ -38,7 +38,7 @@ const secondaryNavigation = [
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const { signOut, user, roles } = useAuth()
+  const { signOut, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
   const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Admin'

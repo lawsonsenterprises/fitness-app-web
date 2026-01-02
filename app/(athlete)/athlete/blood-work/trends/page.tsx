@@ -34,7 +34,6 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
-import { useBloodTests } from '@/hooks/athlete'
 import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
 

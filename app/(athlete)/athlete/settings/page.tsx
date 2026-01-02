@@ -33,7 +33,8 @@ export default function AthleteSettingsPage() {
     fitnessGoals: '',
   })
 
-  const _supabase = createClient()
+  const supabase = createClient()
+  void supabase // Reserved for future use
 
   useEffect(() => {
     if (user) {

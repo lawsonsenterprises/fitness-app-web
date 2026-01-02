@@ -7,8 +7,6 @@ import {
   Mail,
   Calendar,
   User,
-  Dumbbell,
-  UtensilsCrossed,
   ClipboardCheck,
   Eye,
   MessageSquare,

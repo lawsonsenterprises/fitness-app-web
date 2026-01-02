@@ -13,15 +13,6 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'

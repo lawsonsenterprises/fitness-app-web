@@ -7,7 +7,6 @@ import {
   AlertCircle,
   Clock,
   CheckCircle2,
-  MessageSquare,
   User,
   ChevronRight,
   Loader2,
@@ -17,7 +16,6 @@ import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/dashboard/top-bar'
 import {
   useSupportTickets,

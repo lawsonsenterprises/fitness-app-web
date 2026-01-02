@@ -22,7 +22,6 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 interface TestDetailHeaderProps {
-  testId: string
   date: Date
   lab: string
   tags?: string[]
@@ -38,7 +37,6 @@ interface TestDetailHeaderProps {
 }
 
 export function TestDetailHeader({
-  testId: _testId,
   date,
   lab,
   tags,

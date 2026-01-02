@@ -63,7 +63,7 @@ function createEmptyMeal(sortOrder: number): Meal {
   }
 }
 
-function createEmptyFood(sortOrder: number): MealFood {
+function createEmptyFood(): MealFood {
   return {
     id: crypto.randomUUID(),
     mealId: '',
@@ -129,7 +129,7 @@ export default function NewMealPlanPage() {
     setMeals(
       meals.map((meal) => {
         if (meal.id === mealId) {
-          return { ...meal, foods: [...meal.foods, createEmptyFood(meal.foods.length)] }
+          return { ...meal, foods: [...meal.foods, createEmptyFood()] }
         }
         return meal
       })
@@ -425,7 +425,7 @@ export default function NewMealPlanPage() {
             </div>
 
             <div className="space-y-4">
-              {meals.map((meal, mealIndex) => (
+              {meals.map((meal) => (
                 <div
                   key={meal.id}
                   className="rounded-xl border border-border bg-card overflow-hidden"

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Dumbbell, ClipboardList, Shield, ArrowRight, Sparkles } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
-import { type UserRole, ROLE_ROUTES, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/roles'
+import { type UserRole, ROLE_LABELS, ROLE_DESCRIPTIONS } from '@/lib/roles'
 import { cn } from '@/lib/utils'
 
 const roleConfig: Record<UserRole, {

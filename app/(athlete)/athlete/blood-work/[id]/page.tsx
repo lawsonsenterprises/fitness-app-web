@@ -8,8 +8,6 @@ import {
   Share2,
   AlertTriangle,
   CheckCircle2,
-  TrendingUp,
-  TrendingDown,
   Minus,
   FileText,
   Building2,
@@ -18,17 +16,6 @@ import {
   Droplets,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  ReferenceArea,
-} from 'recharts'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'

@@ -18,7 +18,6 @@ import {
   Zap,
   Crown,
   Medal,
-  Star,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'

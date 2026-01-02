@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import {
   Users,
   UserCircle,
@@ -20,11 +21,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts'
 
 import { cn } from '@/lib/utils'
@@ -35,14 +31,6 @@ import {
   useSubscriptionStats,
   usePlatformAnalytics,
 } from '@/hooks/admin'
-
-// Subscription breakdown colors
-const SUBSCRIPTION_COLORS = {
-  professional: '#22c55e',
-  starter: '#f59e0b',
-  enterprise: '#6366f1',
-  free: '#94a3b8',
-}
 
 function getGreeting() {
   const hour = new Date().getHours()
@@ -90,11 +78,6 @@ export default function AdminDashboardPage() {
     month: new Date(d.date).toLocaleDateString('en-GB', { month: 'short' }),
     dau: d.dau,
   })) || []
-
-  // Subscription breakdown for pie chart
-  const subscriptionBreakdown = [
-    { name: 'Professional', value: platformStats?.activeSubscriptions || 0, color: SUBSCRIPTION_COLORS.professional },
-  ]
 
   return (
     <div className="min-h-screen">
@@ -275,7 +258,7 @@ export default function AdminDashboardPage() {
         >
           <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
           <div className="grid gap-4 md:grid-cols-4">
-            <a
+            <Link
               href="/admin/coaches"
               className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-amber-500/30 hover:bg-amber-500/5 transition-all"
             >
@@ -284,8 +267,8 @@ export default function AdminDashboardPage() {
                 <p className="font-medium">Manage Coaches</p>
                 <p className="text-xs text-muted-foreground">{platformStats?.totalCoaches || 0} total</p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/athletes"
               className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-blue-500/30 hover:bg-blue-500/5 transition-all"
             >
@@ -294,8 +277,8 @@ export default function AdminDashboardPage() {
                 <p className="font-medium">Manage Athletes</p>
                 <p className="text-xs text-muted-foreground">{platformStats?.totalAthletes || 0} total</p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/subscriptions"
               className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-green-500/30 hover:bg-green-500/5 transition-all"
             >
@@ -304,8 +287,8 @@ export default function AdminDashboardPage() {
                 <p className="font-medium">Subscriptions</p>
                 <p className="text-xs text-muted-foreground">{subscriptionStats?.activeSubscriptions || 0} active</p>
               </div>
-            </a>
-            <a
+            </Link>
+            <Link
               href="/admin/support"
               className="flex items-center gap-3 p-4 rounded-lg border border-border hover:border-red-500/30 hover:bg-red-500/5 transition-all"
             >
@@ -314,7 +297,7 @@ export default function AdminDashboardPage() {
                 <p className="font-medium">Support Tickets</p>
                 <p className="text-xs text-muted-foreground">View all tickets</p>
               </div>
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

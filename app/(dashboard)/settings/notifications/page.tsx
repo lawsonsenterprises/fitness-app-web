@@ -150,7 +150,7 @@ export default function NotificationSettingsPage() {
             })
           )
         }
-      } catch (error) {
+      } catch {
         // No preferences exist yet, use defaults
         console.log('No notification preferences found, using defaults')
       } finally {

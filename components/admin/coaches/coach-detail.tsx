@@ -40,7 +40,6 @@ interface CoachDetailProps {
   onSuspend: () => void
   onActivate: () => void
   onImpersonate: () => void
-  onEmail: () => void
 }
 
 const statusConfig = {
@@ -60,7 +59,6 @@ export function CoachDetail({
   onSuspend,
   onActivate,
   onImpersonate,
-  onEmail: _onEmail,
 }: CoachDetailProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-GB', {

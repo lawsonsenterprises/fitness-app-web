@@ -7,8 +7,6 @@ import {
   Pencil,
   Copy,
   Trash2,
-  CheckCircle2,
-  Clock,
   Flame,
   Target,
   Globe,

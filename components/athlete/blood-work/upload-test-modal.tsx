@@ -47,7 +47,7 @@ export function UploadTestModal({ isOpen, onClose, onComplete }: UploadTestModal
   const [extractedMarkers, setExtractedMarkers] = useState<ExtractedMarker[]>([])
   const [isExtracting, setIsExtracting] = useState(false)
   const [extractionError, setExtractionError] = useState<string | null>(null)
-  const [_metadata, setMetadata] = useState<TestMetadata | null>(null)
+  const [, setMetadata] = useState<TestMetadata | null>(null)
 
   const handleFileUpload = async (uploadedFile: File) => {
     setFile(uploadedFile)

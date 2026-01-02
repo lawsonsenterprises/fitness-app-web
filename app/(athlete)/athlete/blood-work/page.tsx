@@ -5,16 +5,10 @@ import {
   Droplets,
   Upload,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
-  Minus,
   AlertTriangle,
-  CheckCircle2,
   Loader2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-
-import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { useBloodTests } from '@/hooks/athlete'

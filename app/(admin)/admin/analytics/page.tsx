@@ -11,12 +11,8 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
-  LineChart,
-  Line,
   AreaChart,
   Area,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,

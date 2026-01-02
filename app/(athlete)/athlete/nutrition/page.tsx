@@ -1,13 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
   UtensilsCrossed,
   Flame,
   Target,
-  Droplets,
-  Plus,
   ChevronRight,
   Loader2,
   Beef,

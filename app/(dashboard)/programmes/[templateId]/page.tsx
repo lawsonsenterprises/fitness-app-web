@@ -13,7 +13,6 @@ import {
   Play,
   Globe,
   Lock,
-  Loader2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 

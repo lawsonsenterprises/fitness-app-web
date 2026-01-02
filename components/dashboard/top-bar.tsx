@@ -66,7 +66,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ title }: TopBarProps) {
-  const { user, signOut, activeRole } = useAuth()
+  const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [searchFocused, setSearchFocused] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

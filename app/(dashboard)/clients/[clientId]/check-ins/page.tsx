@@ -22,11 +22,10 @@ import { CheckInStatusBadge } from '@/components/check-ins/check-in-status-badge
 import { useClient } from '@/hooks/use-clients'
 import { useClientCheckIns } from '@/hooks/use-check-ins'
 import { cn } from '@/lib/utils'
-import type { CheckIn } from '@/types'
 
 export default function ClientCheckInsPage() {
   const params = useParams()
-  const router = useRouter()
+  useRouter() // Navigation hook available for future use
   const clientId = params.clientId as string
   const { data: client } = useClient(clientId)
   const { data: checkInsData, isLoading } = useClientCheckIns(clientId)

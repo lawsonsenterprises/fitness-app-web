@@ -60,12 +60,10 @@ const muscleGroupColors: Record<string, string> = {
 
 function SetRow({
   set,
-  exerciseId: _exerciseId,
   onComplete,
   readOnly,
 }: {
   set: ExerciseSet
-  exerciseId: string
   onComplete?: (data: Partial<ExerciseSet>) => void
   readOnly?: boolean
 }) {
@@ -304,7 +302,6 @@ function ExerciseCard({
                   <SetRow
                     key={set.setNumber}
                     set={set}
-                    exerciseId={exercise.id}
                     onComplete={
                       onSetComplete
                         ? (data) => onSetComplete(exercise.id, set.setNumber, data)
