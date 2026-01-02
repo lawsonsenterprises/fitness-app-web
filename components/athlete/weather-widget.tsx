@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Cloud, Sun, CloudRain, CloudSnow, Wind, Loader2, MapPin, CloudSun, CloudFog, Settings, X, Check } from 'lucide-react'
+import { Cloud, Sun, Moon, CloudRain, CloudSnow, Wind, Loader2, MapPin, CloudSun, CloudMoon, CloudFog, Settings, X, Check, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { Button } from '@/components/ui/button'
@@ -15,9 +15,11 @@ interface WeatherData {
   low: number
   humidity: number
   description: string
+  isNight: boolean
 }
 
-const WEATHER_ICONS = {
+// Day icons
+const WEATHER_ICONS_DAY = {
   clear: Sun,
   partly_cloudy: CloudSun,
   cloudy: Cloud,
@@ -28,9 +30,32 @@ const WEATHER_ICONS = {
   thunderstorm: CloudRain,
 }
 
-const WEATHER_COLORS = {
+// Night icons
+const WEATHER_ICONS_NIGHT = {
+  clear: Moon,
+  partly_cloudy: CloudMoon,
+  cloudy: Cloud,
+  rain: CloudRain,
+  snow: CloudSnow,
+  fog: CloudFog,
+  wind: Wind,
+  thunderstorm: CloudRain,
+}
+
+const WEATHER_COLORS_DAY = {
   clear: 'text-amber-500',
   partly_cloudy: 'text-amber-400',
+  cloudy: 'text-slate-400',
+  rain: 'text-blue-400',
+  snow: 'text-blue-200',
+  fog: 'text-slate-300',
+  wind: 'text-cyan-400',
+  thunderstorm: 'text-purple-400',
+}
+
+const WEATHER_COLORS_NIGHT = {
+  clear: 'text-indigo-400',
+  partly_cloudy: 'text-indigo-300',
   cloudy: 'text-slate-400',
   rain: 'text-blue-400',
   snow: 'text-blue-200',
@@ -85,6 +110,9 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 
       const data = await response.json()
       const condition = mapWeatherCode(data.weather[0].id)
+      // OpenWeatherMap icon codes end with 'd' (day) or 'n' (night)
+      const iconCode = data.weather[0].icon as string
+      const isNight = iconCode.endsWith('n')
 
       setWeather({
         temp: Math.round(data.main.temp),
@@ -94,6 +122,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
         low: Math.round(data.main.temp_min),
         humidity: data.main.humidity,
         description: data.weather[0].description,
+        isNight,
       })
       setError(null)
     } catch {
@@ -258,13 +287,18 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
     )
   }
 
-  const WeatherIcon = WEATHER_ICONS[weather.condition]
+  const WeatherIcon = weather.isNight
+    ? WEATHER_ICONS_NIGHT[weather.condition]
+    : WEATHER_ICONS_DAY[weather.condition]
+  const weatherColor = weather.isNight
+    ? WEATHER_COLORS_NIGHT[weather.condition]
+    : WEATHER_COLORS_DAY[weather.condition]
 
   return (
     <div className={cn('rounded-xl border border-border bg-card p-4', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className={cn('p-2 rounded-lg bg-muted/50', WEATHER_COLORS[weather.condition])}>
+          <div className={cn('p-2 rounded-lg bg-muted/50', weatherColor)}>
             <WeatherIcon className="h-8 w-8" />
           </div>
           <div>
