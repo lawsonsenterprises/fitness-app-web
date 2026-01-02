@@ -1249,3 +1249,23 @@ export function useCheckUserAuthMethod() {
     },
   })
 }
+
+export function usePromoteToSuperAdmin() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { promoteToSuperAdmin } = await import('@/app/actions/promote-to-super-admin')
+      const result = await promoteToSuperAdmin(userId)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to promote to super admin')
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+    },
+  })
+}

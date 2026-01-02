@@ -14,6 +14,7 @@ import {
   Mail,
   Key,
   Trash2,
+  Crown,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -23,7 +24,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
-import { useAdmins, useDemoteAdmin, useDeleteAdmin, usePendingInvites, useResendInvite } from '@/hooks/admin'
+import { useAdmins, useDemoteAdmin, useDeleteAdmin, usePendingInvites, useResendInvite, usePromoteToSuperAdmin } from '@/hooks/admin'
 import { useAuth } from '@/contexts/auth-context'
 import { AddAdminDialog } from '@/components/admin/admins/add-admin-dialog'
 import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
@@ -69,7 +70,8 @@ export default function AdminsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string; isAdminOnly: boolean } | null>(null)
   const [resetPasswordAdmin, setResetPasswordAdmin] = useState<{ id: string; name: string; email: string } | null>(null)
-  const [isProcessingAction, setIsProcessingAction] = useState<'demote' | 'delete' | null>(null)
+  const [adminToPromote, setAdminToPromote] = useState<{ id: string; name: string } | null>(null)
+  const [isProcessingAction, setIsProcessingAction] = useState<'demote' | 'delete' | 'promote' | null>(null)
 
   const { data: adminsData, isLoading, error, refetch: refetchAdmins } = useAdmins({
     search: searchQuery || undefined,
@@ -78,6 +80,7 @@ export default function AdminsPage() {
   const demoteAdmin = useDemoteAdmin(user?.id || '')
   const deleteAdmin = useDeleteAdmin(user?.id || '')
   const resendInvite = useResendInvite()
+  const promoteToSuperAdmin = usePromoteToSuperAdmin()
 
   const admins = adminsData?.admins || []
 
@@ -136,6 +139,26 @@ export default function AdminsPage() {
       setAdminToRemove(null)
     } catch (error) {
       toast.error('Failed to delete admin', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    } finally {
+      setIsProcessingAction(null)
+    }
+  }
+
+  const handlePromoteToSuperAdmin = async () => {
+    if (!adminToPromote) return
+
+    setIsProcessingAction('promote')
+    try {
+      await promoteToSuperAdmin.mutateAsync(adminToPromote.id)
+      await refetchAdmins()
+      toast.success('Promoted to Super Admin', {
+        description: `${adminToPromote.name} is now a super admin.`,
+      })
+      setAdminToPromote(null)
+    } catch (error) {
+      toast.error('Failed to promote', {
         description: error instanceof Error ? error.message : 'Please try again.',
       })
     } finally {
@@ -385,6 +408,18 @@ export default function AdminsPage() {
                                 >
                                   <Key className="h-4 w-4 text-muted-foreground group-hover:text-amber-500" />
                                 </button>
+                                {isSuperAdmin && !isTargetSuperAdmin && (
+                                  <button
+                                    onClick={() => setAdminToPromote({
+                                      id: admin.id,
+                                      name: getDisplayName(admin.display_name, admin.contact_email),
+                                    })}
+                                    className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors group"
+                                    title="Promote to Super Admin"
+                                  >
+                                    <Crown className="h-4 w-4 text-muted-foreground group-hover:text-purple-500" />
+                                  </button>
+                                )}
                                 {isSuperAdmin && (
                                   <button
                                     onClick={() => {
@@ -526,6 +561,20 @@ export default function AdminsPage() {
             name: resetPasswordAdmin.name,
             email: resetPasswordAdmin.email,
           }}
+        />
+      )}
+
+      {/* Promote to Super Admin Confirmation */}
+      {adminToPromote && (
+        <ConfirmationDialog
+          isOpen={true}
+          onClose={() => setAdminToPromote(null)}
+          onConfirm={handlePromoteToSuperAdmin}
+          title="Promote to Super Admin"
+          description={`Are you sure you want to promote ${adminToPromote.name} to super admin? They will have full control over admin management and cannot be demoted or deleted.`}
+          confirmLabel={isProcessingAction === 'promote' ? 'Promoting...' : 'Promote'}
+          variant="default"
+          icon={<Crown className="h-6 w-6 text-purple-500" />}
         />
       )}
     </>
