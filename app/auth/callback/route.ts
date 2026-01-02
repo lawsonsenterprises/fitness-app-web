@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { ROUTES } from '@/lib/constants'
 import { type UserRole } from '@/lib/roles'
+import { applyPendingInvite } from '@/app/actions/apply-pending-invite'
 
 async function handleCallback(request: Request) {
   const { origin } = new URL(request.url)
@@ -39,11 +40,23 @@ async function handleCallback(request: Request) {
     const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!sessionError && data?.session) {
-      // Check user's roles to determine redirect
+      const userId = data.session.user.id
+      const userEmail = data.session.user.email
+
+      // Check if there's a pending invite for this email and apply roles
+      // This handles the case where an admin invited someone, but they signed in with Apple
+      if (userEmail) {
+        const inviteResult = await applyPendingInvite(userId, userEmail)
+        if (inviteResult.applied) {
+          console.log(`Applied pending invite roles to OAuth user: ${userEmail}`)
+        }
+      }
+
+      // Re-fetch profile after potential invite application to get updated roles
       const { data: profile } = await supabase
         .from('profiles')
         .select('roles')
-        .eq('id', data.session.user.id)
+        .eq('id', userId)
         .single()
 
       const userRoles = (profile?.roles as UserRole[]) || []
