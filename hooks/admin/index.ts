@@ -1143,3 +1143,25 @@ export function useDemoteAdmin(currentUserId: string) {
     },
   })
 }
+
+export function useInviteAdmin() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ email, displayName }: { email: string; displayName: string }) => {
+      // Dynamic import to avoid bundling server code in client
+      const { inviteAdmin } = await import('@/app/actions/invite-admin')
+      const result = await inviteAdmin(email, displayName)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to invite admin')
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+    },
+  })
+}

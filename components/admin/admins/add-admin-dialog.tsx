@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Loader2, Search, CheckCircle2, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { X, Loader2, Search, CheckCircle2, ShieldCheck, AlertTriangle, Mail, UserPlus, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { useSearchUsersForPromotion, usePromoteToAdmin } from '@/hooks/admin'
+import { useSearchUsersForPromotion, usePromoteToAdmin, useInviteAdmin } from '@/hooks/admin'
 
 interface FoundUser {
   id: string
@@ -21,6 +21,8 @@ interface AddAdminDialogProps {
   isOpen: boolean
   onClose: () => void
 }
+
+type TabType = 'existing' | 'invite'
 
 function getDisplayName(user: FoundUser): string {
   if (user.display_name) return user.display_name
@@ -42,18 +44,26 @@ function getInitials(user: FoundUser): string {
 }
 
 export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
+  const [activeTab, setActiveTab] = useState<TabType>('existing')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUser, setSelectedUser] = useState<FoundUser | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
+
+  // Invite form state
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteName, setInviteName] = useState('')
 
   const { data: searchResults, isLoading: isSearching } = useSearchUsersForPromotion(searchQuery)
   const promoteToAdmin = usePromoteToAdmin()
+  const inviteAdmin = useInviteAdmin()
 
   const handlePromote = async () => {
     if (!selectedUser) return
 
     try {
       await promoteToAdmin.mutateAsync(selectedUser.id)
+      setSuccessMessage(`${getDisplayName(selectedUser)} now has full platform access.`)
       setShowSuccess(true)
       toast.success('Admin added', {
         description: `${getDisplayName(selectedUser)} now has admin access.`,
@@ -68,12 +78,38 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
     }
   }
 
+  const handleInvite = async () => {
+    if (!inviteEmail || !inviteName) return
+
+    try {
+      await inviteAdmin.mutateAsync({ email: inviteEmail, displayName: inviteName })
+      setSuccessMessage(`An invite has been sent to ${inviteEmail}. They will have admin access once they accept.`)
+      setShowSuccess(true)
+      toast.success('Admin invited', {
+        description: `Invite sent to ${inviteEmail}`,
+      })
+      setTimeout(() => {
+        handleClose()
+      }, 2000)
+    } catch (error) {
+      toast.error('Failed to invite admin', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    }
+  }
+
   const handleClose = () => {
     onClose()
+    setActiveTab('existing')
     setSearchQuery('')
     setSelectedUser(null)
     setShowSuccess(false)
+    setSuccessMessage('')
+    setInviteEmail('')
+    setInviteName('')
   }
+
+  const isLoading = promoteToAdmin.isPending || inviteAdmin.isPending
 
   if (!isOpen) return null
 
@@ -99,7 +135,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
             <div>
               <h2 className="text-lg font-semibold">Add Admin</h2>
               <p className="text-sm text-muted-foreground">
-                Grant admin access to an existing user
+                Promote an existing user or invite someone new
               </p>
             </div>
             <button
@@ -110,6 +146,36 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
             </button>
           </div>
 
+          {/* Tabs */}
+          {!showSuccess && (
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setActiveTab('existing')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                  activeTab === 'existing'
+                    ? 'border-b-2 border-red-500 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Existing User
+              </button>
+              <button
+                onClick={() => setActiveTab('invite')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                  activeTab === 'invite'
+                    ? 'border-b-2 border-red-500 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Mail className="h-4 w-4" />
+                Invite New
+              </button>
+            </div>
+          )}
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             {showSuccess ? (
@@ -117,12 +183,15 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                   <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                 </div>
-                <h3 className="mb-2 text-lg font-medium">Admin Added!</h3>
+                <h3 className="mb-2 text-lg font-medium">
+                  {activeTab === 'existing' ? 'Admin Added!' : 'Invite Sent!'}
+                </h3>
                 <p className="text-center text-sm text-muted-foreground">
-                  {selectedUser && getDisplayName(selectedUser)} now has full platform access.
+                  {successMessage}
                 </p>
               </div>
-            ) : (
+            ) : activeTab === 'existing' ? (
+              /* Existing User Tab */
               <div className="space-y-6">
                 {/* Search input */}
                 <div>
@@ -215,6 +284,12 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                     <p className="text-sm text-muted-foreground">
                       No users found matching &quot;{searchQuery}&quot;
                     </p>
+                    <button
+                      onClick={() => setActiveTab('invite')}
+                      className="mt-2 text-sm text-red-500 hover:text-red-600 font-medium"
+                    >
+                      Invite them instead
+                    </button>
                   </div>
                 )}
 
@@ -245,6 +320,89 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                   </div>
                 </div>
               </div>
+            ) : (
+              /* Invite New Tab */
+              <div className="space-y-6">
+                {/* Name input */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Full name
+                  </label>
+                  <Input
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="John Smith"
+                    className={cn(
+                      'h-12 rounded-lg border-border bg-background',
+                      'focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
+                    )}
+                  />
+                </div>
+
+                {/* Email input */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="admin@example.com"
+                      className={cn(
+                        'h-12 rounded-lg border-border bg-background pl-10',
+                        'focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Warning box */}
+                {inviteEmail && inviteName && (
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="mt-0.5 h-5 w-5 text-red-500 shrink-0" />
+                      <div>
+                        <p className="font-medium text-red-600">
+                          Invite as admin?
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          <strong>{inviteName}</strong> ({inviteEmail}) will receive an email invitation and have full admin access once they accept.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Info box */}
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex items-start gap-3">
+                    <Mail className="mt-0.5 h-5 w-5 text-muted-foreground shrink-0" />
+                    <div className="text-sm text-muted-foreground">
+                      <p>
+                        <strong className="text-foreground">How it works:</strong>
+                      </p>
+                      <ul className="mt-2 space-y-1 list-disc list-inside">
+                        <li>We&apos;ll send an email invitation</li>
+                        <li>They&apos;ll create a password</li>
+                        <li>They&apos;ll have admin access immediately</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Admin access info */}
+                <div className="rounded-xl border border-border bg-muted/30 p-4">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 text-red-500 shrink-0" />
+                    <p className="text-sm text-muted-foreground">
+                      <strong className="text-foreground">Admin access:</strong> Admins can view and manage all platform data, suspend users, access billing information, and modify system settings.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
@@ -256,30 +414,52 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                   type="button"
                   variant="outline"
                   onClick={handleClose}
-                  disabled={promoteToAdmin.isPending}
+                  disabled={isLoading}
                   className="flex-1"
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="button"
-                  onClick={handlePromote}
-                  disabled={!selectedUser || promoteToAdmin.isPending}
-                  className={cn(
-                    'group relative flex-1 overflow-hidden bg-red-600 text-white',
-                    'hover:bg-red-700',
-                    'disabled:opacity-50'
-                  )}
-                >
-                  {promoteToAdmin.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <ShieldCheck className="mr-2 h-4 w-4" />
-                      Grant Admin Access
-                    </>
-                  )}
-                </Button>
+                {activeTab === 'existing' ? (
+                  <Button
+                    type="button"
+                    onClick={handlePromote}
+                    disabled={!selectedUser || isLoading}
+                    className={cn(
+                      'group relative flex-1 overflow-hidden bg-red-600 text-white',
+                      'hover:bg-red-700',
+                      'disabled:opacity-50'
+                    )}
+                  >
+                    {promoteToAdmin.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Grant Admin Access
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleInvite}
+                    disabled={!inviteEmail || !inviteName || isLoading}
+                    className={cn(
+                      'group relative flex-1 overflow-hidden bg-red-600 text-white',
+                      'hover:bg-red-700',
+                      'disabled:opacity-50'
+                    )}
+                  >
+                    {inviteAdmin.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        Send Invite
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
           )}
