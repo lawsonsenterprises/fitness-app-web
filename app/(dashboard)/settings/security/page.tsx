@@ -150,24 +150,8 @@ export default function SecuritySettingsPage() {
   }
 
 
-  // Debug: Log auth state to console
-  console.log('Auth Provider State:', { isOAuthOnly, isEmailPassword, hasBothMethods, providers, provider })
-
   return (
     <div className="space-y-8">
-      {/* Debug Info - Remove after testing */}
-      {!isAuthLoading && (
-        <div className="rounded-xl border border-dashed border-amber-500/50 bg-amber-500/5 p-4 text-xs">
-          <p className="font-medium text-amber-600 mb-2">Debug: Auth Detection</p>
-          <ul className="space-y-1 text-muted-foreground">
-            <li>Providers: {providers.length > 0 ? providers.join(', ') : 'none detected'}</li>
-            <li>isOAuthOnly: {String(isOAuthOnly)}</li>
-            <li>isEmailPassword: {String(isEmailPassword)}</li>
-            <li>hasBothMethods: {String(hasBothMethods)}</li>
-          </ul>
-        </div>
-      )}
-
       {/* Sign-in Methods */}
       {!isAuthLoading && (isOAuthOnly || hasBothMethods) && (
         <div className="rounded-xl border border-border bg-card p-6">

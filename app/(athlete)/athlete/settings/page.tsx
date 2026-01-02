@@ -47,7 +47,7 @@ export default function AthleteSettingsPage() {
   })
 
   // Security tab state
-  const { isOAuth, provider, isLoading: isAuthLoading } = useAuthProvider()
+  const { isOAuth, isOAuthOnly, provider, isLoading: isAuthLoading, hasBothMethods, providers } = useAuthProvider()
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -422,24 +422,149 @@ export default function AthleteSettingsPage() {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : isOAuth ? (
-              /* OAuth User - Cannot Change Password */
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                    <Apple className="h-6 w-6 text-amber-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-amber-600">Password Change Unavailable</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      You sign in with <strong>{getProviderDisplayName(provider)}</strong>.
-                      Password management is only available for email/password accounts.
-                    </p>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      To change your {getProviderDisplayName(provider)} password, visit your {getProviderDisplayName(provider)} account settings.
-                    </p>
+            ) : isOAuthOnly ? (
+              /* OAuth-Only User - Can Add Password */
+              <div className="space-y-4">
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    You currently sign in with <strong>{getProviderDisplayName(provider)}</strong>.
+                    Adding a password gives you a backup way to access your account.
+                  </p>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium">Password</label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Create a strong password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
+
+                {/* Password Strength Indicator */}
+                {newPassword && (
+                  <div className="space-y-3">
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn(
+                          'h-full transition-all duration-300',
+                          strengthPercent <= 25 && 'bg-red-500',
+                          strengthPercent > 25 && strengthPercent <= 50 && 'bg-orange-500',
+                          strengthPercent > 50 && strengthPercent <= 75 && 'bg-yellow-500',
+                          strengthPercent > 75 && 'bg-emerald-500'
+                        )}
+                        style={{ width: `${strengthPercent}%` }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className={cn('flex items-center gap-1.5', passwordValidation.checks.minLength ? 'text-emerald-600' : 'text-muted-foreground')}>
+                        {passwordValidation.checks.minLength ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        8+ characters
+                      </div>
+                      <div className={cn('flex items-center gap-1.5', passwordValidation.checks.hasUppercase ? 'text-emerald-600' : 'text-muted-foreground')}>
+                        {passwordValidation.checks.hasUppercase ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        Uppercase letter
+                      </div>
+                      <div className={cn('flex items-center gap-1.5', passwordValidation.checks.hasLowercase ? 'text-emerald-600' : 'text-muted-foreground')}>
+                        {passwordValidation.checks.hasLowercase ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        Lowercase letter
+                      </div>
+                      <div className={cn('flex items-center gap-1.5', passwordValidation.checks.hasNumber ? 'text-emerald-600' : 'text-muted-foreground')}>
+                        {passwordValidation.checks.hasNumber ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        Number
+                      </div>
+                      <div className={cn('flex items-center gap-1.5', passwordValidation.checks.hasSpecialChar ? 'text-emerald-600' : 'text-muted-foreground')}>
+                        {passwordValidation.checks.hasSpecialChar ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        Special character
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      className={cn(
+                        'pr-10',
+                        confirmPassword && !passwordsMatch && 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                      )}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {confirmPassword && !passwordsMatch && (
+                    <p className="mt-1.5 text-xs text-red-500">Passwords do not match</p>
+                  )}
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    if (!passwordValidation.valid || !passwordsMatch) return
+                    setIsChangingPassword(true)
+                    try {
+                      const result = await changePassword(newPassword)
+                      if (result.success) {
+                        toast.success('Password added successfully', {
+                          description: 'You can now sign in with either Apple or email/password.',
+                        })
+                        setNewPassword('')
+                        setConfirmPassword('')
+                        window.location.reload()
+                      } else {
+                        toast.error('Failed to add password', { description: result.error })
+                      }
+                    } catch {
+                      toast.error('An error occurred')
+                    } finally {
+                      setIsChangingPassword(false)
+                    }
+                  }}
+                  disabled={!passwordValidation.valid || !passwordsMatch || isChangingPassword}
+                  className="gap-2 bg-foreground text-background hover:bg-foreground/90"
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Password'
+                  )}
+                </Button>
               </div>
             ) : (
               /* Email/Password User - Show Form */
