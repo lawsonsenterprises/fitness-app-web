@@ -25,8 +25,8 @@ export async function promoteAdmin(userId: string): Promise<PromoteAdminResult> 
       .eq('id', currentUser.id)
       .single()
 
-    if (!currentProfile?.roles?.includes('admin')) {
-      return { success: false, error: 'Unauthorized - admin access required' }
+    if (!currentProfile?.roles?.includes('super_admin')) {
+      return { success: false, error: 'Unauthorized - only super admins can promote users to admin' }
     }
 
     // Use admin client to bypass RLS and update the target user's roles

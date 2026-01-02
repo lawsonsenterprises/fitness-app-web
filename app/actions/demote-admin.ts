@@ -54,6 +54,11 @@ export async function demoteAdmin(userId: string): Promise<DemoteAdminResult> {
       return { success: false, error: 'User is not an admin' }
     }
 
+    // Prevent demoting super admins
+    if (currentRoles.includes('super_admin')) {
+      return { success: false, error: 'Super admins cannot be demoted' }
+    }
+
     const newRoles = currentRoles.filter((role: string) => role !== 'admin')
 
     // Ensure user has at least athlete role

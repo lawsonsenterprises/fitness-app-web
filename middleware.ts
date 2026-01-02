@@ -121,8 +121,8 @@ export async function middleware(request: NextRequest) {
 
     const roles: string[] = profile?.roles || ['athlete']
 
-    // Protect admin routes - must have admin role
-    if (isAdminRoute && !roles.includes('admin')) {
+    // Protect admin routes - must have admin or super_admin role
+    if (isAdminRoute && !roles.includes('admin') && !roles.includes('super_admin')) {
       // Redirect to coach dashboard if coach, else athlete
       if (roles.includes('coach')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -132,8 +132,8 @@ export async function middleware(request: NextRequest) {
 
     // Protect coach routes - must have coach role
     if (isCoachRoute && !roles.includes('coach')) {
-      // Redirect admin-only users to admin, athletes to athlete dashboard
-      if (roles.includes('admin')) {
+      // Redirect admin/super_admin users to admin, athletes to athlete dashboard
+      if (roles.includes('admin') || roles.includes('super_admin')) {
         return NextResponse.redirect(new URL('/admin', request.url))
       }
       return NextResponse.redirect(new URL('/athlete', request.url))
@@ -145,7 +145,7 @@ export async function middleware(request: NextRequest) {
       if (roles.includes('coach')) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
-      if (roles.includes('admin')) {
+      if (roles.includes('admin') || roles.includes('super_admin')) {
         return NextResponse.redirect(new URL('/admin', request.url))
       }
       return NextResponse.redirect(new URL('/login', request.url))

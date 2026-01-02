@@ -29,8 +29,8 @@ export async function inviteAdmin(
       .eq('id', currentUser.id)
       .single()
 
-    if (!profile?.roles?.includes('admin')) {
-      return { success: false, error: 'Unauthorized - admin access required' }
+    if (!profile?.roles?.includes('super_admin')) {
+      return { success: false, error: 'Unauthorized - only super admins can invite new admins' }
     }
 
     // Use admin client for user creation

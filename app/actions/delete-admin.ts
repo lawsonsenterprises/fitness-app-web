@@ -58,6 +58,11 @@ export async function deleteAdmin(userId: string): Promise<DeleteAdminResult> {
       return { success: false, error: 'User is not an admin' }
     }
 
+    // Prevent deleting super admins
+    if (currentRoles.includes('super_admin')) {
+      return { success: false, error: 'Super admins cannot be deleted' }
+    }
+
     // Delete the profile first (due to foreign key constraints)
     const { error: profileDeleteError } = await adminClient
       .from('profiles')

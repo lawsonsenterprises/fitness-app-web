@@ -81,6 +81,10 @@ export default function AdminsPage() {
 
   const admins = adminsData?.admins || []
 
+  // Check if current user is a super admin (for showing/hiding management buttons)
+  const currentUserAdmin = admins.find(a => a.id === user?.id)
+  const isSuperAdmin = currentUserAdmin?.roles?.includes('super_admin') || false
+
   // Cross-reference admins with pending invites to mark who hasn't confirmed
   const pendingAdminIds = new Set(pendingInvites.map(p => p.userId))
 
@@ -163,13 +167,15 @@ export default function AdminsPage() {
               Manage platform administrators
             </p>
           </div>
-          <Button
-            onClick={() => setIsAddDialogOpen(true)}
-            className="gap-2 bg-red-600 hover:bg-red-700"
-          >
-            <UserPlus className="h-4 w-4" />
-            Add Admin
-          </Button>
+          {isSuperAdmin && (
+            <Button
+              onClick={() => setIsAddDialogOpen(true)}
+              className="gap-2 bg-red-600 hover:bg-red-700"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add Admin
+            </Button>
+          )}
         </div>
 
         {/* Stats */}
@@ -254,7 +260,8 @@ export default function AdminsPage() {
                     const isPending = pendingAdminIds.has(admin.id)
                     const isActiveToday = !isPending && admin.updated_at &&
                       new Date(admin.updated_at) >= new Date(new Date().setHours(0, 0, 0, 0))
-                    const otherRoles = admin.roles.filter(r => r !== 'admin')
+                    const isTargetSuperAdmin = admin.roles.includes('super_admin')
+                    const otherRoles = admin.roles.filter(r => r !== 'admin' && r !== 'super_admin')
 
                     return (
                       <tr key={admin.id} className="hover:bg-muted/30 transition-colors">
@@ -282,7 +289,12 @@ export default function AdminsPage() {
                           </div>
                         </td>
                         <td className="p-4">
-                          <div className="flex gap-1">
+                          <div className="flex flex-wrap gap-1">
+                            {isTargetSuperAdmin && (
+                              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-purple-500/10 text-purple-600">
+                                Super Admin
+                              </span>
+                            )}
                             {otherRoles.length > 0 ? (
                               otherRoles.map((role) => (
                                 <span
@@ -296,9 +308,9 @@ export default function AdminsPage() {
                                   {role}
                                 </span>
                               ))
-                            ) : (
-                              <span className="text-sm text-muted-foreground">Admin only</span>
-                            )}
+                            ) : !isTargetSuperAdmin ? (
+                              <span className="text-sm text-muted-foreground">—</span>
+                            ) : null}
                           </div>
                         </td>
                         <td className="p-4">
@@ -342,9 +354,13 @@ export default function AdminsPage() {
                               <span className="text-xs text-muted-foreground px-2">
                                 Cannot modify yourself
                               </span>
+                            ) : isTargetSuperAdmin ? (
+                              <span className="text-xs text-muted-foreground px-2">
+                                Protected account
+                              </span>
                             ) : (
                               <>
-                                {isPending && (
+                                {isPending && isSuperAdmin && (
                                   <button
                                     onClick={() => handleResendInvite(admin.id, admin.contact_email || '')}
                                     disabled={resendInvite.isPending}
@@ -369,20 +385,22 @@ export default function AdminsPage() {
                                 >
                                   <Key className="h-4 w-4 text-muted-foreground group-hover:text-amber-500" />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    const otherRoles = admin.roles.filter((r: string) => r !== 'admin')
-                                    setAdminToRemove({
-                                      id: admin.id,
-                                      name: getDisplayName(admin.display_name, admin.contact_email),
-                                      isAdminOnly: otherRoles.length === 0,
-                                    })
-                                  }}
-                                  className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
-                                  title="Remove admin access"
-                                >
-                                  <UserMinus className="h-4 w-4 text-muted-foreground group-hover:text-red-500" />
-                                </button>
+                                {isSuperAdmin && (
+                                  <button
+                                    onClick={() => {
+                                      const nonAdminRoles = admin.roles.filter((r: string) => r !== 'admin' && r !== 'super_admin')
+                                      setAdminToRemove({
+                                        id: admin.id,
+                                        name: getDisplayName(admin.display_name, admin.contact_email),
+                                        isAdminOnly: nonAdminRoles.length === 0,
+                                      })
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
+                                    title="Remove admin access"
+                                  >
+                                    <UserMinus className="h-4 w-4 text-muted-foreground group-hover:text-red-500" />
+                                  </button>
+                                )}
                               </>
                             )}
                           </div>
