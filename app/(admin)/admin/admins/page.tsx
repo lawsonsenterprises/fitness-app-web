@@ -23,10 +23,7 @@ import { useAdmins, useDemoteAdmin } from '@/hooks/admin'
 import { useAuth } from '@/contexts/auth-context'
 import { AddAdminDialog } from '@/components/admin/admins/add-admin-dialog'
 
-function getInitials(displayName?: string | null, firstName?: string | null, lastName?: string | null, email?: string | null): string {
-  if (firstName && lastName) {
-    return `${firstName[0]}${lastName[0]}`.toUpperCase()
-  }
+function getInitials(displayName?: string | null, email?: string | null): string {
   if (displayName) {
     const parts = displayName.split(' ')
     if (parts.length >= 2) {
@@ -40,10 +37,8 @@ function getInitials(displayName?: string | null, firstName?: string | null, las
   return '??'
 }
 
-function getDisplayName(displayName?: string | null, firstName?: string | null, lastName?: string | null, email?: string | null): string {
+function getDisplayName(displayName?: string | null, email?: string | null): string {
   if (displayName) return displayName
-  if (firstName && lastName) return `${firstName} ${lastName}`
-  if (firstName) return firstName
   return email || 'Unknown'
 }
 
@@ -204,8 +199,8 @@ export default function AdminsPage() {
                 <tbody className="divide-y divide-border">
                   {admins.map((admin) => {
                     const isCurrentUser = admin.id === user?.id
-                    const isActiveToday = admin.last_sign_in_at &&
-                      new Date(admin.last_sign_in_at) >= new Date(new Date().setHours(0, 0, 0, 0))
+                    const isActiveToday = admin.updated_at &&
+                      new Date(admin.updated_at) >= new Date(new Date().setHours(0, 0, 0, 0))
                     const otherRoles = admin.roles.filter(r => r !== 'admin')
 
                     return (
@@ -213,12 +208,12 @@ export default function AdminsPage() {
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-white font-bold">
-                              {getInitials(admin.display_name, admin.first_name, admin.last_name, admin.email)}
+                              {getInitials(admin.display_name, admin.contact_email)}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">
-                                  {getDisplayName(admin.display_name, admin.first_name, admin.last_name, admin.email)}
+                                  {getDisplayName(admin.display_name, admin.contact_email)}
                                 </p>
                                 {isCurrentUser && (
                                   <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
@@ -226,7 +221,7 @@ export default function AdminsPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-sm text-muted-foreground">{admin.email}</p>
+                              <p className="text-sm text-muted-foreground">{admin.contact_email}</p>
                             </div>
                           </div>
                         </td>
@@ -269,7 +264,7 @@ export default function AdminsPage() {
                           </span>
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
-                          {getRelativeTime(admin.last_sign_in_at)}
+                          {getRelativeTime(admin.updated_at)}
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
                           {admin.created_at ? new Date(admin.created_at).toLocaleDateString('en-GB', {
@@ -288,7 +283,7 @@ export default function AdminsPage() {
                               <button
                                 onClick={() => setAdminToRemove({
                                   id: admin.id,
-                                  name: getDisplayName(admin.display_name, admin.first_name, admin.last_name, admin.email),
+                                  name: getDisplayName(admin.display_name, admin.contact_email),
                                 })}
                                 className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
                                 title="Remove admin access"

@@ -1003,14 +1003,11 @@ export function useMessageStats() {
 export interface AdminUser {
   id: string
   display_name: string | null
-  first_name: string | null
-  last_name: string | null
-  email: string | null
+  contact_email: string | null
   avatar_url: string | null
   roles: string[]
-  status: string | null
-  last_sign_in_at: string | null
-  created_at: string
+  created_at: string | null
+  updated_at: string | null
 }
 
 export function useAdmins(options?: { search?: string }) {
@@ -1021,23 +1018,24 @@ export function useAdmins(options?: { search?: string }) {
     queryFn: async () => {
       let query = supabase
         .from('profiles')
-        .select('id, display_name, first_name, last_name, email, avatar_url, roles, status, last_sign_in_at, created_at', { count: 'exact' })
+        .select('id, display_name, contact_email, avatar_url, roles, created_at, updated_at', { count: 'exact' })
         .contains('roles', ['admin'])
         .order('created_at', { ascending: false })
 
       if (search) {
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_name.ilike.%${search}%,email.ilike.%${search}%`)
+        query = query.or(`display_name.ilike.%${search}%,contact_email.ilike.%${search}%`)
       }
 
       const { data, error, count } = await query
 
       if (error) throw error
 
+      // Use updated_at as proxy for "active today" since last_sign_in_at isn't in profiles
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
       const activeToday = (data || []).filter(admin =>
-        admin.last_sign_in_at && new Date(admin.last_sign_in_at) >= today
+        admin.updated_at && new Date(admin.updated_at) >= today
       ).length
 
       return {
@@ -1057,9 +1055,9 @@ export function useSearchUsersForPromotion(search: string) {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, display_name, first_name, last_name, email, avatar_url, roles')
+        .select('id, display_name, contact_email, avatar_url, roles')
         .not('roles', 'cs', '{"admin"}')
-        .or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,display_name.ilike.%${search}%,email.ilike.%${search}%`)
+        .or(`display_name.ilike.%${search}%,contact_email.ilike.%${search}%`)
         .limit(10)
 
       if (error) throw error

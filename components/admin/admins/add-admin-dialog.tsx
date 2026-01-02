@@ -12,9 +12,7 @@ import { useSearchUsersForPromotion, usePromoteToAdmin } from '@/hooks/admin'
 interface FoundUser {
   id: string
   display_name: string | null
-  first_name: string | null
-  last_name: string | null
-  email: string | null
+  contact_email: string | null
   avatar_url: string | null
   roles: string[]
 }
@@ -26,15 +24,10 @@ interface AddAdminDialogProps {
 
 function getDisplayName(user: FoundUser): string {
   if (user.display_name) return user.display_name
-  if (user.first_name && user.last_name) return `${user.first_name} ${user.last_name}`
-  if (user.first_name) return user.first_name
-  return user.email || 'Unknown User'
+  return user.contact_email || 'Unknown User'
 }
 
 function getInitials(user: FoundUser): string {
-  if (user.first_name && user.last_name) {
-    return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
-  }
   if (user.display_name) {
     const parts = user.display_name.split(' ')
     if (parts.length >= 2) {
@@ -42,8 +35,8 @@ function getInitials(user: FoundUser): string {
     }
     return user.display_name.slice(0, 2).toUpperCase()
   }
-  if (user.email) {
-    return user.email.slice(0, 2).toUpperCase()
+  if (user.contact_email) {
+    return user.contact_email.slice(0, 2).toUpperCase()
   }
   return '??'
 }
@@ -193,7 +186,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                               {getDisplayName(user as FoundUser)}
                             </p>
                             <p className="text-sm text-muted-foreground truncate">
-                              {user.email}
+                              {user.contact_email}
                             </p>
                           </div>
                           <div className="flex gap-1">
