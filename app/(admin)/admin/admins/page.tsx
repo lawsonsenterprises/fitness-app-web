@@ -69,6 +69,7 @@ export default function AdminsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string; isAdminOnly: boolean } | null>(null)
   const [resetPasswordAdmin, setResetPasswordAdmin] = useState<{ id: string; name: string; email: string } | null>(null)
+  const [isProcessingAction, setIsProcessingAction] = useState<'demote' | 'delete' | null>(null)
 
   const { data: adminsData, isLoading, error, refetch: refetchAdmins } = useAdmins({
     search: searchQuery || undefined,
@@ -101,6 +102,7 @@ export default function AdminsPage() {
   const handleDemoteAdmin = async () => {
     if (!adminToRemove) return
 
+    setIsProcessingAction('demote')
     try {
       await demoteAdmin.mutateAsync(adminToRemove.id)
       await Promise.all([refetchAdmins(), refetchPendingInvites()])
@@ -112,12 +114,15 @@ export default function AdminsPage() {
       toast.error('Failed to remove admin', {
         description: error instanceof Error ? error.message : 'Please try again.',
       })
+    } finally {
+      setIsProcessingAction(null)
     }
   }
 
   const handleDeleteAdmin = async () => {
     if (!adminToRemove) return
 
+    setIsProcessingAction('delete')
     try {
       await deleteAdmin.mutateAsync(adminToRemove.id)
       await Promise.all([refetchAdmins(), refetchPendingInvites()])
@@ -129,6 +134,8 @@ export default function AdminsPage() {
       toast.error('Failed to delete admin', {
         description: error instanceof Error ? error.message : 'Please try again.',
       })
+    } finally {
+      setIsProcessingAction(null)
     }
   }
 
@@ -442,11 +449,11 @@ export default function AdminsPage() {
             <div className="space-y-3">
               <button
                 onClick={handleDemoteAdmin}
-                disabled={demoteAdmin.isPending || deleteAdmin.isPending}
+                disabled={isProcessingAction !== null}
                 className="w-full flex items-center gap-3 rounded-lg border border-border p-4 text-left hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  {demoteAdmin.isPending ? (
+                  {isProcessingAction === 'demote' ? (
                     <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
                   ) : (
                     <UserMinus className="h-5 w-5 text-blue-500" />
@@ -462,11 +469,11 @@ export default function AdminsPage() {
 
               <button
                 onClick={handleDeleteAdmin}
-                disabled={deleteAdmin.isPending || demoteAdmin.isPending}
+                disabled={isProcessingAction !== null}
                 className="w-full flex items-center gap-3 rounded-lg border border-red-500/30 p-4 text-left hover:bg-red-500/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                  {deleteAdmin.isPending ? (
+                  {isProcessingAction === 'delete' ? (
                     <Loader2 className="h-5 w-5 text-red-500 animate-spin" />
                   ) : (
                     <Trash2 className="h-5 w-5 text-red-500" />
