@@ -442,11 +442,15 @@ export default function AdminsPage() {
             <div className="space-y-3">
               <button
                 onClick={handleDemoteAdmin}
-                disabled={demoteAdmin.isPending}
-                className="w-full flex items-center gap-3 rounded-lg border border-border p-4 text-left hover:bg-muted/50 transition-colors"
+                disabled={demoteAdmin.isPending || deleteAdmin.isPending}
+                className="w-full flex items-center gap-3 rounded-lg border border-border p-4 text-left hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                  <UserMinus className="h-5 w-5 text-blue-500" />
+                  {demoteAdmin.isPending ? (
+                    <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                  ) : (
+                    <UserMinus className="h-5 w-5 text-blue-500" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium">Keep as Athlete</p>
@@ -458,11 +462,15 @@ export default function AdminsPage() {
 
               <button
                 onClick={handleDeleteAdmin}
-                disabled={deleteAdmin.isPending}
-                className="w-full flex items-center gap-3 rounded-lg border border-red-500/30 p-4 text-left hover:bg-red-500/5 transition-colors"
+                disabled={deleteAdmin.isPending || demoteAdmin.isPending}
+                className="w-full flex items-center gap-3 rounded-lg border border-red-500/30 p-4 text-left hover:bg-red-500/5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                  <Trash2 className="h-5 w-5 text-red-500" />
+                  {deleteAdmin.isPending ? (
+                    <Loader2 className="h-5 w-5 text-red-500 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-5 w-5 text-red-500" />
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-red-600">Delete Account</p>
