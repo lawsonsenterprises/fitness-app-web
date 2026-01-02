@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Key, Shield, Smartphone, Clock, AlertTriangle, Loader2, Apple } from 'lucide-react'
+import { Key, Shield, Smartphone, Clock, AlertTriangle, Loader2, Apple, Check, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -13,7 +13,8 @@ import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { useAuthProvider, getProviderDisplayName } from '@/hooks/use-auth-provider'
 
-const passwordSchema = z
+// Schema for changing password (requires current password)
+const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z
@@ -30,28 +31,46 @@ const passwordSchema = z
     path: ['confirmPassword'],
   })
 
-type PasswordFormData = z.infer<typeof passwordSchema>
+// Schema for adding password (OAuth-only users, no current password needed)
+const addPasswordSchema = z
+  .object({
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+      .regex(/[a-z]/, 'Password must contain a lowercase letter')
+      .regex(/[0-9]/, 'Password must contain a number')
+      .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, 'Password must contain a special character'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
+
+type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
+type AddPasswordFormData = z.infer<typeof addPasswordSchema>
 
 export default function SecuritySettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [isRevokingSession, setIsRevokingSession] = useState<string | null>(null)
   const supabase = createClient()
-  const { isOAuth, provider, isLoading: isAuthLoading, isEmailPassword } = useAuthProvider()
+  const { isOAuthOnly, provider, isLoading: isAuthLoading, isEmailPassword, hasBothMethods, providers } = useAuthProvider()
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<PasswordFormData>({
-    resolver: zodResolver(passwordSchema),
+  // Form for changing password (email/password users)
+  const changePasswordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
   })
 
-  const onSubmit = handleSubmit(async (formData) => {
+  // Form for adding password (OAuth-only users)
+  const addPasswordForm = useForm<AddPasswordFormData>({
+    resolver: zodResolver(addPasswordSchema),
+  })
+
+  const onChangePassword = changePasswordForm.handleSubmit(async (formData) => {
     setIsSubmitting(true)
     try {
-      // Verify current password by attempting to sign in
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.email) {
         throw new Error('User not found')
@@ -77,10 +96,37 @@ export default function SecuritySettingsPage() {
       if (updateError) throw updateError
 
       toast.success('Password updated successfully')
-      reset()
+      changePasswordForm.reset()
     } catch (error) {
       console.error('Password update error:', error)
       toast.error('Failed to update password', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  })
+
+  const onAddPassword = addPasswordForm.handleSubmit(async (formData) => {
+    setIsSubmitting(true)
+    try {
+      // For OAuth users, we can directly set a password without verifying current
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: formData.newPassword,
+      })
+
+      if (updateError) throw updateError
+
+      toast.success('Password added successfully', {
+        description: 'You can now sign in with either Apple or email/password.',
+      })
+      addPasswordForm.reset()
+
+      // Reload the page to refresh auth state
+      window.location.reload()
+    } catch (error) {
+      console.error('Add password error:', error)
+      toast.error('Failed to add password', {
         description: error instanceof Error ? error.message : 'Please try again.',
       })
     } finally {
@@ -106,16 +152,75 @@ export default function SecuritySettingsPage() {
 
   return (
     <div className="space-y-8">
-      {/* Change password */}
+      {/* Sign-in Methods */}
+      {!isAuthLoading && (isOAuthOnly || hasBothMethods) && (
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10">
+              <Shield className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Sign-in Methods</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Ways you can access your account
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {providers.includes('apple') && (
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Apple className="h-5 w-5" />
+                  <span className="font-medium">Apple</span>
+                </div>
+                <span className="flex items-center gap-1 text-sm text-emerald-600">
+                  <Check className="h-4 w-4" />
+                  Connected
+                </span>
+              </div>
+            )}
+            {providers.includes('email') ? (
+              <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Key className="h-5 w-5" />
+                  <span className="font-medium">Email & Password</span>
+                </div>
+                <span className="flex items-center gap-1 text-sm text-emerald-600">
+                  <Check className="h-4 w-4" />
+                  Connected
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between rounded-lg border border-dashed border-border px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Key className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium text-muted-foreground">Email & Password</span>
+                </div>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Plus className="h-4 w-4" />
+                  Not set up
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Add/Change Password */}
       <div className="rounded-xl border border-border bg-card p-6">
         <div className="mb-6 flex items-start gap-4">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
             <Key className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Change Password</h2>
+            <h2 className="text-lg font-semibold">
+              {isOAuthOnly ? 'Add Password' : 'Change Password'}
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Update your password to keep your account secure
+              {isOAuthOnly
+                ? 'Add a password to sign in with email as an alternative to Apple'
+                : 'Update your password to keep your account secure'}
             </p>
           </div>
         </div>
@@ -124,40 +229,97 @@ export default function SecuritySettingsPage() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : isOAuth ? (
-          /* OAuth User - Cannot Change Password */
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
-                <Apple className="h-6 w-6 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-amber-600">Password Change Unavailable</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  You sign in with <strong>{getProviderDisplayName(provider)}</strong>.
-                  Password management is only available for email/password accounts.
-                </p>
-                <p className="mt-3 text-sm text-muted-foreground">
-                  To change your {getProviderDisplayName(provider)} password, visit your {getProviderDisplayName(provider)} account settings.
-                </p>
-              </div>
+        ) : isOAuthOnly ? (
+          /* OAuth-Only User - Add Password Form */
+          <>
+            <div className="mb-6 rounded-xl border border-blue-500/20 bg-blue-500/5 p-4">
+              <p className="text-sm text-muted-foreground">
+                You currently sign in with <strong>{getProviderDisplayName(provider)}</strong>.
+                Adding a password gives you a backup way to access your account if you ever
+                can&apos;t use {getProviderDisplayName(provider)}.
+              </p>
             </div>
-          </div>
+
+            <form onSubmit={onAddPassword} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Password</label>
+                <Input
+                  {...addPasswordForm.register('newPassword')}
+                  type="password"
+                  placeholder="Create a strong password"
+                  className={cn(addPasswordForm.formState.errors.newPassword && 'border-red-500')}
+                />
+                {addPasswordForm.formState.errors.newPassword && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {addPasswordForm.formState.errors.newPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Confirm Password
+                </label>
+                <Input
+                  {...addPasswordForm.register('confirmPassword')}
+                  type="password"
+                  placeholder="Confirm your password"
+                  className={cn(addPasswordForm.formState.errors.confirmPassword && 'border-red-500')}
+                />
+                {addPasswordForm.formState.errors.confirmPassword && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {addPasswordForm.formState.errors.confirmPassword.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-lg bg-muted/50 p-4">
+                <p className="text-xs text-muted-foreground">
+                  Password requirements:
+                </p>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  <li>• At least 8 characters</li>
+                  <li>• At least one uppercase letter</li>
+                  <li>• At least one lowercase letter</li>
+                  <li>• At least one number</li>
+                  <li>• At least one special character (!@#$%^&*)</li>
+                </ul>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="gap-2 bg-foreground text-background hover:bg-foreground/90"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Add Password
+                  </>
+                )}
+              </Button>
+            </form>
+          </>
         ) : (
-          /* Email/Password User - Show Form */
-          <form onSubmit={onSubmit} className="space-y-4">
+          /* Email/Password User (or Both) - Change Password Form */
+          <form onSubmit={onChangePassword} className="space-y-4">
             <div>
               <label className="mb-2 block text-sm font-medium">
                 Current Password
               </label>
               <Input
-                {...register('currentPassword')}
+                {...changePasswordForm.register('currentPassword')}
                 type="password"
-                className={cn(errors.currentPassword && 'border-red-500')}
+                className={cn(changePasswordForm.formState.errors.currentPassword && 'border-red-500')}
               />
-              {errors.currentPassword && (
+              {changePasswordForm.formState.errors.currentPassword && (
                 <p className="mt-1 text-xs text-red-500">
-                  {errors.currentPassword.message}
+                  {changePasswordForm.formState.errors.currentPassword.message}
                 </p>
               )}
             </div>
@@ -165,13 +327,13 @@ export default function SecuritySettingsPage() {
             <div>
               <label className="mb-2 block text-sm font-medium">New Password</label>
               <Input
-                {...register('newPassword')}
+                {...changePasswordForm.register('newPassword')}
                 type="password"
-                className={cn(errors.newPassword && 'border-red-500')}
+                className={cn(changePasswordForm.formState.errors.newPassword && 'border-red-500')}
               />
-              {errors.newPassword && (
+              {changePasswordForm.formState.errors.newPassword && (
                 <p className="mt-1 text-xs text-red-500">
-                  {errors.newPassword.message}
+                  {changePasswordForm.formState.errors.newPassword.message}
                 </p>
               )}
             </div>
@@ -181,13 +343,13 @@ export default function SecuritySettingsPage() {
                 Confirm New Password
               </label>
               <Input
-                {...register('confirmPassword')}
+                {...changePasswordForm.register('confirmPassword')}
                 type="password"
-                className={cn(errors.confirmPassword && 'border-red-500')}
+                className={cn(changePasswordForm.formState.errors.confirmPassword && 'border-red-500')}
               />
-              {errors.confirmPassword && (
+              {changePasswordForm.formState.errors.confirmPassword && (
                 <p className="mt-1 text-xs text-red-500">
-                  {errors.confirmPassword.message}
+                  {changePasswordForm.formState.errors.confirmPassword.message}
                 </p>
               )}
             </div>

@@ -5,29 +5,35 @@ import { createClient } from '@/lib/supabase/client'
 
 interface AuthProviderState {
   isOAuth: boolean
+  isOAuthOnly: boolean
   provider: string | null
   isLoading: boolean
   isEmailPassword: boolean
+  hasBothMethods: boolean
+  providers: string[]
 }
 
 /**
- * Hook to detect whether the current user signed in with OAuth or email/password
+ * Hook to detect the current user's authentication methods
  *
  * Usage:
  * ```tsx
- * const { isOAuth, provider, isEmailPassword, isLoading } = useAuthProvider()
+ * const { isOAuthOnly, isEmailPassword, hasBothMethods, providers, isLoading } = useAuthProvider()
  *
  * if (isLoading) return <Spinner />
- * if (isOAuth) return <p>You sign in with {provider}</p>
- * if (isEmailPassword) return <PasswordChangeForm />
+ * if (isOAuthOnly) return <AddPasswordForm />
+ * if (isEmailPassword || hasBothMethods) return <ChangePasswordForm />
  * ```
  */
 export function useAuthProvider(): AuthProviderState {
   const [state, setState] = useState<AuthProviderState>({
     isOAuth: false,
+    isOAuthOnly: false,
     provider: null,
     isLoading: true,
     isEmailPassword: false,
+    hasBothMethods: false,
+    providers: [],
   })
 
   useEffect(() => {
@@ -39,39 +45,44 @@ export function useAuthProvider(): AuthProviderState {
         if (!user) {
           setState({
             isOAuth: false,
+            isOAuthOnly: false,
             provider: null,
             isLoading: false,
             isEmailPassword: false,
+            hasBothMethods: false,
+            providers: [],
           })
           return
         }
 
-        // Check identities array for OAuth providers
+        // Check identities array for all providers
         const identities = user.identities || []
-        const oauthIdentity = identities.find(id => id.provider !== 'email')
+        const oauthIdentities = identities.filter(id => id.provider !== 'email')
+        const emailIdentity = identities.find(id => id.provider === 'email')
 
-        if (oauthIdentity) {
-          setState({
-            isOAuth: true,
-            provider: oauthIdentity.provider,
-            isLoading: false,
-            isEmailPassword: false,
-          })
-        } else {
-          setState({
-            isOAuth: false,
-            provider: null,
-            isLoading: false,
-            isEmailPassword: true,
-          })
-        }
+        const hasOAuth = oauthIdentities.length > 0
+        const hasEmail = !!emailIdentity
+        const providers = identities.map(id => id.provider)
+
+        setState({
+          isOAuth: hasOAuth,
+          isOAuthOnly: hasOAuth && !hasEmail,
+          provider: oauthIdentities[0]?.provider || null,
+          isLoading: false,
+          isEmailPassword: hasEmail,
+          hasBothMethods: hasOAuth && hasEmail,
+          providers,
+        })
       } catch (error) {
         console.error('Error checking auth provider:', error)
         setState({
           isOAuth: false,
+          isOAuthOnly: false,
           provider: null,
           isLoading: false,
           isEmailPassword: false,
+          hasBothMethods: false,
+          providers: [],
         })
       }
     }
