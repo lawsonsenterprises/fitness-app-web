@@ -57,6 +57,8 @@ export function useAuthProvider(): AuthProviderState {
 
         // Check identities array for all providers
         const identities = user.identities || []
+        console.log('User identities:', identities.map(id => ({ provider: id.provider, id: id.id })))
+
         const oauthIdentities = identities.filter(id => id.provider !== 'email')
         const emailIdentity = identities.find(id => id.provider === 'email')
 
