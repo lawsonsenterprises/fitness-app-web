@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Key, Shield, Smartphone, Clock, AlertTriangle, Loader2 } from 'lucide-react'
+import { Key, Shield, Smartphone, Clock, AlertTriangle, Loader2, Apple } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useAuthProvider, getProviderDisplayName } from '@/hooks/use-auth-provider'
 
 const passwordSchema = z
   .object({
@@ -20,7 +21,8 @@ const passwordSchema = z
       .min(8, 'Password must be at least 8 characters')
       .regex(/[A-Z]/, 'Password must contain an uppercase letter')
       .regex(/[a-z]/, 'Password must contain a lowercase letter')
-      .regex(/[0-9]/, 'Password must contain a number'),
+      .regex(/[0-9]/, 'Password must contain a number')
+      .regex(/[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/, 'Password must contain a special character'),
     confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -35,6 +37,7 @@ export default function SecuritySettingsPage() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [isRevokingSession, setIsRevokingSession] = useState<string | null>(null)
   const supabase = createClient()
+  const { isOAuth, provider, isLoading: isAuthLoading, isEmailPassword } = useAuthProvider()
 
   const {
     register,
@@ -117,80 +120,107 @@ export default function SecuritySettingsPage() {
           </div>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Current Password
-            </label>
-            <Input
-              {...register('currentPassword')}
-              type="password"
-              className={cn(errors.currentPassword && 'border-red-500')}
-            />
-            {errors.currentPassword && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.currentPassword.message}
+        {isAuthLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : isOAuth ? (
+          /* OAuth User - Cannot Change Password */
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-500/10">
+                <Apple className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-amber-600">Password Change Unavailable</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You sign in with <strong>{getProviderDisplayName(provider)}</strong>.
+                  Password management is only available for email/password accounts.
+                </p>
+                <p className="mt-3 text-sm text-muted-foreground">
+                  To change your {getProviderDisplayName(provider)} password, visit your {getProviderDisplayName(provider)} account settings.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Email/Password User - Show Form */
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Current Password
+              </label>
+              <Input
+                {...register('currentPassword')}
+                type="password"
+                className={cn(errors.currentPassword && 'border-red-500')}
+              />
+              {errors.currentPassword && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.currentPassword.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">New Password</label>
+              <Input
+                {...register('newPassword')}
+                type="password"
+                className={cn(errors.newPassword && 'border-red-500')}
+              />
+              {errors.newPassword && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.newPassword.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Confirm New Password
+              </label>
+              <Input
+                {...register('confirmPassword')}
+                type="password"
+                className={cn(errors.confirmPassword && 'border-red-500')}
+              />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-500">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            <div className="rounded-lg bg-muted/50 p-4">
+              <p className="text-xs text-muted-foreground">
+                Password requirements:
               </p>
-            )}
-          </div>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <li>• At least 8 characters</li>
+                <li>• At least one uppercase letter</li>
+                <li>• At least one lowercase letter</li>
+                <li>• At least one number</li>
+                <li>• At least one special character (!@#$%^&*)</li>
+              </ul>
+            </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">New Password</label>
-            <Input
-              {...register('newPassword')}
-              type="password"
-              className={cn(errors.newPassword && 'border-red-500')}
-            />
-            {errors.newPassword && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.newPassword.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Confirm New Password
-            </label>
-            <Input
-              {...register('confirmPassword')}
-              type="password"
-              className={cn(errors.confirmPassword && 'border-red-500')}
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-xs text-red-500">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-lg bg-muted/50 p-4">
-            <p className="text-xs text-muted-foreground">
-              Password requirements:
-            </p>
-            <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
-              <li>• At least 8 characters</li>
-              <li>• At least one uppercase letter</li>
-              <li>• At least one lowercase letter</li>
-              <li>• At least one number</li>
-            </ul>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="gap-2 bg-foreground text-background hover:bg-foreground/90"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              'Update Password'
-            )}
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="gap-2 bg-foreground text-background hover:bg-foreground/90"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Password'
+              )}
+            </Button>
+          </form>
+        )}
       </div>
 
       {/* Two-factor authentication */}

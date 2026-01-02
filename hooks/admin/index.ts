@@ -1178,3 +1178,45 @@ export function usePendingInvites() {
     },
   })
 }
+
+// ============================================================================
+// Password Management Hooks
+// ============================================================================
+
+export function useResetUserPassword() {
+  return useMutation({
+    mutationFn: async ({
+      userId,
+      password,
+      forceChange = true,
+    }: {
+      userId: string
+      password?: string
+      forceChange?: boolean
+    }) => {
+      const { resetUserPassword } = await import('@/app/actions/reset-user-password')
+      const result = await resetUserPassword({ userId, password, forceChange })
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to reset password')
+      }
+
+      return result
+    },
+  })
+}
+
+export function useCheckUserAuthMethod() {
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { checkUserAuthMethod } = await import('@/app/actions/reset-user-password')
+      const result = await checkUserAuthMethod(userId)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to check auth method')
+      }
+
+      return result
+    },
+  })
+}

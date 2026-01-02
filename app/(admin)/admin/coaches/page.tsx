@@ -13,6 +13,7 @@ import {
   Ban,
   Loader2,
   AlertCircle,
+  Key,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { useAllCoaches, usePlatformStats } from '@/hooks/admin'
+import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
 
 function getInitials(firstName?: string | null, lastName?: string | null, email?: string): string {
   if (firstName && lastName) {
@@ -61,9 +63,16 @@ function getRelativeTime(date: string | null): string {
   return then.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+interface CoachForReset {
+  id: string
+  name: string
+  email: string
+}
+
 export default function CoachesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'trial' | 'inactive'>('all')
+  const [coachToResetPassword, setCoachToResetPassword] = useState<CoachForReset | null>(null)
 
   const { data: coachesData, isLoading, error } = useAllCoaches({
     search: searchQuery || undefined,
@@ -261,6 +270,17 @@ export default function CoachesPage() {
                             <button className="p-2 rounded-lg hover:bg-muted transition-colors">
                               <Mail className="h-4 w-4 text-muted-foreground" />
                             </button>
+                            <button
+                              onClick={() => setCoachToResetPassword({
+                                id: coach.id,
+                                name: getDisplayName(coach.first_name, coach.last_name, coach.email),
+                                email: coach.email || '',
+                              })}
+                              className="p-2 rounded-lg hover:bg-amber-500/10 transition-colors"
+                              title="Reset Password"
+                            >
+                              <Key className="h-4 w-4 text-amber-600" />
+                            </button>
                             <button className="p-2 rounded-lg hover:bg-red-500/10 transition-colors">
                               <Ban className="h-4 w-4 text-red-500" />
                             </button>
@@ -280,6 +300,15 @@ export default function CoachesPage() {
           <div className="mt-6 text-center text-sm text-muted-foreground">
             Showing {filteredCoaches.length} of {coachesData?.total || coaches.length} coaches
           </div>
+        )}
+
+        {/* Reset Password Modal */}
+        {coachToResetPassword && (
+          <ResetPasswordModal
+            isOpen={!!coachToResetPassword}
+            onClose={() => setCoachToResetPassword(null)}
+            user={coachToResetPassword}
+          />
         )}
       </div>
     </>

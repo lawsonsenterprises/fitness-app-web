@@ -25,6 +25,9 @@ const authRoutes = ['/login', '/register', '/reset-password']
 // Routes accessible when authenticated (but not redirected away from)
 const selectRoleRoute = '/select-role'
 
+// Route for forced password change
+const forceChangePasswordRoute = '/change-password'
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -85,9 +88,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Check for forced password change BEFORE any other authenticated redirects
+  // Allow: change-password page, logout API, static assets
+  if (user && user.user_metadata?.force_password_change === true) {
+    const isChangePasswordPage = pathname === forceChangePasswordRoute
+    const isLogoutRoute = pathname === '/api/auth/signout'
+
+    if (!isChangePasswordPage && !isLogoutRoute && !pathname.startsWith('/_next')) {
+      return NextResponse.redirect(new URL(forceChangePasswordRoute, request.url))
+    }
+  }
+
   // Redirect authenticated users from auth routes to dashboard
-  // But allow access to select-role page
-  if (isAuthRoute && user && pathname !== selectRoleRoute) {
+  // But allow access to select-role page and change-password page
+  if (isAuthRoute && user && pathname !== selectRoleRoute && pathname !== forceChangePasswordRoute) {
     return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
   }
 

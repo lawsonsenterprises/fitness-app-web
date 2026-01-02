@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Activity,
   Loader2,
+  Key,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -32,6 +33,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useCoachDetail } from '@/hooks/admin'
+import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
 
 export default function CoachDetailPage({
   params,
@@ -40,6 +42,7 @@ export default function CoachDetailPage({
 }) {
   const resolvedParams = use(params)
   const [activeTab, setActiveTab] = useState<'clients' | 'activity' | 'revenue'>('clients')
+  const [showResetPassword, setShowResetPassword] = useState(false)
 
   // Fetch coach data
   const { data: coach, isLoading, error } = useCoachDetail(resolvedParams.coachId)
@@ -152,6 +155,14 @@ export default function CoachDetailPage({
             <Button variant="outline" size="sm">
               <Eye className="h-4 w-4 mr-2" />
               Impersonate
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetPassword(true)}
+            >
+              <Key className="h-4 w-4 mr-2" />
+              Reset Password
             </Button>
             <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
               <Ban className="h-4 w-4 mr-2" />
@@ -426,6 +437,17 @@ export default function CoachDetailPage({
           )}
         </motion.div>
       )}
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={showResetPassword}
+        onClose={() => setShowResetPassword(false)}
+        user={{
+          id: resolvedParams.coachId,
+          name: coachName,
+          email: coach.email || coach.contact_email || '',
+        }}
+      />
     </div>
   )
 }

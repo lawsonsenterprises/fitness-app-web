@@ -9,6 +9,7 @@ import {
   Shield,
   ShieldOff,
   Mail,
+  Key,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +26,7 @@ interface CoachRowActionsProps {
   onActivate: () => void
   onImpersonate: () => void
   onEmail: () => void
+  onResetPassword: () => void
 }
 
 export function CoachRowActions({
@@ -34,6 +36,7 @@ export function CoachRowActions({
   onActivate,
   onImpersonate,
   onEmail,
+  onResetPassword,
 }: CoachRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -78,6 +81,12 @@ export function CoachRowActions({
       icon: Mail,
       onClick: onEmail,
       color: 'text-blue-600',
+    },
+    {
+      label: 'Reset Password',
+      icon: Key,
+      onClick: onResetPassword,
+      color: 'text-amber-600',
     },
     coach.status === 'suspended'
       ? {

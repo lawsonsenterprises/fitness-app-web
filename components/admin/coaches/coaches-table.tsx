@@ -32,6 +32,7 @@ interface CoachesTableProps {
   onActivateCoach: (id: string) => void
   onImpersonate: (id: string) => void
   onEmailCoach: (id: string) => void
+  onResetPasswordCoach: (coach: Coach) => void
 }
 
 type SortField = 'name' | 'clientCount' | 'joinedAt' | 'lastActiveAt'
@@ -50,6 +51,7 @@ export function CoachesTable({
   onActivateCoach,
   onImpersonate,
   onEmailCoach,
+  onResetPasswordCoach,
 }: CoachesTableProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<Coach['status'] | 'all'>('all')
@@ -289,6 +291,7 @@ export function CoachesTable({
                     onActivate={() => onActivateCoach(coach.id)}
                     onImpersonate={() => onImpersonate(coach.id)}
                     onEmail={() => onEmailCoach(coach.id)}
+                    onResetPassword={() => onResetPasswordCoach(coach)}
                   />
                 </td>
               </motion.tr>

@@ -16,6 +16,7 @@ import {
   TrendingDown,
   Loader2,
   AlertCircle,
+  Key,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import {
@@ -32,6 +33,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { useAthleteDetail } from '@/hooks/admin'
+import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
 
 function getInitials(firstName?: string | null, lastName?: string | null, email?: string): string {
   if (firstName && lastName) {
@@ -76,6 +78,7 @@ export default function AthleteDetailPage({
 }) {
   const resolvedParams = use(params)
   const [activeTab, setActiveTab] = useState<'overview' | 'activity'>('overview')
+  const [showResetPassword, setShowResetPassword] = useState(false)
 
   const { data: athlete, isLoading, error } = useAthleteDetail(resolvedParams.athleteId)
 
@@ -195,6 +198,14 @@ export default function AthleteDetailPage({
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
                 Impersonate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowResetPassword(true)}
+              >
+                <Key className="h-4 w-4 mr-2" />
+                Reset Password
               </Button>
             </div>
           </div>
@@ -451,6 +462,17 @@ export default function AthleteDetailPage({
             )}
           </motion.div>
         )}
+
+        {/* Reset Password Modal */}
+        <ResetPasswordModal
+          isOpen={showResetPassword}
+          onClose={() => setShowResetPassword(false)}
+          user={{
+            id: resolvedParams.athleteId,
+            name: displayName,
+            email: athlete.email || '',
+          }}
+        />
       </div>
     </>
   )

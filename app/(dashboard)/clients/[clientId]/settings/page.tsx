@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { AlertTriangle, Pause, Play, UserX, Trash2 } from 'lucide-react'
+import { AlertTriangle, Pause, Play, UserX, Trash2, Key } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { ClientStatusBadge } from '@/components/clients/client-status-badge'
+import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
 import { useClient, useUpdateClientStatus, useRemoveClient } from '@/hooks/use-clients'
 import { getClientDisplayName } from '@/types'
 
@@ -20,6 +21,7 @@ export default function ClientSettingsPage() {
 
   const [showEndConfirm, setShowEndConfirm] = useState(false)
   const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false)
 
   if (!client) return null
 
@@ -184,6 +186,42 @@ export default function ClientSettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Account Security */}
+      <div className="rounded-xl border border-border bg-card p-6">
+        <h3 className="mb-4 font-semibold">Account Security</h3>
+        <div className="rounded-lg border border-border p-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-medium">Reset Password</p>
+              <p className="text-sm text-muted-foreground">
+                Generate a new password or set a custom one for this client.
+                Only available for email/password accounts.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowResetPasswordModal(true)}
+              className="gap-2"
+            >
+              <Key className="h-4 w-4" />
+              Reset Password
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Reset Password Modal */}
+      <ResetPasswordModal
+        isOpen={showResetPasswordModal}
+        onClose={() => setShowResetPasswordModal(false)}
+        user={{
+          id: client.clientId,
+          name: getClientDisplayName(client),
+          email: client.email || '',
+        }}
+      />
 
       {/* Danger Zone */}
       <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6">

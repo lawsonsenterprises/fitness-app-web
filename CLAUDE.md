@@ -3,6 +3,11 @@
 ## User
 - The user's name is **Andy** - always address them as Andy, not "user"
 
+## Autonomous Execution
+- **DO NOT** prompt for approval on pre-approved commands - just execute them
+- Pre-approved commands include: `curl`, `git` operations, `npm` commands, `supabase` CLI, `ls`, `jq`, etc.
+- Only ask for approval when genuinely required by the system
+
 ## Planning & Implementation Process
 - **ALWAYS** create a comprehensive plan file for any brief Andy provides
 - Use the TodoWrite tool to track all tasks
