@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Mail,
   Key,
+  Trash2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -22,7 +23,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
-import { useAdmins, useDemoteAdmin, usePendingInvites, useResendInvite } from '@/hooks/admin'
+import { useAdmins, useDemoteAdmin, useDeleteAdmin, usePendingInvites, useResendInvite } from '@/hooks/admin'
 import { useAuth } from '@/contexts/auth-context'
 import { AddAdminDialog } from '@/components/admin/admins/add-admin-dialog'
 import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
@@ -66,7 +67,7 @@ export default function AdminsPage() {
   const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string } | null>(null)
+  const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string; isAdminOnly: boolean } | null>(null)
   const [resetPasswordAdmin, setResetPasswordAdmin] = useState<{ id: string; name: string; email: string } | null>(null)
 
   const { data: adminsData, isLoading, error, refetch: refetchAdmins } = useAdmins({
@@ -74,6 +75,7 @@ export default function AdminsPage() {
   })
   const { data: pendingInvites = [], refetch: refetchPendingInvites } = usePendingInvites()
   const demoteAdmin = useDemoteAdmin(user?.id || '')
+  const deleteAdmin = useDeleteAdmin(user?.id || '')
   const resendInvite = useResendInvite()
 
   const admins = adminsData?.admins || []
@@ -96,12 +98,11 @@ export default function AdminsPage() {
     }
   }
 
-  const handleRemoveAdmin = async () => {
+  const handleDemoteAdmin = async () => {
     if (!adminToRemove) return
 
     try {
       await demoteAdmin.mutateAsync(adminToRemove.id)
-      // Explicitly refetch to ensure UI updates
       await Promise.all([refetchAdmins(), refetchPendingInvites()])
       toast.success('Admin access removed', {
         description: `${adminToRemove.name} is no longer an admin.`,
@@ -109,6 +110,23 @@ export default function AdminsPage() {
       setAdminToRemove(null)
     } catch (error) {
       toast.error('Failed to remove admin', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      })
+    }
+  }
+
+  const handleDeleteAdmin = async () => {
+    if (!adminToRemove) return
+
+    try {
+      await deleteAdmin.mutateAsync(adminToRemove.id)
+      await Promise.all([refetchAdmins(), refetchPendingInvites()])
+      toast.success('Admin deleted', {
+        description: `${adminToRemove.name} has been permanently removed.`,
+      })
+      setAdminToRemove(null)
+    } catch (error) {
+      toast.error('Failed to delete admin', {
         description: error instanceof Error ? error.message : 'Please try again.',
       })
     }
@@ -345,10 +363,14 @@ export default function AdminsPage() {
                                   <Key className="h-4 w-4 text-muted-foreground group-hover:text-amber-500" />
                                 </button>
                                 <button
-                                  onClick={() => setAdminToRemove({
-                                    id: admin.id,
-                                    name: getDisplayName(admin.display_name, admin.contact_email),
-                                  })}
+                                  onClick={() => {
+                                    const otherRoles = admin.roles.filter((r: string) => r !== 'admin')
+                                    setAdminToRemove({
+                                      id: admin.id,
+                                      name: getDisplayName(admin.display_name, admin.contact_email),
+                                      isAdminOnly: otherRoles.length === 0,
+                                    })
+                                  }}
                                   className="p-2 rounded-lg hover:bg-red-500/10 transition-colors group"
                                   title="Remove admin access"
                                 >
@@ -382,16 +404,84 @@ export default function AdminsPage() {
       />
 
       {/* Remove Admin Confirmation */}
-      <ConfirmationDialog
-        isOpen={!!adminToRemove}
-        onClose={() => setAdminToRemove(null)}
-        onConfirm={handleRemoveAdmin}
-        title="Remove Admin Access"
-        description={`Are you sure you want to remove admin access from ${adminToRemove?.name}? They will no longer be able to access the admin dashboard.`}
-        confirmLabel="Remove Admin"
-        variant="destructive"
-        icon={<UserMinus className="h-6 w-6 text-red-500" />}
-      />
+      {adminToRemove && !adminToRemove.isAdminOnly && (
+        <ConfirmationDialog
+          isOpen={true}
+          onClose={() => setAdminToRemove(null)}
+          onConfirm={handleDemoteAdmin}
+          title="Remove Admin Access"
+          description={`Are you sure you want to remove admin access from ${adminToRemove.name}? They will no longer be able to access the admin dashboard but will keep their other roles.`}
+          confirmLabel="Remove Admin"
+          variant="destructive"
+          icon={<UserMinus className="h-6 w-6 text-red-500" />}
+        />
+      )}
+
+      {/* Admin-Only User Choice Dialog */}
+      {adminToRemove && adminToRemove.isAdminOnly && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={() => setAdminToRemove(null)}
+          />
+          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-2xl">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+                <AlertCircle className="h-6 w-6 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Admin-Only User</h3>
+                <p className="text-sm text-muted-foreground">{adminToRemove.name}</p>
+              </div>
+            </div>
+
+            <p className="mb-6 text-sm text-muted-foreground">
+              This user only has the admin role. What would you like to do?
+            </p>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleDemoteAdmin}
+                disabled={demoteAdmin.isPending}
+                className="w-full flex items-center gap-3 rounded-lg border border-border p-4 text-left hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                  <UserMinus className="h-5 w-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="font-medium">Keep as Athlete</p>
+                  <p className="text-xs text-muted-foreground">
+                    Remove admin access but keep them in the system as an athlete
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleDeleteAdmin}
+                disabled={deleteAdmin.isPending}
+                className="w-full flex items-center gap-3 rounded-lg border border-red-500/30 p-4 text-left hover:bg-red-500/5 transition-colors"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
+                  <Trash2 className="h-5 w-5 text-red-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-red-600">Delete Account</p>
+                  <p className="text-xs text-muted-foreground">
+                    Permanently remove them from the system
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setAdminToRemove(null)}
+              className="mt-4 w-full rounded-lg border border-border py-2 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Reset Password Modal */}
       {resetPasswordAdmin && (

@@ -1117,6 +1117,34 @@ export function useDemoteAdmin(currentUserId: string) {
   })
 }
 
+export function useDeleteAdmin(currentUserId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      // Prevent self-deletion (also checked server-side)
+      if (userId === currentUserId) {
+        throw new Error('You cannot delete your own account')
+      }
+
+      // Use server action to bypass RLS
+      const { deleteAdmin } = await import('@/app/actions/delete-admin')
+      const result = await deleteAdmin(userId)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete admin')
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] })
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+    },
+  })
+}
+
 export function useInviteAdmin() {
   const queryClient = useQueryClient()
 
