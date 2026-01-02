@@ -66,10 +66,10 @@ export default function AdminsPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string } | null>(null)
 
-  const { data: adminsData, isLoading, error } = useAdmins({
+  const { data: adminsData, isLoading, error, refetch: refetchAdmins } = useAdmins({
     search: searchQuery || undefined,
   })
-  const { data: pendingInvites = [] } = usePendingInvites()
+  const { data: pendingInvites = [], refetch: refetchPendingInvites } = usePendingInvites()
   const demoteAdmin = useDemoteAdmin(user?.id || '')
   const resendInvite = useResendInvite()
 
@@ -81,6 +81,8 @@ export default function AdminsPage() {
   const handleResendInvite = async (userId: string, email: string) => {
     try {
       await resendInvite.mutateAsync(userId)
+      // Explicitly refetch to ensure UI updates (user ID changes after resend)
+      await Promise.all([refetchAdmins(), refetchPendingInvites()])
       toast.success('Invite resent', {
         description: `A new invitation email has been sent to ${email}.`,
       })
@@ -96,6 +98,8 @@ export default function AdminsPage() {
 
     try {
       await demoteAdmin.mutateAsync(adminToRemove.id)
+      // Explicitly refetch to ensure UI updates
+      await Promise.all([refetchAdmins(), refetchPendingInvites()])
       toast.success('Admin access removed', {
         description: `${adminToRemove.name} is no longer an admin.`,
       })

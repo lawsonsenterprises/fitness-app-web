@@ -1108,34 +1108,20 @@ export function useDemoteAdmin(currentUserId: string) {
 
   return useMutation({
     mutationFn: async (userId: string) => {
-      // Prevent self-demotion
+      // Prevent self-demotion (also checked server-side)
       if (userId === currentUserId) {
         throw new Error('You cannot remove your own admin access')
       }
 
-      // First get current roles
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('roles')
-        .eq('id', userId)
-        .single()
+      // Use server action to bypass RLS
+      const { demoteAdmin } = await import('@/app/actions/demote-admin')
+      const result = await demoteAdmin(userId)
 
-      if (fetchError) throw fetchError
-
-      const currentRoles = profile?.roles || []
-      const newRoles = currentRoles.filter((role: string) => role !== 'admin')
-
-      if (newRoles.length === 0) {
-        // Ensure user has at least athlete role
-        newRoles.push('athlete')
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to remove admin access')
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ roles: newRoles })
-        .eq('id', userId)
-
-      if (error) throw error
+      return result
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admins'] })
