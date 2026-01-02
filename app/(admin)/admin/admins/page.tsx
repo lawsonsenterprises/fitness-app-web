@@ -12,6 +12,7 @@ import {
   UserPlus,
   RefreshCw,
   Mail,
+  Key,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
@@ -24,6 +25,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { useAdmins, useDemoteAdmin, usePendingInvites, useResendInvite } from '@/hooks/admin'
 import { useAuth } from '@/contexts/auth-context'
 import { AddAdminDialog } from '@/components/admin/admins/add-admin-dialog'
+import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
 
 function getInitials(displayName?: string | null, email?: string | null): string {
   if (displayName) {
@@ -65,6 +67,7 @@ export default function AdminsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [adminToRemove, setAdminToRemove] = useState<{ id: string; name: string } | null>(null)
+  const [resetPasswordAdmin, setResetPasswordAdmin] = useState<{ id: string; name: string; email: string } | null>(null)
 
   const { data: adminsData, isLoading, error, refetch: refetchAdmins } = useAdmins({
     search: searchQuery || undefined,
@@ -331,6 +334,17 @@ export default function AdminsPage() {
                                   </button>
                                 )}
                                 <button
+                                  onClick={() => setResetPasswordAdmin({
+                                    id: admin.id,
+                                    name: getDisplayName(admin.display_name, admin.contact_email),
+                                    email: admin.contact_email || '',
+                                  })}
+                                  className="p-2 rounded-lg hover:bg-amber-500/10 transition-colors group"
+                                  title="Reset password"
+                                >
+                                  <Key className="h-4 w-4 text-muted-foreground group-hover:text-amber-500" />
+                                </button>
+                                <button
                                   onClick={() => setAdminToRemove({
                                     id: admin.id,
                                     name: getDisplayName(admin.display_name, admin.contact_email),
@@ -378,6 +392,19 @@ export default function AdminsPage() {
         variant="destructive"
         icon={<UserMinus className="h-6 w-6 text-red-500" />}
       />
+
+      {/* Reset Password Modal */}
+      {resetPasswordAdmin && (
+        <ResetPasswordModal
+          isOpen={!!resetPasswordAdmin}
+          onClose={() => setResetPasswordAdmin(null)}
+          user={{
+            id: resetPasswordAdmin.id,
+            name: resetPasswordAdmin.name,
+            email: resetPasswordAdmin.email,
+          }}
+        />
+      )}
     </>
   )
 }
