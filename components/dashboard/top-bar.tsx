@@ -80,6 +80,13 @@ export function TopBar({ title }: TopBarProps) {
 
   const navigation = getNavigation()
 
+  // Determine search placeholder based on current path
+  const getSearchPlaceholder = () => {
+    if (pathname.startsWith('/athlete')) return 'Search workouts, meals...'
+    if (pathname.startsWith('/admin')) return 'Search coaches, athletes...'
+    return 'Search clients, programmes...'
+  }
+
   // Get user initials for avatar
   const initials = user?.user_metadata?.first_name?.[0]?.toUpperCase() ||
     user?.email?.[0]?.toUpperCase() || 'U'
@@ -129,7 +136,7 @@ export function TopBar({ title }: TopBarProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search clients, programmes..."
+            placeholder={getSearchPlaceholder()}
             className={cn(
               'h-10 rounded-lg border-border bg-muted/50 pl-10 pr-4 text-sm transition-all',
               'placeholder:text-muted-foreground/60',
