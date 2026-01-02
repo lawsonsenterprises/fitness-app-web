@@ -44,7 +44,7 @@ function getInitials(user: FoundUser): string {
 }
 
 export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('existing')
+  const [activeTab, setActiveTab] = useState<TabType>('invite')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedUser, setSelectedUser] = useState<FoundUser | null>(null)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -100,7 +100,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
 
   const handleClose = () => {
     onClose()
-    setActiveTab('existing')
+    setActiveTab('invite')
     setSearchQuery('')
     setSelectedUser(null)
     setShowSuccess(false)
@@ -150,18 +150,6 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
           {!showSuccess && (
             <div className="flex border-b border-border">
               <button
-                onClick={() => setActiveTab('existing')}
-                className={cn(
-                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
-                  activeTab === 'existing'
-                    ? 'border-b-2 border-red-500 text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                <Users className="h-4 w-4" />
-                Existing User
-              </button>
-              <button
                 onClick={() => setActiveTab('invite')}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
@@ -172,6 +160,18 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
               >
                 <Mail className="h-4 w-4" />
                 Invite New
+              </button>
+              <button
+                onClick={() => setActiveTab('existing')}
+                className={cn(
+                  'flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors',
+                  activeTab === 'existing'
+                    ? 'border-b-2 border-red-500 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Users className="h-4 w-4" />
+                Existing User
               </button>
             </div>
           )}
