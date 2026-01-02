@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
@@ -22,16 +22,88 @@ import { AppleSignInButton, AuthDivider } from '@/components/auth/apple-sign-in-
 import { useAuth } from '@/contexts/auth-context'
 import { loginSchema, type LoginFormData } from '@/lib/validations'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 export function LoginForm() {
   const { signIn, isLoading: authLoading } = useAuth()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isProcessingInvite, setIsProcessingInvite] = useState(false)
 
   // Check for callback errors
   const callbackError = searchParams.get('error')
+
+  // Handle invite tokens from URL hash (e.g., #access_token=...&type=invite)
+  useEffect(() => {
+    const handleInviteToken = async () => {
+      // Only run in browser
+      if (typeof window === 'undefined') return
+
+      const hash = window.location.hash
+      if (!hash || !hash.includes('access_token')) return
+
+      // Parse hash parameters
+      const params = new URLSearchParams(hash.substring(1))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token')
+      const type = params.get('type')
+
+      // Only handle invite type
+      if (type !== 'invite' || !accessToken || !refreshToken) return
+
+      setIsProcessingInvite(true)
+
+      try {
+        const supabase = createClient()
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        })
+
+        if (sessionError) {
+          console.error('Error setting session from invite:', sessionError)
+          setError('Failed to accept invite. Please try again or contact support.')
+          setIsProcessingInvite(false)
+          return
+        }
+
+        if (data.session) {
+          // Clear the hash from URL
+          window.history.replaceState(null, '', window.location.pathname)
+
+          // Check user's roles to determine redirect
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('roles')
+            .eq('id', data.session.user.id)
+            .single()
+
+          const userRoles = profile?.roles || []
+
+          if (userRoles.length > 1) {
+            router.push('/select-role')
+          } else if (userRoles.includes('admin')) {
+            router.push('/admin')
+          } else if (userRoles.includes('coach')) {
+            router.push('/dashboard')
+          } else if (userRoles.includes('athlete')) {
+            router.push('/athlete')
+          } else {
+            router.push('/dashboard')
+          }
+        }
+      } catch (err) {
+        console.error('Error processing invite:', err)
+        setError('An unexpected error occurred. Please try again.')
+        setIsProcessingInvite(false)
+      }
+    }
+
+    handleInviteToken()
+  }, [router])
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -55,10 +127,20 @@ export function LoginForm() {
 
   const formLoading = isLoading || authLoading
 
+  // Show loading while processing invite
+  if (isProcessingInvite) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-amber-500 mb-4" />
+        <p className="text-sm text-muted-foreground">Accepting invite...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full">
       {/* Callback error message */}
-      {callbackError && (
+      {callbackError && !error && (
         <Alert variant="destructive" className="mb-6">
           <AlertDescription>
             {callbackError === 'auth_callback_error'
