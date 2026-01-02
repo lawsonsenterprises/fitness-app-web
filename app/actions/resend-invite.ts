@@ -49,17 +49,54 @@ export async function resendInvite(userId: string): Promise<ResendInviteResult> 
       return { success: false, error: 'User has already confirmed their email' }
     }
 
-    // Generate a new invite link - this will send a new email
-    const { error: inviteError } = await adminClient.auth.admin.generateLink({
-      type: 'invite',
-      email,
-      options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+    // Get display name from profile BEFORE deleting the user
+    const { data: profileData } = await adminClient
+      .from('profiles')
+      .select('display_name')
+      .eq('id', userId)
+      .single()
+
+    const displayName = profileData?.display_name || email.split('@')[0]
+
+    // Delete the old user and re-invite them
+    // This is necessary because inviteUserByEmail won't work for existing users
+    // and generateLink doesn't send an email
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId)
+
+    if (deleteError) {
+      return { success: false, error: `Failed to reset user: ${deleteError.message}` }
+    }
+
+    // Re-invite the user - this actually sends the email
+    const { data: newUser, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
+      data: {
+        display_name: displayName,
+        full_name: displayName,
       },
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
     })
 
     if (inviteError) {
       return { success: false, error: inviteError.message }
+    }
+
+    // Re-create the profile with admin role
+    if (newUser?.user) {
+      const { error: profileError } = await adminClient
+        .from('profiles')
+        .upsert({
+          id: newUser.user.id,
+          display_name: displayName,
+          contact_email: email,
+          roles: ['admin'],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+
+      if (profileError) {
+        console.error('Failed to create profile:', profileError)
+        // Don't fail the whole operation - user can still accept invite
+      }
     }
 
     return { success: true }

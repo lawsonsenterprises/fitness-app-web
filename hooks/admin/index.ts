@@ -1167,6 +1167,8 @@ export function useInviteAdmin() {
 }
 
 export function useResendInvite() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async (userId: string) => {
       // Dynamic import to avoid bundling server code in client
@@ -1178,6 +1180,11 @@ export function useResendInvite() {
       }
 
       return result
+    },
+    onSuccess: () => {
+      // Refresh both admins and pending invites since user ID changes
+      queryClient.invalidateQueries({ queryKey: ['admins'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-invites'] })
     },
   })
 }
