@@ -88,8 +88,9 @@ export async function inviteAdmin(
       data: {
         display_name: displayName,
         full_name: displayName,
+        force_password_change: true,
       },
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
     })
 
     if (createError) {
