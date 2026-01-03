@@ -127,22 +127,22 @@ export function CurrentMealPlanCard({
             <div className="flex items-center justify-center gap-1 text-orange-500">
               <Flame className="h-4 w-4" />
             </div>
-            <p className="mt-1 text-2xl font-bold">{macros.calories}</p>
+            <p className="mt-1 text-2xl font-bold">{Math.round(macros.calories)}</p>
             <p className="text-xs text-muted-foreground">Calories</p>
           </div>
           <div className="rounded-xl bg-blue-500/10 p-3 text-center">
             <div className="flex items-center justify-center gap-1 text-blue-500">
               <Zap className="h-4 w-4" />
             </div>
-            <p className="mt-1 text-2xl font-bold">{macros.protein}g</p>
+            <p className="mt-1 text-2xl font-bold">{Math.round(macros.protein)}g</p>
             <p className="text-xs text-muted-foreground">Protein</p>
           </div>
           <div className="rounded-xl bg-amber-500/10 p-3 text-center">
-            <p className="mt-1 text-2xl font-bold">{macros.carbs}g</p>
+            <p className="mt-1 text-2xl font-bold">{Math.round(macros.carbs)}g</p>
             <p className="text-xs text-muted-foreground">Carbs</p>
           </div>
           <div className="rounded-xl bg-rose-500/10 p-3 text-center">
-            <p className="mt-1 text-2xl font-bold">{macros.fat}g</p>
+            <p className="mt-1 text-2xl font-bold">{Math.round(macros.fat)}g</p>
             <p className="text-xs text-muted-foreground">Fat</p>
           </div>
         </div>

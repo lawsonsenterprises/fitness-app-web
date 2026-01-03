@@ -54,9 +54,9 @@ function MacroProgressBar({
         </div>
         <div className="text-right">
           <span className={cn('text-lg font-bold', isOver && 'text-rose-500')}>
-            {logged}
+            {Math.round(logged)}
           </span>
-          <span className="text-muted-foreground"> / {target}</span>
+          <span className="text-muted-foreground"> / {Math.round(target)}</span>
           <span className="ml-1 text-sm text-muted-foreground">
             {label === 'Calories' ? 'kcal' : 'g'}
           </span>
@@ -77,8 +77,8 @@ function MacroProgressBar({
 
       <p className="text-xs text-muted-foreground">
         {isOver
-          ? `${logged - target} ${label === 'Calories' ? 'kcal' : 'g'} over target`
-          : `${remaining} ${label === 'Calories' ? 'kcal' : 'g'} remaining`}
+          ? `${Math.round(logged - target)} ${label === 'Calories' ? 'kcal' : 'g'} over target`
+          : `${Math.round(remaining)} ${label === 'Calories' ? 'kcal' : 'g'} remaining`}
       </p>
     </motion.div>
   )
@@ -187,7 +187,7 @@ export function TodaysMacrosDisplay({
       <div className="mt-6 grid grid-cols-2 gap-3 rounded-xl bg-muted/30 p-4">
         <div className="text-center">
           <p className="text-xs text-muted-foreground">Total Logged</p>
-          <p className="mt-1 text-xl font-bold">{calories.logged}</p>
+          <p className="mt-1 text-xl font-bold">{Math.round(calories.logged)}</p>
           <p className="text-xs text-muted-foreground">kcal</p>
         </div>
         <div className="text-center">
@@ -198,7 +198,7 @@ export function TodaysMacrosDisplay({
               calories.logged > calories.target && 'text-rose-500'
             )}
           >
-            {Math.abs(calories.target - calories.logged)}
+            {Math.round(Math.abs(calories.target - calories.logged))}
           </p>
           <p className="text-xs text-muted-foreground">
             {calories.logged > calories.target ? 'over' : 'kcal to go'}

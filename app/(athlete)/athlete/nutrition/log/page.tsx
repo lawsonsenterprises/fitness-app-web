@@ -239,7 +239,7 @@ export default function FoodLogPage() {
               <div className="text-right">
                 <p className="text-2xl font-bold">{Math.round(dailyTotals.calories)}</p>
                 <p className="text-sm text-muted-foreground">
-                  of {dailyTargets.calories} kcal
+                  of {Math.round(dailyTargets.calories)} kcal
                 </p>
               </div>
             </div>
@@ -331,7 +331,7 @@ export default function FoodLogPage() {
                     </div>
                     <p className="text-sm font-medium">{macro.label}</p>
                     <p className="text-xs text-muted-foreground">
-                      {Math.round(macro.current)}/{macro.target}{macro.unit}
+                      {Math.round(macro.current)}/{Math.round(macro.target)}{macro.unit}
                     </p>
                   </div>
                 )
@@ -652,14 +652,14 @@ export default function FoodLogPage() {
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 {food.servingSize || 1}
-                                {food.servingUnit || 'g'} • {food.calories} kcal
+                                {food.servingUnit || 'g'} • {Math.round(food.calories)} kcal
                               </p>
                             </div>
                             <div className="flex items-center gap-3">
                               <div className="text-right text-xs text-muted-foreground">
-                                <p>P: {food.protein}g</p>
-                                <p>C: {food.carbs}g</p>
-                                <p>F: {food.fat}g</p>
+                                <p>P: {Math.round(food.protein)}g</p>
+                                <p>C: {Math.round(food.carbs)}g</p>
+                                <p>F: {Math.round(food.fat)}g</p>
                               </div>
                               {food.isFavourite && (
                                 <Star className="h-4 w-4 text-amber-500 fill-amber-500" />

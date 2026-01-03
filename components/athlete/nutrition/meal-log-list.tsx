@@ -135,7 +135,7 @@ function MealLogCard({
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 text-sm">
             <Flame className="h-4 w-4 text-orange-500" />
-            <span className="font-medium">{log.totalCalories}</span>
+            <span className="font-medium">{Math.round(log.totalCalories)}</span>
             <span className="text-muted-foreground">kcal</span>
           </div>
 
@@ -174,11 +174,11 @@ function MealLogCard({
               <p className="text-xs text-muted-foreground">{food.portion}</p>
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="text-orange-500 font-medium">{food.calories}</span>
+              <span className="text-orange-500 font-medium">{Math.round(food.calories)}</span>
               <span className="text-muted-foreground">|</span>
-              <span className="text-blue-500">{food.protein}P</span>
-              <span className="text-amber-500">{food.carbs}C</span>
-              <span className="text-rose-500">{food.fat}F</span>
+              <span className="text-blue-500">{Math.round(food.protein)}P</span>
+              <span className="text-amber-500">{Math.round(food.carbs)}C</span>
+              <span className="text-rose-500">{Math.round(food.fat)}F</span>
             </div>
           </div>
         ))}
@@ -197,9 +197,9 @@ function MealLogCard({
           Meal Totals
         </span>
         <div className="flex items-center gap-3 text-sm">
-          <span className="text-blue-600 font-medium">{log.totalProtein}g P</span>
-          <span className="text-amber-600 font-medium">{log.totalCarbs}g C</span>
-          <span className="text-rose-600 font-medium">{log.totalFat}g F</span>
+          <span className="text-blue-600 font-medium">{Math.round(log.totalProtein)}g P</span>
+          <span className="text-amber-600 font-medium">{Math.round(log.totalCarbs)}g C</span>
+          <span className="text-rose-600 font-medium">{Math.round(log.totalFat)}g F</span>
         </div>
       </div>
     </motion.div>
@@ -244,20 +244,20 @@ export function MealLogList({
       <div className="grid grid-cols-4 gap-3">
         <div className="rounded-xl bg-orange-500/10 p-3 text-center">
           <Flame className="mx-auto h-5 w-5 text-orange-500" />
-          <p className="mt-1 text-xl font-bold">{totalCalories}</p>
+          <p className="mt-1 text-xl font-bold">{Math.round(totalCalories)}</p>
           <p className="text-xs text-muted-foreground">Calories</p>
         </div>
         <div className="rounded-xl bg-blue-500/10 p-3 text-center">
           <Zap className="mx-auto h-5 w-5 text-blue-500" />
-          <p className="mt-1 text-xl font-bold">{totalProtein}g</p>
+          <p className="mt-1 text-xl font-bold">{Math.round(totalProtein)}g</p>
           <p className="text-xs text-muted-foreground">Protein</p>
         </div>
         <div className="rounded-xl bg-amber-500/10 p-3 text-center">
-          <p className="mt-1 text-xl font-bold">{totalCarbs}g</p>
+          <p className="mt-1 text-xl font-bold">{Math.round(totalCarbs)}g</p>
           <p className="text-xs text-muted-foreground">Carbs</p>
         </div>
         <div className="rounded-xl bg-rose-500/10 p-3 text-center">
-          <p className="mt-1 text-xl font-bold">{totalFat}g</p>
+          <p className="mt-1 text-xl font-bold">{Math.round(totalFat)}g</p>
           <p className="text-xs text-muted-foreground">Fat</p>
         </div>
       </div>

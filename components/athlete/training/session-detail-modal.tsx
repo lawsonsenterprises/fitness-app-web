@@ -126,7 +126,7 @@ export function SessionDetailModal({
                 <div className="rounded-lg bg-muted/50 p-3 text-center">
                   <p className="text-xs text-muted-foreground">Total Volume</p>
                   <p className="mt-1 text-lg font-bold">
-                    {session.totalVolume.toLocaleString()} kg
+                    {Math.round(session.totalVolume).toLocaleString()} kg
                   </p>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3 text-center">
@@ -205,7 +205,7 @@ export function SessionDetailModal({
                             <tr key={set.setNumber} className="hover:bg-muted/20">
                               <td className="px-3 py-2 font-medium">{set.setNumber}</td>
                               <td className="px-3 py-2 text-center">{set.reps}</td>
-                              <td className="px-3 py-2 text-center">{set.weight} kg</td>
+                              <td className="px-3 py-2 text-center">{set.weight.toFixed(1)} kg</td>
                               <td className="px-3 py-2 text-center text-muted-foreground">
                                 {set.rpe || '—'}
                               </td>

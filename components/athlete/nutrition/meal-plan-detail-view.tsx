@@ -100,7 +100,7 @@ function MealCard({ meal }: { meal: Meal }) {
         </div>
         <div className="flex items-center gap-1 text-sm">
           <Flame className="h-4 w-4 text-orange-500" />
-          <span className="font-medium">{totalMacros.calories}</span>
+          <span className="font-medium">{Math.round(totalMacros.calories)}</span>
           <span className="text-muted-foreground">kcal</span>
         </div>
       </div>
@@ -116,11 +116,11 @@ function MealCard({ meal }: { meal: Meal }) {
               <p className="text-xs text-muted-foreground">{food.portion}</p>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-orange-500">{food.calories}</span>
+              <span className="text-orange-500">{Math.round(food.calories)}</span>
               <span className="text-muted-foreground">|</span>
-              <span className="text-blue-500">{food.protein}P</span>
-              <span className="text-amber-500">{food.carbs}C</span>
-              <span className="text-rose-500">{food.fat}F</span>
+              <span className="text-blue-500">{Math.round(food.protein)}P</span>
+              <span className="text-amber-500">{Math.round(food.carbs)}C</span>
+              <span className="text-rose-500">{Math.round(food.fat)}F</span>
             </div>
           </div>
         ))}
@@ -131,9 +131,9 @@ function MealCard({ meal }: { meal: Meal }) {
           Meal Totals
         </span>
         <div className="flex gap-2">
-          <MacroPill label="P" value={totalMacros.protein} color="bg-blue-500/10 text-blue-600" />
-          <MacroPill label="C" value={totalMacros.carbs} color="bg-amber-500/10 text-amber-600" />
-          <MacroPill label="F" value={totalMacros.fat} color="bg-rose-500/10 text-rose-600" />
+          <MacroPill label="P" value={Math.round(totalMacros.protein)} color="bg-blue-500/10 text-blue-600" />
+          <MacroPill label="C" value={Math.round(totalMacros.carbs)} color="bg-amber-500/10 text-amber-600" />
+          <MacroPill label="F" value={Math.round(totalMacros.fat)} color="bg-rose-500/10 text-rose-600" />
         </div>
       </div>
     </div>
@@ -154,20 +154,20 @@ function DayPlanSection({ plan, title, isActive }: { plan: DayPlan; title: strin
       <div className="grid grid-cols-4 gap-3">
         <div className="rounded-xl bg-orange-500/10 p-4 text-center">
           <Flame className="mx-auto h-5 w-5 text-orange-500" />
-          <p className="mt-2 text-2xl font-bold">{plan.totalCalories}</p>
+          <p className="mt-2 text-2xl font-bold">{Math.round(plan.totalCalories)}</p>
           <p className="text-xs text-muted-foreground">Calories</p>
         </div>
         <div className="rounded-xl bg-blue-500/10 p-4 text-center">
           <Zap className="mx-auto h-5 w-5 text-blue-500" />
-          <p className="mt-2 text-2xl font-bold">{plan.totalProtein}g</p>
+          <p className="mt-2 text-2xl font-bold">{Math.round(plan.totalProtein)}g</p>
           <p className="text-xs text-muted-foreground">Protein</p>
         </div>
         <div className="rounded-xl bg-amber-500/10 p-4 text-center">
-          <p className="mt-2 text-2xl font-bold">{plan.totalCarbs}g</p>
+          <p className="mt-2 text-2xl font-bold">{Math.round(plan.totalCarbs)}g</p>
           <p className="text-xs text-muted-foreground">Carbs</p>
         </div>
         <div className="rounded-xl bg-rose-500/10 p-4 text-center">
-          <p className="mt-2 text-2xl font-bold">{plan.totalFat}g</p>
+          <p className="mt-2 text-2xl font-bold">{Math.round(plan.totalFat)}g</p>
           <p className="text-xs text-muted-foreground">Fat</p>
         </div>
       </div>

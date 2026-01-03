@@ -208,7 +208,7 @@ function MacroCard({ icon: Icon, label, current, target, unit, color }: MacroCar
 
       <div className="flex items-baseline gap-1">
         <span className="text-xl font-bold">{Math.round(current)}</span>
-        <span className="text-sm text-muted-foreground">/ {target}{unit}</span>
+        <span className="text-sm text-muted-foreground">/ {Math.round(target)}{unit}</span>
       </div>
 
       <div className="h-2 rounded-full bg-muted overflow-hidden">

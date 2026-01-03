@@ -119,12 +119,12 @@ function MealRow({
           <div className="text-right">
             <div className="flex items-center gap-1 text-sm">
               <Flame className="h-4 w-4 text-orange-500" />
-              <span className="font-medium">{totalCalories}</span>
+              <span className="font-medium">{Math.round(totalCalories)}</span>
               <span className="text-muted-foreground">kcal</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Zap className="h-3 w-3 text-blue-500" />
-              <span>{totalProtein}g protein</span>
+              <span>{Math.round(totalProtein)}g protein</span>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -193,7 +193,7 @@ function MacroProgress({
           'text-sm font-medium',
           isOver ? 'text-rose-500' : 'text-muted-foreground'
         )}>
-          {current} / {target}{label !== 'Calories' ? 'g' : ''}
+          {Math.round(current)} / {Math.round(target)}{label !== 'Calories' ? 'g' : ''}
         </span>
       </div>
       <div className="h-2 w-full rounded-full bg-muted">
@@ -286,28 +286,28 @@ export function DayMealBreakdown({
         </h3>
         <MacroProgress
           label="Calories"
-          current={totalCalories}
-          target={targetCalories}
+          current={Math.round(totalCalories)}
+          target={Math.round(targetCalories)}
           color="text-orange-500"
           icon={Flame}
         />
         <MacroProgress
           label="Protein"
-          current={totalProtein}
-          target={targetProtein}
+          current={Math.round(totalProtein)}
+          target={Math.round(targetProtein)}
           color="text-blue-500"
           icon={Zap}
         />
         <MacroProgress
           label="Carbs"
-          current={totalCarbs}
-          target={targetCarbs}
+          current={Math.round(totalCarbs)}
+          target={Math.round(targetCarbs)}
           color="text-amber-500"
         />
         <MacroProgress
           label="Fat"
-          current={totalFat}
-          target={targetFat}
+          current={Math.round(totalFat)}
+          target={Math.round(targetFat)}
           color="text-rose-500"
         />
       </div>

@@ -104,7 +104,7 @@ function DayCard({
               <span className="text-xs text-muted-foreground">Calories</span>
             </div>
             <span className="text-xs font-medium">
-              {day.totalCalories} / {day.targetCalories}
+              {Math.round(day.totalCalories)} / {Math.round(day.targetCalories)}
             </span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted">
@@ -123,7 +123,7 @@ function DayCard({
               <span className="text-xs text-muted-foreground">Protein</span>
             </div>
             <span className="text-xs font-medium">
-              {day.totalProtein}g / {day.targetProtein}g
+              {Math.round(day.totalProtein)}g / {Math.round(day.targetProtein)}g
             </span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted">
@@ -238,11 +238,11 @@ export function WeeklyMealsGrid({
           <div className="flex items-center justify-center gap-4 mt-1 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Flame className="h-3 w-3 text-orange-500" />
-              {weeklyCalories.toLocaleString()} / {targetCalories.toLocaleString()} kcal
+              {Math.round(weeklyCalories).toLocaleString()} / {Math.round(targetCalories).toLocaleString()} kcal
             </span>
             <span className="flex items-center gap-1">
               <Zap className="h-3 w-3 text-blue-500" />
-              {weeklyProtein}g / {targetProtein}g protein
+              {Math.round(weeklyProtein)}g / {Math.round(targetProtein)}g protein
             </span>
           </div>
         </div>

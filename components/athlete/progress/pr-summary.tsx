@@ -86,12 +86,12 @@ function PRCard({
       <div className="flex items-center gap-4">
         <div className="text-right">
           <p className="text-xl font-bold">
-            {record.weight}{record.unit} × {record.reps}
+            {record.weight.toFixed(1)}{record.unit} × {record.reps}
           </p>
           {record.improvement && (
             <p className="flex items-center justify-end gap-1 text-sm text-emerald-600">
               <TrendingUp className="h-3 w-3" />
-              +{record.improvement}{record.unit}
+              +{record.improvement.toFixed(1)}{record.unit}
             </p>
           )}
         </div>

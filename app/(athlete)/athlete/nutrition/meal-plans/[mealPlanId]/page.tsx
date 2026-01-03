@@ -231,16 +231,16 @@ export default function MealPlanDetailPage({
                               <span>•</span>
                             </>
                           )}
-                          <span>{meal.calories} kcal</span>
+                          <span>{Math.round(meal.calories)} kcal</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className="hidden md:flex items-center gap-3 text-sm">
-                        <span className="text-purple-500">P: {meal.protein}g</span>
-                        <span className="text-green-500">C: {meal.carbs}g</span>
-                        <span className="text-amber-500">F: {meal.fat}g</span>
+                        <span className="text-purple-500">P: {Math.round(meal.protein)}g</span>
+                        <span className="text-green-500">C: {Math.round(meal.carbs)}g</span>
+                        <span className="text-amber-500">F: {Math.round(meal.fat)}g</span>
                       </div>
                       {isExpanded ? (
                         <ChevronUp className="h-5 w-5 text-muted-foreground" />
@@ -271,11 +271,11 @@ export default function MealPlanDetailPage({
                               <div className="flex items-center gap-4 text-xs">
                                 <span className="flex items-center gap-1">
                                   <Flame className="h-3 w-3 text-orange-500" />
-                                  {food.calories}
+                                  {Math.round(food.calories)}
                                 </span>
-                                <span className="text-purple-500">P: {food.protein}g</span>
-                                <span className="text-green-500">C: {food.carbs}g</span>
-                                <span className="text-amber-500">F: {food.fat}g</span>
+                                <span className="text-purple-500">P: {Math.round(food.protein)}g</span>
+                                <span className="text-green-500">C: {Math.round(food.carbs)}g</span>
+                                <span className="text-amber-500">F: {Math.round(food.fat)}g</span>
                               </div>
                             </div>
                           ))}
@@ -329,7 +329,7 @@ export default function MealPlanDetailPage({
             </div>
 
             <div className="mt-4 text-center">
-              <p className="text-3xl font-bold">{currentPlan.calories}</p>
+              <p className="text-3xl font-bold">{Math.round(currentPlan.calories)}</p>
               <p className="text-sm text-muted-foreground">Total Calories</p>
             </div>
           </motion.div>
@@ -349,12 +349,12 @@ export default function MealPlanDetailPage({
                     <Target className="h-4 w-4 text-purple-500" />
                     <span className="text-sm font-medium">Protein</span>
                   </span>
-                  <span className="text-sm font-bold">{currentPlan.protein}g</span>
+                  <span className="text-sm font-bold">{Math.round(currentPlan.protein)}g</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full bg-purple-500 rounded-full" style={{ width: '100%' }} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{currentPlan.protein * 4} kcal</p>
+                <p className="text-xs text-muted-foreground mt-1">{Math.round(currentPlan.protein * 4)} kcal</p>
               </div>
 
               <div>
@@ -363,12 +363,12 @@ export default function MealPlanDetailPage({
                     <Flame className="h-4 w-4 text-green-500" />
                     <span className="text-sm font-medium">Carbs</span>
                   </span>
-                  <span className="text-sm font-bold">{currentPlan.carbs}g</span>
+                  <span className="text-sm font-bold">{Math.round(currentPlan.carbs)}g</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full bg-green-500 rounded-full" style={{ width: '100%' }} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{currentPlan.carbs * 4} kcal</p>
+                <p className="text-xs text-muted-foreground mt-1">{Math.round(currentPlan.carbs * 4)} kcal</p>
               </div>
 
               <div>
@@ -377,12 +377,12 @@ export default function MealPlanDetailPage({
                     <Droplets className="h-4 w-4 text-amber-500" />
                     <span className="text-sm font-medium">Fat</span>
                   </span>
-                  <span className="text-sm font-bold">{currentPlan.fat}g</span>
+                  <span className="text-sm font-bold">{Math.round(currentPlan.fat)}g</span>
                 </div>
                 <div className="h-2 rounded-full bg-muted overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full" style={{ width: '100%' }} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{currentPlan.fat * 9} kcal</p>
+                <p className="text-xs text-muted-foreground mt-1">{Math.round(currentPlan.fat * 9)} kcal</p>
               </div>
             </div>
           </motion.div>

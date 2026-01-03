@@ -61,7 +61,7 @@ function PRCard({ record, index }: { record: PersonalRecord; index: number }) {
               <h4 className="font-semibold">{record.exerciseName}</h4>
               <div className="mt-1 flex items-center gap-3 text-sm">
                 <span className="font-medium text-amber-600">
-                  {record.newRecord.weight}kg × {record.newRecord.reps}
+                  {record.newRecord.weight.toFixed(1)}kg × {record.newRecord.reps}
                 </span>
                 {record.newRecord.rpe && (
                   <span className="text-muted-foreground">@ RPE {record.newRecord.rpe}</span>
@@ -85,7 +85,7 @@ function PRCard({ record, index }: { record: PersonalRecord; index: number }) {
           {/* Previous record */}
           {record.previousRecord && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Previous: {record.previousRecord.weight}kg × {record.previousRecord.reps}
+              Previous: {record.previousRecord.weight.toFixed(1)}kg × {record.previousRecord.reps}
             </p>
           )}
 
