@@ -327,11 +327,11 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
           <div className="mt-2 space-y-1 text-xs">
             <div className="flex justify-end gap-2">
               <span className="text-muted-foreground">H:</span>
-              <span className="font-medium">{weather.high}°</span>
+              <span className="font-medium tabular-nums text-right min-w-[2.5rem]">{weather.high}°</span>
             </div>
             <div className="flex justify-end gap-2">
               <span className="text-muted-foreground">L:</span>
-              <span className="font-medium">{weather.low}°</span>
+              <span className="font-medium tabular-nums text-right min-w-[2.5rem]">{weather.low}°</span>
             </div>
           </div>
         </div>
