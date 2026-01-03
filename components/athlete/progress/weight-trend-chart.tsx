@@ -227,7 +227,7 @@ export function WeightTrendChart({
                 domain={yDomain}
                 tick={{ fontSize: 12 }}
                 stroke="hsl(var(--muted-foreground))"
-                tickFormatter={(value) => value.toFixed(0)}
+                tickFormatter={(value) => `${Math.round(Number(value))}kg`}
               />
               <Tooltip
                 contentStyle={{

@@ -38,7 +38,7 @@ export function WeightTrendChart({ data, goalWeight, className }: WeightTrendCha
     return {
       date: d.date,
       formattedDate: format(parseISO(d.date), 'MMM dd'),
-      weight: d.weight_kg,
+      weight: Math.round(d.weight_kg * 10) / 10, // Round to 1 decimal place
       avg,
     }
   })
@@ -68,7 +68,7 @@ export function WeightTrendChart({ data, goalWeight, className }: WeightTrendCha
             tickLine={false}
             axisLine={false}
             domain={[minWeight - padding, maxWeight + padding]}
-            tickFormatter={(value) => `${value}kg`}
+            tickFormatter={(value) => `${Math.round(Number(value))}kg`}
           />
           <Tooltip
             contentStyle={{
@@ -84,7 +84,7 @@ export function WeightTrendChart({ data, goalWeight, className }: WeightTrendCha
               return ''
             }}
             formatter={(value, name) => [
-              value != null ? `${value}kg` : 'N/A',
+              value != null ? `${Number(value).toFixed(1)}kg` : 'N/A',
               name === 'weight' ? 'Daily Weight' : '7-day Avg'
             ]}
           />
@@ -105,7 +105,7 @@ export function WeightTrendChart({ data, goalWeight, className }: WeightTrendCha
               strokeDasharray="4 4"
               strokeWidth={2}
               label={{
-                value: `Goal ${goalWeight}kg`,
+                value: `Goal ${goalWeight.toFixed(1)}kg`,
                 position: 'right',
                 fill: '#22c55e',
                 fontSize: 11,
