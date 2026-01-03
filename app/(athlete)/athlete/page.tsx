@@ -127,11 +127,6 @@ export default function AthleteDashboardPage() {
                 {hasHealthKitData && readinessData && (
                   <div className="mt-6 grid grid-cols-3 gap-3">
                     <div className="rounded-lg bg-muted/50 p-3 text-center">
-                      <Moon className="h-4 w-4 mx-auto text-indigo-500 mb-1" />
-                      <p className="text-xs text-muted-foreground">Sleep</p>
-                      <p className="text-lg font-bold">{readinessData.sleepScore}%</p>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-3 text-center">
                       <Zap className="h-4 w-4 mx-auto text-amber-500 mb-1" />
                       <p className="text-xs text-muted-foreground">Strain</p>
                       <p className="text-lg font-bold">{readinessData.strainPercentage}%</p>
@@ -140,6 +135,11 @@ export default function AthleteDashboardPage() {
                       <Heart className="h-4 w-4 mx-auto text-green-500 mb-1" />
                       <p className="text-xs text-muted-foreground">Recovery</p>
                       <p className="text-lg font-bold">{readinessData.recoveryScore}%</p>
+                    </div>
+                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                      <Moon className="h-4 w-4 mx-auto text-indigo-500 mb-1" />
+                      <p className="text-xs text-muted-foreground">Sleep</p>
+                      <p className="text-lg font-bold">{readinessData.sleepScore}%</p>
                     </div>
                   </div>
                 )}
