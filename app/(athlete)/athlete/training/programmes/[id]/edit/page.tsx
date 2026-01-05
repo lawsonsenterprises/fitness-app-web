@@ -109,6 +109,8 @@ export default function ProgrammeBuilderPage() {
     )
   }
 
+  const isRollingProgramme = !programme.durationWeeks || programme.durationWeeks === 0
+
   return (
     <>
       <div className="min-h-screen bg-background">
@@ -147,45 +149,47 @@ export default function ProgrammeBuilderPage() {
 
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           {/* Week Selector */}
-          <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">Week:</span>
-              <div className="flex gap-2">
-                {Array.from({ length: programme.durationWeeks }, (_, i) => i + 1).map((week) => (
-                  <Button
-                    key={week}
-                    variant={selectedWeek === week ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedWeek(week)}
-                    className="min-w-[40px]"
-                  >
-                    {week}
-                  </Button>
-                ))}
+          {!isRollingProgramme && (
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Week:</span>
+                <div className="flex gap-2">
+                  {Array.from({ length: programme.durationWeeks }, (_, i) => i + 1).map((week) => (
+                    <Button
+                      key={week}
+                      variant={selectedWeek === week ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedWeek(week)}
+                      className="min-w-[40px]"
+                    >
+                      {week}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Week Actions */}
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopyWeek}>
+                  <Copy className="mr-2 h-4 w-4" />
+                  Copy Week
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePasteWeek}
+                  disabled={!copiedWeek}
+                >
+                  <Clipboard className="mr-2 h-4 w-4" />
+                  Paste Week
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleClearWeek}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear Week
+                </Button>
               </div>
             </div>
-
-            {/* Week Actions */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleCopyWeek}>
-                <Copy className="mr-2 h-4 w-4" />
-                Copy Week
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePasteWeek}
-                disabled={!copiedWeek}
-              >
-                <Clipboard className="mr-2 h-4 w-4" />
-                Paste Week
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleClearWeek}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Clear Week
-              </Button>
-            </div>
-          </div>
+          )}
 
           {/* 7-Day Grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
