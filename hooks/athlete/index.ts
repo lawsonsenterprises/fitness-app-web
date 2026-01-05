@@ -349,6 +349,7 @@ export function useCurrentProgramme(athleteId?: string) {
         .select('*')
         .eq('user_id', athleteId!)
         .eq('is_active', true)
+        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
         .maybeSingle()
 
       if (error) {
@@ -405,7 +406,7 @@ export function useUserProgrammes() {
         .from('programmes')
         .select('*')
         .eq('user_id', user.id)
-        .is('deleted_at', null)
+        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
         .order('updated_at', { ascending: false })
 
       if (error) {
@@ -444,7 +445,7 @@ export function useUserProgramme(programmeId: string) {
         .select('*')
         .eq('id', programmeId)
         .eq('user_id', user.id)
-        .is('deleted_at', null)
+        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
         .single()
 
       if (error) {
@@ -592,7 +593,10 @@ export function useDeleteUserProgramme() {
 
       const { error } = await supabase
         .from('programmes')
-        .update({ deleted_at: new Date().toISOString() })
+        .update({
+          deleted_at: new Date().toISOString(),
+          is_soft_deleted: true
+        })
         .eq('id', programmeId)
         .eq('user_id', user.id)
 
