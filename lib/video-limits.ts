@@ -42,8 +42,8 @@ export async function canWatchVideo(
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('video_type', 'musclewiki')
-    .gte('watched_at', `${today}T00:00:00Z`)
-    .lte('watched_at', `${today}T23:59:59Z`)
+    .gte('watched_at', `${today}T00:00:00.000Z`)
+    .lt('watched_at', `${today}T23:59:59.999Z`)
 
   if (userError) {
     console.error('Error checking user video usage:', userError)
@@ -65,8 +65,8 @@ export async function canWatchVideo(
     .from('video_usage_tracking')
     .select('*', { count: 'exact', head: true })
     .eq('video_type', 'musclewiki')
-    .gte('watched_at', `${today}T00:00:00Z`)
-    .lte('watched_at', `${today}T23:59:59Z`)
+    .gte('watched_at', `${today}T00:00:00.000Z`)
+    .lt('watched_at', `${today}T23:59:59.999Z`)
 
   if (globalError) {
     console.error('Error checking global video usage:', globalError)
@@ -124,8 +124,8 @@ export async function getRemainingVideos(
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('video_type', 'musclewiki')
-    .gte('watched_at', `${today}T00:00:00Z`)
-    .lte('watched_at', `${today}T23:59:59Z`)
+    .gte('watched_at', `${today}T00:00:00.000Z`)
+    .lt('watched_at', `${today}T23:59:59.999Z`)
 
   if (error) {
     console.error('Error getting remaining videos:', error)

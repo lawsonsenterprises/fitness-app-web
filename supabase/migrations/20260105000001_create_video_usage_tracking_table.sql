@@ -36,15 +36,16 @@ CREATE TABLE IF NOT EXISTS video_usage_tracking (
     platform platform_type NOT NULL,
 
     -- Timestamp
-    watched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-
-    -- Prevent duplicate tracking per user/exercise/day
-    CONSTRAINT unique_video_per_user_exercise_day
-        UNIQUE (user_id, exercise_id, video_type, DATE(watched_at))
+    watched_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 -- Enable Row Level Security
 ALTER TABLE video_usage_tracking ENABLE ROW LEVEL SECURITY;
+
+-- Create unique index to prevent duplicate tracking per user/exercise/day
+-- Using expression index with date cast (immutable)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_video_usage_unique_per_day
+    ON video_usage_tracking(user_id, exercise_id, video_type, ((watched_at AT TIME ZONE 'UTC')::date));
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_video_usage_user_id
@@ -61,11 +62,11 @@ CREATE INDEX IF NOT EXISTS idx_video_usage_watched_at
 
 -- Index for daily limit checks (most common query)
 CREATE INDEX IF NOT EXISTS idx_video_usage_user_date_type
-    ON video_usage_tracking(user_id, DATE(watched_at), video_type);
+    ON video_usage_tracking(user_id, ((watched_at AT TIME ZONE 'UTC')::date), video_type);
 
 -- Index for global daily limit checks
 CREATE INDEX IF NOT EXISTS idx_video_usage_date_type
-    ON video_usage_tracking(DATE(watched_at), video_type);
+    ON video_usage_tracking(((watched_at AT TIME ZONE 'UTC')::date), video_type);
 
 -- Index for analytics queries
 CREATE INDEX IF NOT EXISTS idx_video_usage_platform
@@ -120,7 +121,6 @@ COMMENT ON COLUMN video_usage_tracking.exercise_id IS 'Exercise associated with 
 COMMENT ON COLUMN video_usage_tracking.video_type IS 'MuscleWiki (counts toward limits) or YouTube (unlimited)';
 COMMENT ON COLUMN video_usage_tracking.platform IS 'iOS app or web app';
 COMMENT ON COLUMN video_usage_tracking.watched_at IS 'Timestamp when video was played';
-COMMENT ON CONSTRAINT unique_video_per_user_exercise_day ON video_usage_tracking IS 'Prevents duplicate tracking of same video per day';
 
 -- ============================================================================
 -- TIER LIMITS REFERENCE
@@ -134,12 +134,12 @@ COMMENT ON CONSTRAINT unique_video_per_user_exercise_day ON video_usage_tracking
 -- SELECT COUNT(*) FROM video_usage_tracking
 -- WHERE user_id = 'xxx'
 --   AND video_type = 'musclewiki'
---   AND DATE(watched_at) = CURRENT_DATE;
+--   AND (watched_at AT TIME ZONE 'UTC')::date = CURRENT_DATE;
 --
 -- Global daily count:
 -- SELECT COUNT(*) FROM video_usage_tracking
 -- WHERE video_type = 'musclewiki'
---   AND DATE(watched_at) = CURRENT_DATE;
+--   AND (watched_at AT TIME ZONE 'UTC')::date = CURRENT_DATE;
 -- ============================================================================
 
 -- ============================================================================
