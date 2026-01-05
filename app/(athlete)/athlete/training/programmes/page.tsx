@@ -182,7 +182,8 @@ interface ProgrammeCardProps {
 }
 
 function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive }: ProgrammeCardProps) {
-  const progress = Math.round((programme.currentWeek / programme.durationWeeks) * 100)
+  const isRollingProgramme = !programme.durationWeeks || programme.durationWeeks === 0
+  const progress = isRollingProgramme ? 0 : Math.round((programme.currentWeek / programme.durationWeeks) * 100)
 
   return (
     <div className="group relative overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-foreground/20 hover:shadow-md">
@@ -209,22 +210,26 @@ function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-muted-foreground">
-              Week {programme.currentWeek}/{programme.durationWeeks}
+              {isRollingProgramme ? 'Rolling programme' : `Week ${programme.currentWeek}/${programme.durationWeeks}`}
             </span>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">{progress}% complete</span>
-          </div>
+          {!isRollingProgramme && (
+            <div className="flex items-center gap-2 text-sm">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">{progress}% complete</span>
+            </div>
+          )}
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-foreground transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        {/* Progress Bar (only for fixed-duration programmes) */}
+        {!isRollingProgramme && (
+          <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-foreground transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        )}
 
         {/* Badge */}
         {isActive && (

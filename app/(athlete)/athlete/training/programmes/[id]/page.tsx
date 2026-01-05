@@ -40,7 +40,8 @@ export default function ProgrammeDetailPage() {
     )
   }
 
-  const progress = Math.round((programme.currentWeek / programme.durationWeeks) * 100)
+  const isRollingProgramme = !programme.durationWeeks || programme.durationWeeks === 0
+  const progress = isRollingProgramme ? 0 : Math.round((programme.currentWeek / programme.durationWeeks) * 100)
   const weekDays = programmeDays.filter(d => d.weekNumber === selectedWeek)
 
   return (
@@ -80,14 +81,14 @@ export default function ProgrammeDetailPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className={`grid grid-cols-1 gap-4 ${isRollingProgramme ? 'sm:grid-cols-2' : 'sm:grid-cols-3'}`}>
             <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/5">
                 <Calendar className="h-5 w-5 text-muted-foreground" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Duration</p>
-                <p className="font-semibold">{programme.durationWeeks} weeks</p>
+                <p className="font-semibold">{isRollingProgramme ? 'Rolling programme' : `${programme.durationWeeks} weeks`}</p>
               </div>
             </div>
 
@@ -101,15 +102,17 @@ export default function ProgrammeDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/5">
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+            {!isRollingProgramme && (
+              <div className="flex items-center gap-3 rounded-lg border border-border bg-background p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground/5">
+                  <TrendingUp className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Progress</p>
+                  <p className="font-semibold">{progress}% complete</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Progress</p>
-                <p className="font-semibold">{progress}% complete</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -117,22 +120,24 @@ export default function ProgrammeDetailPage() {
       {/* Content */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Week Selector */}
-        <div className="mb-6">
-          <h2 className="mb-4 text-lg font-semibold">Programme Overview</h2>
-          <div className="flex items-center gap-2">
-            {Array.from({ length: programme.durationWeeks }, (_, i) => i + 1).map((week) => (
-              <Button
-                key={week}
-                variant={selectedWeek === week ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedWeek(week)}
-                className="min-w-[60px]"
-              >
-                Week {week}
-              </Button>
-            ))}
+        {!isRollingProgramme && (
+          <div className="mb-6">
+            <h2 className="mb-4 text-lg font-semibold">Programme Overview</h2>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: programme.durationWeeks }, (_, i) => i + 1).map((week) => (
+                <Button
+                  key={week}
+                  variant={selectedWeek === week ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedWeek(week)}
+                  className="min-w-[60px]"
+                >
+                  Week {week}
+                </Button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Week Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
