@@ -1326,17 +1326,47 @@ export interface ExerciseLibraryItem {
   videoUrl?: string
   imageUrl?: string
   isFavourite?: boolean
+  isCustom?: boolean
 }
 
-export function useExerciseLibrary(_athleteId?: string) {
-  // Exercise library is coming soon - return empty array for now
-  // When a global exercise library table is added, this will query it
+export function useExerciseLibrary(athleteId?: string) {
   return useQuery({
-    queryKey: ['exercise-library'],
+    queryKey: ['exercise-library', athleteId],
     queryFn: async () => {
-      // Return empty array - exercise library feature is coming soon
-      return [] as ExerciseLibraryItem[]
+      // Fetch exercises from Supabase
+      // RLS automatically filters: MuscleWiki + own custom + coach's custom (if has active coach)
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('*')
+        .is('deleted_at', null)
+        .order('name', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching exercise library:', error)
+        return []
+      }
+
+      // Transform database schema to frontend interface
+      return (data || []).map(exercise => ({
+        id: exercise.id,
+        name: exercise.name,
+        muscleGroup: exercise.primary_muscle || 'full_body',
+        secondaryMuscles: exercise.secondary_muscles || [],
+        equipment: exercise.equipment ? [exercise.equipment] : [],
+        difficulty: exercise.difficulty || 'intermediate',
+        type: exercise.type || 'compound',
+        description: exercise.description || '',
+        instructions: typeof exercise.instructions === 'string'
+          ? [exercise.instructions]
+          : exercise.instructions || [],
+        tips: exercise.tips || [],
+        videoUrl: exercise.youtube_url || exercise.musclewiki_video_url,
+        imageUrl: exercise.thumbnail_url,
+        isFavourite: false, // TODO: Implement favourites tracking
+        isCustom: exercise.is_custom || false,
+      })) as ExerciseLibraryItem[]
     },
+    enabled: !!athleteId,
   })
 }
 
@@ -1349,8 +1379,9 @@ export function useToggleExerciseFavourite() {
       exerciseId: string
       isFavourite: boolean
     }) => {
-      // Exercise favourites feature is coming soon
-      // When implemented, this will update the user's exercise favourites
+      // TODO: Exercise favourites feature (future enhancement)
+      // Will need to create exercise_favourites table
+      // For now, this is a no-op that returns success
       return { success: true }
     },
     onSuccess: () => {

@@ -57,7 +57,7 @@ const equipmentOptions: { id: Equipment; label: string }[] = [
   { id: 'smith_machine', label: 'Smith Machine' },
 ]
 
-export default function ExerciseLibraryPage() {
+export default function CoachExerciseLibraryPage() {
   const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null)
@@ -164,11 +164,11 @@ export default function ExerciseLibraryPage() {
         <div>
           <h1 className="text-2xl font-bold">Exercise Library</h1>
           <p className="text-muted-foreground mt-1">
-            Browse and learn proper form for hundreds of exercises
+            Browse 1,731 exercises from MuscleWiki and create custom exercises for clients
           </p>
         </div>
         <Link
-          href="/athlete/training/exercises/new"
+          href="/dashboard/exercises/new"
           className="flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -316,22 +316,8 @@ export default function ExerciseLibraryPage() {
                   </div>
                 </div>
 
-                {/* Favourites toggle and clear */}
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <button
-                    onClick={() => setShowFavouritesOnly(!showFavouritesOnly)}
-                    className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
-                      showFavouritesOnly
-                        ? 'bg-rose-500/10 text-rose-500'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Heart
-                      className={cn('h-4 w-4', showFavouritesOnly && 'fill-current')}
-                    />
-                    Favourites Only
-                  </button>
+                {/* Clear filters */}
+                <div className="flex items-center justify-end pt-2 border-t border-border">
                   {hasActiveFilters && (
                     <button
                       onClick={clearFilters}
@@ -451,11 +437,11 @@ export default function ExerciseLibraryPage() {
             )}
           </div>
           <h3 className="font-semibold mb-1">
-            {exercises.length === 0 ? 'Exercise Library Coming Soon' : 'No exercises found'}
+            {exercises.length === 0 ? 'No exercises yet' : 'No exercises found'}
           </h3>
           <p className="text-sm text-muted-foreground max-w-sm mx-auto">
             {exercises.length === 0
-              ? 'We\'re building a comprehensive exercise library with video tutorials and form guides. Check back soon!'
+              ? 'The exercise library will be populated once the database import is complete'
               : 'Try adjusting your search or filters'}
           </p>
         </div>
@@ -592,23 +578,25 @@ export default function ExerciseLibraryPage() {
                   </div>
 
                   {/* Tips */}
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-amber-500" />
-                      Pro Tips
-                    </h3>
-                    <ul className="space-y-2">
-                      {selectedExercise.tips.map((tip, idx) => (
-                        <li
-                          key={idx}
-                          className="flex gap-3 text-sm text-muted-foreground"
-                        >
-                          <span className="text-amber-500">•</span>
-                          {tip}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  {selectedExercise.tips.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-3 flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-amber-500" />
+                        Pro Tips
+                      </h3>
+                      <ul className="space-y-2">
+                        {selectedExercise.tips.map((tip, idx) => (
+                          <li
+                            key={idx}
+                            className="flex gap-3 text-sm text-muted-foreground"
+                          >
+                            <span className="text-amber-500">•</span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Video link placeholder */}
                   {selectedExercise.videoUrl && (
