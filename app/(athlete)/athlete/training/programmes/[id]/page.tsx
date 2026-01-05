@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Edit2, Calendar, TrendingUp, Clock, Dumbbell } from 'lucide-react'
+import { ArrowLeft, Edit2, Calendar, TrendingUp, Clock } from 'lucide-react'
 import { useUserProgramme } from '@/hooks/athlete'
 import { useProgrammeDays, useWorkoutItems } from '@/hooks/use-programme-details'
 import { Button } from '@/components/ui/button'
@@ -158,7 +158,7 @@ export default function ProgrammeDetailPage() {
             </div>
             <h3 className="mt-6 text-lg font-semibold">No sessions scheduled</h3>
             <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
-              This week doesn't have any sessions yet. Click "Edit Programme" to add exercises.
+              This week doesn&apos;t have any sessions yet. Click &quot;Edit Programme&quot; to add exercises.
             </p>
           </div>
         )}

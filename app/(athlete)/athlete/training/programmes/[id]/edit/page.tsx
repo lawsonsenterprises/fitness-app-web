@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Save, Copy, Clipboard, Trash2 } from 'lucide-react'
 import { useUserProgramme, useUpdateUserProgramme } from '@/hooks/athlete'
-import { useProgrammeDays, useWorkoutItems } from '@/hooks/use-programme-details'
+import { useProgrammeDays } from '@/hooks/use-programme-details'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { DayEditorModal } from '@/components/programmes/day-editor-modal'
@@ -30,9 +30,6 @@ export default function ProgrammeBuilderPage() {
   const [editingDay, setEditingDay] = useState<{ week: number; day: number } | null>(null)
   const [copiedWeek, setCopiedWeek] = useState<WeekData | null>(null)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-
-  // Auto-save timer
-  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 

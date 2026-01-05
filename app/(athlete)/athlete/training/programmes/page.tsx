@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Plus, Calendar, TrendingUp, MoreVertical, Copy, Trash2, CheckCircle2, Clock } from 'lucide-react'
-import { useAuth } from '@/contexts/auth-context'
+import { Plus, Calendar, TrendingUp, MoreVertical, Copy, Trash2, CheckCircle2 } from 'lucide-react'
 import {
   useUserProgrammes,
   useDeleteUserProgramme,
@@ -23,7 +22,6 @@ import { toast } from 'sonner'
 import { CreateProgrammeModal } from '@/components/programmes/create-programme-modal'
 
 export default function ProgrammesPage() {
-  const { user } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const { data: programmes = [], isLoading } = useUserProgrammes()
   const deleteMutation = useDeleteUserProgramme()
