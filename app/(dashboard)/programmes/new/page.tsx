@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useCreateProgramme } from '@/hooks/use-programmes'
 import type { ProgrammeType, ProgrammeDifficulty, TrainingDay, ProgrammeExercise } from '@/types'
+import { ExerciseSelectorModal } from '@/components/programmes/exercise-selector-modal'
 
 const programmeTypes: { value: ProgrammeType; label: string }[] = [
   { value: 'strength', label: 'Strength' },
@@ -81,6 +82,9 @@ export default function NewProgrammePage() {
     createEmptyDay(3),
     createEmptyDay(4),
   ])
+  const [exerciseSelectorOpen, setExerciseSelectorOpen] = useState(false)
+  const [currentDayId, setCurrentDayId] = useState<string | null>(null)
+  const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null)
 
   const handleDaysPerWeekChange = (newDays: number) => {
     setDaysPerWeek(newDays)
@@ -149,6 +153,47 @@ export default function NewProgrammePage() {
         return day
       })
     )
+  }
+
+  const openExerciseSelector = (dayId: string, exerciseId?: string) => {
+    setCurrentDayId(dayId)
+    setCurrentExerciseId(exerciseId || null)
+    setExerciseSelectorOpen(true)
+  }
+
+  const handleExerciseSelected = (exercises: Array<{ id: string; name: string }>) => {
+    if (!currentDayId) return
+
+    if (currentExerciseId) {
+      // Update existing exercise
+      const exercise = exercises[0]
+      if (exercise) {
+        updateExercise(currentDayId, currentExerciseId, {
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+        })
+      }
+    } else {
+      // Add new exercises
+      setTrainingDays(
+        trainingDays.map((day) => {
+          if (day.id === currentDayId) {
+            const newExercises = exercises.map((ex, index) =>
+              createEmptyExercise(day.exercises.length + index)
+            )
+            newExercises.forEach((newEx, index) => {
+              newEx.exerciseId = exercises[index].id
+              newEx.exerciseName = exercises[index].name
+            })
+            return { ...day, exercises: [...day.exercises, ...newExercises] }
+          }
+          return day
+        })
+      )
+    }
+
+    setCurrentDayId(null)
+    setCurrentExerciseId(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -363,16 +408,16 @@ export default function NewProgrammePage() {
                             </span>
                             <div className="grid flex-1 gap-2 sm:grid-cols-5">
                               <div className="sm:col-span-2">
-                                <Input
-                                  value={exercise.exerciseName}
-                                  onChange={(e) =>
-                                    updateExercise(day.id, exercise.id, {
-                                      exerciseName: e.target.value,
-                                    })
-                                  }
-                                  placeholder="Exercise name"
-                                  className="h-8 text-sm"
-                                />
+                                <button
+                                  type="button"
+                                  onClick={() => openExerciseSelector(day.id, exercise.id)}
+                                  className="w-full h-8 px-3 text-left text-sm rounded-lg border border-input bg-background hover:border-blue-500 transition-colors flex items-center justify-between gap-2"
+                                >
+                                  <span className={exercise.exerciseName ? '' : 'text-muted-foreground'}>
+                                    {exercise.exerciseName || 'Select exercise...'}
+                                  </span>
+                                  <Dumbbell className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                </button>
                               </div>
                               <div>
                                 <Input
@@ -441,7 +486,7 @@ export default function NewProgrammePage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      onClick={() => addExercise(day.id)}
+                      onClick={() => openExerciseSelector(day.id)}
                       className="mt-4 gap-2"
                     >
                       <Plus className="h-4 w-4" />
@@ -472,6 +517,18 @@ export default function NewProgrammePage() {
             </Button>
           </div>
         </form>
+
+        {/* Exercise Selector Modal */}
+        <ExerciseSelectorModal
+          isOpen={exerciseSelectorOpen}
+          onClose={() => {
+            setExerciseSelectorOpen(false)
+            setCurrentDayId(null)
+            setCurrentExerciseId(null)
+          }}
+          onSelectExercises={handleExerciseSelected}
+          multiSelect={!currentExerciseId} // Multi-select when adding, single when updating
+        />
       </div>
     </div>
   )
