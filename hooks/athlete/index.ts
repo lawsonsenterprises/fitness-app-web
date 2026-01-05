@@ -376,6 +376,334 @@ export function useCurrentProgramme(athleteId?: string) {
   })
 }
 
+// ==================== User Programmes (Athlete Self-Coached) ====================
+
+export interface UserProgramme {
+  id: string
+  userId: string
+  name: string
+  description: string | null
+  durationWeeks: number
+  currentWeek: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+// Fetch all programmes for the current user
+export function useUserProgrammes() {
+  return useQuery({
+    queryKey: ['user-programmes'],
+    queryFn: async () => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.error('Auth error:', authError)
+        return []
+      }
+
+      const { data, error } = await supabase
+        .from('programmes')
+        .select('*')
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .order('updated_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching user programmes:', error)
+        return []
+      }
+
+      return (data || []).map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        name: row.name,
+        description: row.description,
+        durationWeeks: row.duration_weeks,
+        currentWeek: row.current_week,
+        isActive: row.is_active,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      }))
+    },
+  })
+}
+
+// Fetch a single programme by ID
+export function useUserProgramme(programmeId: string) {
+  return useQuery({
+    queryKey: ['user-programme', programmeId],
+    queryFn: async () => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.error('Auth error:', authError)
+        return null
+      }
+
+      const { data, error } = await supabase
+        .from('programmes')
+        .select('*')
+        .eq('id', programmeId)
+        .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .single()
+
+      if (error) {
+        console.error('Error fetching user programme:', error)
+        return null
+      }
+
+      return {
+        id: data.id,
+        userId: data.user_id,
+        name: data.name,
+        description: data.description,
+        durationWeeks: data.duration_weeks,
+        currentWeek: data.current_week,
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
+      }
+    },
+    enabled: !!programmeId,
+  })
+}
+
+// Create a new programme
+export interface CreateUserProgrammeData {
+  name: string
+  description?: string
+  durationWeeks: number
+}
+
+export function useCreateUserProgramme() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: CreateUserProgrammeData) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      const { data: newProgramme, error } = await supabase
+        .from('programmes')
+        .insert({
+          user_id: user.id,
+          name: data.name,
+          description: data.description || null,
+          duration_weeks: data.durationWeeks,
+          current_week: 1,
+          is_active: false,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating programme:', error)
+        throw new Error('Failed to create programme')
+      }
+
+      return {
+        id: newProgramme.id,
+        userId: newProgramme.user_id,
+        name: newProgramme.name,
+        description: newProgramme.description,
+        durationWeeks: newProgramme.duration_weeks,
+        currentWeek: newProgramme.current_week,
+        isActive: newProgramme.is_active,
+        createdAt: newProgramme.created_at,
+        updatedAt: newProgramme.updated_at,
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-programmes'] })
+    },
+  })
+}
+
+// Update a programme
+export interface UpdateUserProgrammeData {
+  programmeId: string
+  name?: string
+  description?: string
+  durationWeeks?: number
+  currentWeek?: number
+}
+
+export function useUpdateUserProgramme() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: UpdateUserProgrammeData) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      const updateData: Record<string, unknown> = {}
+      if (data.name !== undefined) updateData.name = data.name
+      if (data.description !== undefined) updateData.description = data.description
+      if (data.durationWeeks !== undefined) updateData.duration_weeks = data.durationWeeks
+      if (data.currentWeek !== undefined) updateData.current_week = data.currentWeek
+
+      const { data: updated, error } = await supabase
+        .from('programmes')
+        .update(updateData)
+        .eq('id', data.programmeId)
+        .eq('user_id', user.id)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error updating programme:', error)
+        throw new Error('Failed to update programme')
+      }
+
+      return {
+        id: updated.id,
+        userId: updated.user_id,
+        name: updated.name,
+        description: updated.description,
+        durationWeeks: updated.duration_weeks,
+        currentWeek: updated.current_week,
+        isActive: updated.is_active,
+        createdAt: updated.created_at,
+        updatedAt: updated.updated_at,
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['user-programmes'] })
+      queryClient.invalidateQueries({ queryKey: ['user-programme', variables.programmeId] })
+      queryClient.invalidateQueries({ queryKey: ['current-programme'] })
+    },
+  })
+}
+
+// Delete a programme (soft delete)
+export function useDeleteUserProgramme() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (programmeId: string) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      const { error } = await supabase
+        .from('programmes')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', programmeId)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Error deleting programme:', error)
+        throw new Error('Failed to delete programme')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-programmes'] })
+      queryClient.invalidateQueries({ queryKey: ['current-programme'] })
+    },
+  })
+}
+
+// Duplicate a programme
+export function useDuplicateUserProgramme() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (programmeId: string) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      // Fetch original programme
+      const { data: original, error: fetchError } = await supabase
+        .from('programmes')
+        .select('*')
+        .eq('id', programmeId)
+        .eq('user_id', user.id)
+        .single()
+
+      if (fetchError || !original) {
+        throw new Error('Programme not found')
+      }
+
+      // Create duplicate
+      const { data: duplicate, error: createError } = await supabase
+        .from('programmes')
+        .insert({
+          user_id: user.id,
+          name: `${original.name} (Copy)`,
+          description: original.description,
+          duration_weeks: original.duration_weeks,
+          current_week: 1,
+          is_active: false,
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error duplicating programme:', createError)
+        throw new Error('Failed to duplicate programme')
+      }
+
+      return {
+        id: duplicate.id,
+        userId: duplicate.user_id,
+        name: duplicate.name,
+        description: duplicate.description,
+        durationWeeks: duplicate.duration_weeks,
+        currentWeek: duplicate.current_week,
+        isActive: duplicate.is_active,
+        createdAt: duplicate.created_at,
+        updatedAt: duplicate.updated_at,
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-programmes'] })
+    },
+  })
+}
+
+// Set a programme as active (deactivates all others)
+export function useSetActiveProgramme() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (programmeId: string) => {
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      // Deactivate all programmes
+      await supabase
+        .from('programmes')
+        .update({ is_active: false })
+        .eq('user_id', user.id)
+
+      // Activate the selected programme
+      const { error } = await supabase
+        .from('programmes')
+        .update({ is_active: true })
+        .eq('id', programmeId)
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Error setting active programme:', error)
+        throw new Error('Failed to set active programme')
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-programmes'] })
+      queryClient.invalidateQueries({ queryKey: ['current-programme'] })
+    },
+  })
+}
+
 export function useSessionHistory(athleteId?: string, limit = 20) {
   return useQuery({
     queryKey: ['session-history', athleteId, limit],

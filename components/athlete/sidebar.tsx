@@ -18,6 +18,7 @@ import {
   Zap,
   Droplets,
   Library,
+  Calendar,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -39,6 +40,7 @@ const navigation: NavigationItem[] = [
     icon: Dumbbell,
     items: [
       { name: 'Overview', href: '/athlete/training', icon: Dumbbell },
+      { name: 'Programmes', href: '/athlete/training/programmes', icon: Calendar },
       { name: 'Exercise Library', href: '/athlete/training/exercises', icon: Library },
     ],
   },
