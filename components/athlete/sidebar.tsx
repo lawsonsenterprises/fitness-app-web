@@ -82,7 +82,22 @@ export function AthleteSidebar() {
       return pathname === item.href || (item.href !== '/athlete' && pathname.startsWith(item.href))
     }
     if (item.items) {
-      return item.items.some((subItem) => pathname === subItem.href || pathname.startsWith(subItem.href))
+      return item.items.some((subItem) => {
+        // Exact match
+        if (pathname === subItem.href) return true
+
+        // Child route check
+        if (pathname.startsWith(subItem.href + '/')) {
+          // Ensure no sibling is a better match
+          const siblings = item.items!.filter(s => s.href !== subItem.href)
+          const siblingMatches = siblings.some(s =>
+            pathname === s.href || pathname.startsWith(s.href + '/')
+          )
+          return !siblingMatches
+        }
+
+        return false
+      })
     }
     return false
   }
@@ -171,7 +186,23 @@ export function AthleteSidebar() {
                       {!collapsed && isExpanded && (
                         <ul className="mt-1 space-y-1 pl-4">
                           {item.items!.map((subItem) => {
-                            const isSubActive = pathname === subItem.href || (pathname.startsWith(subItem.href + '/'))
+                            // Check if this sub-item is active
+                            const isSubActive = (() => {
+                              // Exact match
+                              if (pathname === subItem.href) return true
+
+                              // Child route check (e.g., /programmes/[id])
+                              if (pathname.startsWith(subItem.href + '/')) {
+                                // Ensure no sibling is a better match
+                                const siblings = item.items!.filter(s => s.href !== subItem.href)
+                                const siblingMatches = siblings.some(s =>
+                                  pathname === s.href || pathname.startsWith(s.href + '/')
+                                )
+                                return !siblingMatches
+                              }
+
+                              return false
+                            })()
                             return (
                               <li key={subItem.name}>
                                 <Link
