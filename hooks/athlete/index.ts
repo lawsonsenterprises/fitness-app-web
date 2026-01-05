@@ -418,10 +418,10 @@ export function useUserProgrammes() {
         id: row.id,
         userId: row.user_id,
         name: row.name,
-        description: row.description,
-        durationWeeks: row.duration_weeks,
-        currentWeek: row.current_week,
-        isActive: row.is_active,
+        description: row.description || null,
+        durationWeeks: row.duration_weeks || 0,
+        currentWeek: row.current_week || 1,
+        isActive: row.is_active || false,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
       }))
@@ -457,10 +457,10 @@ export function useUserProgramme(programmeId: string) {
         id: data.id,
         userId: data.user_id,
         name: data.name,
-        description: data.description,
-        durationWeeks: data.duration_weeks,
-        currentWeek: data.current_week,
-        isActive: data.is_active,
+        description: data.description || null,
+        durationWeeks: data.duration_weeks || 0,
+        currentWeek: data.current_week || 1,
+        isActive: data.is_active || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       }
@@ -641,10 +641,11 @@ export function useDuplicateUserProgramme() {
         .insert({
           user_id: user.id,
           name: `${original.name} (Copy)`,
-          description: original.description,
-          duration_weeks: original.duration_weeks,
+          description: original.description || null,
+          duration_weeks: original.duration_weeks || 0,
           current_week: 1,
           is_active: false,
+          rotation_type: original.rotation_type || null, // Preserve iOS field
         })
         .select()
         .single()
@@ -658,10 +659,10 @@ export function useDuplicateUserProgramme() {
         id: duplicate.id,
         userId: duplicate.user_id,
         name: duplicate.name,
-        description: duplicate.description,
-        durationWeeks: duplicate.duration_weeks,
-        currentWeek: duplicate.current_week,
-        isActive: duplicate.is_active,
+        description: duplicate.description || null,
+        durationWeeks: duplicate.duration_weeks || 0,
+        currentWeek: duplicate.current_week || 1,
+        isActive: duplicate.is_active || false,
         createdAt: duplicate.created_at,
         updatedAt: duplicate.updated_at,
       }
