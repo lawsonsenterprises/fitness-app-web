@@ -349,7 +349,7 @@ export function useCurrentProgramme(athleteId?: string) {
         .select('*')
         .eq('user_id', athleteId!)
         .eq('is_active', true)
-        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .maybeSingle()
 
       if (error) {
@@ -406,7 +406,7 @@ export function useUserProgrammes() {
         .from('programmes')
         .select('*')
         .eq('user_id', user.id)
-        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .order('updated_at', { ascending: false })
 
       if (error) {
@@ -445,7 +445,7 @@ export function useUserProgramme(programmeId: string) {
         .select('*')
         .eq('id', programmeId)
         .eq('user_id', user.id)
-        .or('deleted_at.is.null,is_soft_deleted.is.false,is_soft_deleted.is.null')
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .single()
 
       if (error) {

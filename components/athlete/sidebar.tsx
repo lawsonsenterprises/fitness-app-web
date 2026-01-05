@@ -171,7 +171,7 @@ export function AthleteSidebar() {
                       {!collapsed && isExpanded && (
                         <ul className="mt-1 space-y-1 pl-4">
                           {item.items!.map((subItem) => {
-                            const isSubActive = pathname === subItem.href || pathname.startsWith(subItem.href)
+                            const isSubActive = pathname === subItem.href || (pathname.startsWith(subItem.href + '/'))
                             return (
                               <li key={subItem.name}>
                                 <Link
