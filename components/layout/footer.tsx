@@ -84,15 +84,11 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="flex flex-col items-center justify-between gap-4 border-t border-border py-6 text-sm text-muted-foreground md:flex-row">
-          <p>
-            © {currentYear} {APP_NAME}. All rights reserved.
-          </p>
-          <p className="flex items-center gap-1.5">
-            Crafted with
-            <span className="inline-block animate-pulse text-amber-500">●</span>
-            in the United Kingdom
-          </p>
+        <div className="border-t border-border py-6 text-center text-sm text-muted-foreground">
+          <p className="mb-2">© {currentYear} Lawsons Creative. All rights reserved.</p>
+          <p className="mb-2">Lawsons Creative is a trading name of Lawsons Enterprises Ltd.</p>
+          <p className="mb-1">Company No: 16433965 | Registered in England &amp; Wales</p>
+          <p>VAT No: GB495884223</p>
         </div>
       </div>
     </footer>
