@@ -1,4 +1,5 @@
 import { AdminSidebar } from '@/components/admin/sidebar'
+import { Footer } from '@/components/footer'
 
 export default function AdminLayout({
   children,
@@ -11,8 +12,9 @@ export default function AdminLayout({
       <AdminSidebar />
 
       {/* Main content - with padding for mobile bottom nav */}
-      <main className="min-h-screen pb-20 transition-all duration-300 lg:pb-0 lg:pl-64">
-        {children}
+      <main className="flex min-h-screen flex-col pb-20 transition-all duration-300 lg:pb-0 lg:pl-64">
+        <div className="flex-1">{children}</div>
+        <Footer />
       </main>
     </div>
   )
