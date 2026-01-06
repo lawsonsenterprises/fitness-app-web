@@ -42,7 +42,8 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { data: unreadData } = useUnreadCount()
 
-  const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Coach'
+  const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Coach'
+  const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
   const unreadCount = unreadData?.total || 0
 
   return (

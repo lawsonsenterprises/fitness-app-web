@@ -62,7 +62,8 @@ export function AthleteSidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Training']))
 
-  const userName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'
+  const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'
+  const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems((prev) => {
