@@ -89,11 +89,13 @@ export function AthleteSidebar() {
 
         // Child route check
         if (pathname.startsWith(subItem.href + '/')) {
-          // Ensure no sibling is a better match
+          // Ensure no sibling is a better (more specific) match
+          // A sibling is only a better match if its path is longer
           const siblings = item.items!.filter(s => s.href !== subItem.href)
-          const siblingMatches = siblings.some(s =>
-            pathname === s.href || pathname.startsWith(s.href + '/')
-          )
+          const siblingMatches = siblings.some(s => {
+            const siblingMatch = pathname === s.href || pathname.startsWith(s.href + '/')
+            return siblingMatch && s.href.length > subItem.href.length
+          })
           return !siblingMatches
         }
 
@@ -194,11 +196,13 @@ export function AthleteSidebar() {
 
                               // Child route check (e.g., /programmes/[id])
                               if (pathname.startsWith(subItem.href + '/')) {
-                                // Ensure no sibling is a better match
+                                // Ensure no sibling is a better (more specific) match
+                                // A sibling is only a better match if its path is longer
                                 const siblings = item.items!.filter(s => s.href !== subItem.href)
-                                const siblingMatches = siblings.some(s =>
-                                  pathname === s.href || pathname.startsWith(s.href + '/')
-                                )
+                                const siblingMatches = siblings.some(s => {
+                                  const siblingMatch = pathname === s.href || pathname.startsWith(s.href + '/')
+                                  return siblingMatch && s.href.length > subItem.href.length
+                                })
                                 return !siblingMatches
                               }
 

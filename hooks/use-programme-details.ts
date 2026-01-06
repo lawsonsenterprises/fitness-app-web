@@ -26,8 +26,9 @@ export function useProgrammeDays(programmeId: string) {
         .from('programme_days')
         .select('*')
         .eq('programme_id', programmeId)
-        .order('week_number', { ascending: true })
-        .order('day_number', { ascending: true })
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
+        .order('sort_order', { ascending: true })
+        .order('weekday', { ascending: true })
 
       if (error) {
         console.error('Error fetching programme days:', error)
@@ -37,9 +38,9 @@ export function useProgrammeDays(programmeId: string) {
       return (data || []).map(row => ({
         id: row.id,
         programmeId: row.programme_id,
-        weekNumber: row.week_number,
-        dayNumber: row.day_number,
-        dayName: row.day_name,
+        weekNumber: row.sort_order,
+        dayNumber: row.weekday,
+        dayName: row.name,
         notes: row.notes,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -57,8 +58,9 @@ export function useProgrammeDay(programmeId: string, weekNumber: number, dayNumb
         .from('programme_days')
         .select('*')
         .eq('programme_id', programmeId)
-        .eq('week_number', weekNumber)
-        .eq('day_number', dayNumber)
+        .eq('sort_order', weekNumber)
+        .eq('weekday', dayNumber)
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .maybeSingle()
 
       if (error) {
@@ -71,9 +73,9 @@ export function useProgrammeDay(programmeId: string, weekNumber: number, dayNumb
       return {
         id: data.id,
         programmeId: data.programme_id,
-        weekNumber: data.week_number,
-        dayNumber: data.day_number,
-        dayName: data.day_name,
+        weekNumber: data.sort_order,
+        dayNumber: data.weekday,
+        dayName: data.name,
         notes: data.notes,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
@@ -96,13 +98,20 @@ export function useCreateProgrammeDay() {
 
   return useMutation({
     mutationFn: async (data: CreateProgrammeDayData) => {
+      // Get current user for user_id
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
       const { data: newDay, error } = await supabase
         .from('programme_days')
         .insert({
+          user_id: user.id,
           programme_id: data.programmeId,
-          week_number: data.weekNumber,
-          day_number: data.dayNumber,
-          day_name: data.dayName || null,
+          sort_order: data.weekNumber,
+          weekday: data.dayNumber,
+          name: data.dayName || '',
           notes: data.notes || null,
         })
         .select()
@@ -116,9 +125,9 @@ export function useCreateProgrammeDay() {
       return {
         id: newDay.id,
         programmeId: newDay.programme_id,
-        weekNumber: newDay.week_number,
-        dayNumber: newDay.day_number,
-        dayName: newDay.day_name,
+        weekNumber: newDay.sort_order,
+        dayNumber: newDay.weekday,
+        dayName: newDay.name,
         notes: newDay.notes,
         createdAt: newDay.created_at,
         updatedAt: newDay.updated_at,
@@ -144,7 +153,7 @@ export function useUpdateProgrammeDay() {
   return useMutation({
     mutationFn: async (data: UpdateProgrammeDayData) => {
       const updateData: Record<string, unknown> = {}
-      if (data.dayName !== undefined) updateData.day_name = data.dayName
+      if (data.dayName !== undefined) updateData.name = data.dayName
       if (data.notes !== undefined) updateData.notes = data.notes
 
       const { data: updated, error } = await supabase
@@ -162,9 +171,9 @@ export function useUpdateProgrammeDay() {
       return {
         id: updated.id,
         programmeId: updated.programme_id,
-        weekNumber: updated.week_number,
-        dayNumber: updated.day_number,
-        dayName: updated.day_name,
+        weekNumber: updated.sort_order,
+        dayNumber: updated.weekday,
+        dayName: updated.name,
         notes: updated.notes,
         createdAt: updated.created_at,
         updatedAt: updated.updated_at,
