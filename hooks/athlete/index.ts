@@ -1673,6 +1673,7 @@ export function useExerciseLibrary(athleteId?: string) {
         .select('*')
         .is('deleted_at', null)
         .order('name', { ascending: true })
+        .limit(2000)
 
       if (error) {
         console.error('Error fetching exercise library:', error)
