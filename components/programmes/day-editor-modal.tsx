@@ -52,7 +52,7 @@ export function DayEditorModal({
   onClose,
   onSave,
 }: DayEditorModalProps) {
-  const { data: existingDay } = useProgrammeDay(programmeId, weekNumber, dayNumber)
+  const { data: existingDay, refetch: refetchDay } = useProgrammeDay(programmeId, weekNumber, dayNumber)
   const { data: workoutItems = [], refetch: refetchWorkoutItems } = useWorkoutItems(existingDay?.id || '')
   const createDayMutation = useCreateProgrammeDay()
   const updateDayMutation = useUpdateProgrammeDay()
@@ -256,10 +256,30 @@ export function DayEditorModal({
               <Label>Exercises</Label>
               <Button
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
                   if (!existingDay) {
-                    toast.error('Please save the session first before adding exercises')
-                    return
+                    // Auto-save the session first before adding exercises
+                    if (!sessionName.trim()) {
+                      toast.error('Please enter a session name first')
+                      return
+                    }
+
+                    try {
+                      await createDayMutation.mutateAsync({
+                        programmeId,
+                        weekNumber,
+                        dayNumber,
+                        dayName: sessionName,
+                        notes: sessionNotes || undefined,
+                      })
+                      toast.success('Session created')
+                      // Refetch the day data to get the new day ID
+                      await refetchDay()
+                    } catch (error) {
+                      console.error('Error creating session:', error)
+                      toast.error('Failed to create session')
+                      return
+                    }
                   }
                   setShowExerciseSelector(true)
                 }}
