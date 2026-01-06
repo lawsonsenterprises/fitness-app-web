@@ -133,9 +133,9 @@ export function ExerciseConfigModal({
       />
 
       {/* Modal */}
-      <div className="fixed left-1/2 top-1/2 z-[60] max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border bg-card p-6 shadow-lg">
-        {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+      <div className="fixed left-1/2 top-1/2 z-[60] flex max-h-[90vh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-card shadow-lg">
+        {/* Header - Fixed */}
+        <div className="flex shrink-0 items-center justify-between border-b border-border p-6">
           <h2 className="text-2xl font-semibold">
             {existingItem ? 'Edit' : 'Configure'}: {exercise.name}
           </h2>
@@ -147,8 +147,9 @@ export function ExerciseConfigModal({
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Form - Scrollable */}
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="space-y-6 overflow-y-auto p-6">
           {/* Sets */}
           <div>
             <Label htmlFor="sets">
@@ -253,32 +254,35 @@ export function ExerciseConfigModal({
               className="mt-1.5"
             />
           </div>
+          </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={createMutation.isPending || updateMutation.isPending}
-            >
-              {createMutation.isPending || updateMutation.isPending ? (
-                <>
-                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
-                  {existingItem ? 'Updating...' : 'Adding...'}
-                </>
-              ) : (
-                existingItem ? 'Update Exercise' : 'Add Exercise'
-              )}
-            </Button>
+          {/* Actions - Fixed at bottom */}
+          <div className="shrink-0 border-t border-border p-6">
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={createMutation.isPending || updateMutation.isPending}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent" />
+                    {existingItem ? 'Updating...' : 'Adding...'}
+                  </>
+                ) : (
+                  existingItem ? 'Update Exercise' : 'Add Exercise'
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
