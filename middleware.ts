@@ -99,10 +99,35 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Redirect authenticated users from auth routes to dashboard
+  // Redirect authenticated users from auth routes to appropriate destination
   // But allow access to select-role page and change-password page
   if (isAuthRoute && user && pathname !== selectRoleRoute && pathname !== forceChangePasswordRoute) {
-    return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
+    // Fetch user roles from profile to determine where to redirect
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('roles')
+      .eq('id', user.id)
+      .single()
+
+    const roles: string[] = profile?.roles || ['athlete']
+
+    // If user has multiple switchable roles, send them to role selector
+    const switchableRoles = roles.filter(role =>
+      role === 'athlete' || role === 'coach' || role === 'admin' || role === 'super_admin'
+    )
+
+    if (switchableRoles.length > 1) {
+      return NextResponse.redirect(new URL(selectRoleRoute, request.url))
+    }
+
+    // Single role - redirect to appropriate dashboard
+    if (roles.includes('admin') || roles.includes('super_admin')) {
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+    if (roles.includes('coach')) {
+      return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url))
+    }
+    return NextResponse.redirect(new URL('/athlete', request.url))
   }
 
   // Require authentication for select-role page
