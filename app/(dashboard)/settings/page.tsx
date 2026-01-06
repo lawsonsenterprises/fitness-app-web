@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Camera, Save, Loader2 } from 'lucide-react'
+import { Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { AvatarUpload } from '@/components/avatar-upload'
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -30,6 +31,7 @@ export default function ProfileSettingsPage() {
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const supabase = createClient()
 
   const {
@@ -67,6 +69,7 @@ export default function ProfileSettingsPage() {
           .single()
 
         if (profile) {
+          setAvatarUrl(profile.avatar_url || null)
           reset({
             firstName: profile.first_name || user?.user_metadata?.first_name || '',
             lastName: profile.last_name || user?.user_metadata?.last_name || '',
@@ -144,6 +147,7 @@ export default function ProfileSettingsPage() {
         .single()
 
       if (updatedProfile) {
+        setAvatarUrl(updatedProfile.avatar_url || null)
         reset({
           firstName: updatedProfile.first_name || user?.user_metadata?.first_name || '',
           lastName: updatedProfile.last_name || user?.user_metadata?.last_name || '',
@@ -190,24 +194,13 @@ export default function ProfileSettingsPage() {
           This will be displayed on your profile and in messages
         </p>
 
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-foreground text-2xl font-bold text-background">
-              {initials || 'U'}
-            </div>
-            <button className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-amber-500 text-white shadow-lg transition-transform hover:scale-105">
-              <Camera className="h-4 w-4" />
-            </button>
-          </div>
-          <div>
-            <Button variant="outline" size="sm">
-              Upload Photo
-            </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              JPG, PNG or WebP. Max 2MB.
-            </p>
-          </div>
-        </div>
+        <AvatarUpload
+          avatarUrl={avatarUrl}
+          initials={initials}
+          onUploadComplete={(newAvatarUrl) => {
+            setAvatarUrl(newAvatarUrl)
+          }}
+        />
       </div>
 
       {/* Profile form */}

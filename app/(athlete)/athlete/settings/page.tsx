@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Loader2, Save, Camera } from 'lucide-react'
+import { Loader2, Save } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
 import { createClient } from '@/lib/supabase/client'
+import { AvatarUpload } from '@/components/avatar-upload'
 
 export default function AthleteProfileSettingsPage() {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ export default function AthleteProfileSettingsPage() {
     email: '',
     dateOfBirth: '',
     height: '',
+    avatarUrl: null as string | null,
   })
 
   const supabase = createClient()
@@ -43,6 +45,7 @@ export default function AthleteProfileSettingsPage() {
           email: user?.email || '',
           dateOfBirth: data?.date_of_birth || '',
           height: data?.height?.toString() || '',
+          avatarUrl: data?.avatar_url || null,
         })
       } catch {
         setProfile({
@@ -51,6 +54,7 @@ export default function AthleteProfileSettingsPage() {
           email: user?.email || '',
           dateOfBirth: '',
           height: '',
+          avatarUrl: null,
         })
       } finally {
         setIsFetching(false)
@@ -105,6 +109,7 @@ export default function AthleteProfileSettingsPage() {
           email: user?.email || '',
           dateOfBirth: updatedProfile.date_of_birth || '',
           height: updatedProfile.height?.toString() || '',
+          avatarUrl: updatedProfile.avatar_url || null,
         })
       }
 
@@ -140,24 +145,13 @@ export default function AthleteProfileSettingsPage() {
           This will be displayed on your profile and in messages
         </p>
 
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-amber-500 text-2xl font-bold text-white">
-              {initials || 'A'}
-            </div>
-            <button className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-foreground text-background shadow-lg transition-transform hover:scale-105">
-              <Camera className="h-4 w-4" />
-            </button>
-          </div>
-          <div>
-            <Button variant="outline" size="sm">
-              Upload Photo
-            </Button>
-            <p className="mt-2 text-xs text-muted-foreground">
-              JPG, PNG or WebP. Max 2MB.
-            </p>
-          </div>
-        </div>
+        <AvatarUpload
+          avatarUrl={profile.avatarUrl}
+          initials={initials}
+          onUploadComplete={(newAvatarUrl) => {
+            setProfile({ ...profile, avatarUrl: newAvatarUrl })
+          }}
+        />
       </div>
 
       {/* Personal Info */}
