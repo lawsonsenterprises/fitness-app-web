@@ -1664,19 +1664,43 @@ export interface ExerciseLibraryItem {
 
 export function useExerciseLibrary(athleteId?: string) {
   return useQuery({
-    queryKey: ['exercise-library', athleteId, 'v2'],
+    queryKey: ['exercise-library', athleteId, 'v3'],
     queryFn: async () => {
       // Fetch exercises from Supabase
       // RLS automatically filters: MuscleWiki + own custom + coach's custom (if has active coach)
-      const { data, error } = await supabase
-        .from('exercises')
-        .select('*')
-        .is('deleted_at', null)
-        .order('name', { ascending: true })
-        .limit(10000)
+      // Note: PostgREST has a 1000 row limit, so we need to paginate
+      const pageSize = 1000
+      let allExercises: any[] = []
+      let page = 0
+      let hasMore = true
 
-      if (error) {
-        console.error('Error fetching exercise library:', error)
+      while (hasMore) {
+        const from = page * pageSize
+        const to = from + pageSize - 1
+
+        const { data, error } = await supabase
+          .from('exercises')
+          .select('*')
+          .is('deleted_at', null)
+          .order('name', { ascending: true })
+          .range(from, to)
+
+        if (error) {
+          console.error('Error fetching exercise library:', error)
+          break
+        }
+
+        if (data && data.length > 0) {
+          allExercises = [...allExercises, ...data]
+          hasMore = data.length === pageSize
+          page++
+        } else {
+          hasMore = false
+        }
+      }
+
+      const data = allExercises
+      if (data.length === 0) {
         return []
       }
 
