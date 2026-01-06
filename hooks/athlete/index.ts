@@ -1664,7 +1664,7 @@ export interface ExerciseLibraryItem {
 
 export function useExerciseLibrary(athleteId?: string) {
   return useQuery({
-    queryKey: ['exercise-library', athleteId],
+    queryKey: ['exercise-library', athleteId, 'v2'],
     queryFn: async () => {
       // Fetch exercises from Supabase
       // RLS automatically filters: MuscleWiki + own custom + coach's custom (if has active coach)
