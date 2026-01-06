@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Save, Copy, Clipboard, Trash2 } from 'lucide-react'
 import { useUserProgramme, useUpdateUserProgramme } from '@/hooks/athlete'
-import { useProgrammeDays } from '@/hooks/use-programme-details'
+import { useProgrammeDays, useWorkoutItems } from '@/hooks/use-programme-details'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { DayEditorModal } from '@/components/programmes/day-editor-modal'
@@ -198,36 +198,12 @@ export default function ProgrammeBuilderPage() {
               const dayData = getDayData(selectedWeek, dayNumber)
 
               return (
-                <div
+                <DayCard
                   key={dayNumber}
-                  className="flex flex-col rounded-lg border border-border bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-md"
-                >
-                  <h3 className="mb-2 font-semibold">{dayName}</h3>
-
-                  <div className="mb-4 flex-1">
-                    {dayData ? (
-                      <>
-                        {dayData.dayName && (
-                          <p className="mb-2 text-sm text-muted-foreground">{dayData.dayName}</p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          0 exercises
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">No session</p>
-                    )}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => setEditingDay({ week: selectedWeek, day: dayNumber })}
-                  >
-                    {dayData ? 'Edit' : 'Add Session'}
-                  </Button>
-                </div>
+                  dayName={dayName}
+                  dayData={dayData}
+                  onEdit={() => setEditingDay({ week: selectedWeek, day: dayNumber })}
+                />
               )
             })}
           </div>
@@ -249,5 +225,48 @@ export default function ProgrammeBuilderPage() {
         />
       )}
     </>
+  )
+}
+
+interface DayCardProps {
+  dayName: string
+  dayData: {
+    id: string
+    dayName: string | null
+  } | null
+  onEdit: () => void
+}
+
+function DayCard({ dayName, dayData, onEdit }: DayCardProps) {
+  const { data: workoutItems = [] } = useWorkoutItems(dayData?.id || '')
+
+  return (
+    <div className="flex flex-col rounded-lg border border-border bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-md">
+      <h3 className="mb-2 font-semibold">{dayName}</h3>
+
+      <div className="mb-4 flex-1">
+        {dayData ? (
+          <>
+            {dayData.dayName && (
+              <p className="mb-2 text-sm text-muted-foreground">{dayData.dayName}</p>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {workoutItems.length} exercise{workoutItems.length !== 1 ? 's' : ''}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No session</p>
+        )}
+      </div>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={onEdit}
+      >
+        {dayData ? 'Edit' : 'Add Session'}
+      </Button>
+    </div>
   )
 }
