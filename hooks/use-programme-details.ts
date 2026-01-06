@@ -215,15 +215,7 @@ export function useWorkoutItems(programmeDayId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workout_items')
-        .select(`
-          *,
-          exercises!workout_items_exercise_library_item_id_fkey (
-            id,
-            name,
-            primary_muscle,
-            equipment
-          )
-        `)
+        .select('*')
         .eq('programme_day_id', programmeDayId)
         .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
         .order('sort_order', { ascending: true })
@@ -231,6 +223,30 @@ export function useWorkoutItems(programmeDayId: string) {
       if (error) {
         console.error('Error fetching workout items:', error)
         return []
+      }
+
+      // Fetch exercises separately for all items
+      const exerciseIds = (data || [])
+        .map(item => item.exercise_library_item_id)
+        .filter((id): id is string => id !== null)
+
+      let exercisesMap = new Map()
+      if (exerciseIds.length > 0) {
+        const { data: exercises } = await supabase
+          .from('exercises')
+          .select('id, name, primary_muscle, equipment')
+          .in('id', exerciseIds)
+
+        if (exercises) {
+          exercises.forEach(ex => {
+            exercisesMap.set(ex.id, {
+              id: ex.id,
+              name: ex.name,
+              primaryMuscle: ex.primary_muscle,
+              equipment: ex.equipment,
+            })
+          })
+        }
       }
 
       return (data || []).map(row => {
@@ -258,12 +274,7 @@ export function useWorkoutItems(programmeDayId: string) {
           notes: row.notes,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
-          exercise: row.exercises ? {
-            id: row.exercises.id,
-            name: row.exercises.name,
-            primaryMuscle: row.exercises.primary_muscle,
-            equipment: row.exercises.equipment,
-          } : undefined,
+          exercise: row.exercise_library_item_id ? exercisesMap.get(row.exercise_library_item_id) : undefined,
         }
       })
     },
@@ -328,35 +339,56 @@ export function useCreateWorkoutItem() {
         rpeUpper = data.rpeTarget
       }
 
+      const insertData = {
+        user_id: user.id,
+        programme_day_id: data.programmeDayId,
+        exercise_library_item_id: data.exerciseId,
+        sort_order: nextSortOrder,
+        target_sets: data.sets,
+        target_reps_lower: repsLower,
+        target_reps_upper: repsUpper,
+        target_rest_seconds: data.restSeconds || 90,
+        target_rpe_lower: rpeLower,
+        target_rpe_upper: rpeUpper,
+        notes: data.notes || null,
+      }
+
+      console.log('Inserting workout item:', insertData)
+
       const { data: newItem, error } = await supabase
         .from('workout_items')
-        .insert({
-          user_id: user.id,
-          programme_day_id: data.programmeDayId,
-          exercise_library_item_id: data.exerciseId,
-          sort_order: nextSortOrder,
-          target_sets: data.sets,
-          target_reps_lower: repsLower,
-          target_reps_upper: repsUpper,
-          target_rest_seconds: data.restSeconds || 90,
-          target_rpe_lower: rpeLower,
-          target_rpe_upper: rpeUpper,
-          notes: data.notes || null,
-        })
-        .select(`
-          *,
-          exercises!workout_items_exercise_library_item_id_fkey (
-            id,
-            name,
-            primary_muscle,
-            equipment
-          )
-        `)
+        .insert(insertData)
+        .select('*')
         .single()
 
       if (error) {
         console.error('Error creating workout item:', error)
-        throw new Error('Failed to create workout item')
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw new Error(`Failed to create workout item: ${error.message}`)
+      }
+
+      // Fetch the exercise details separately
+      let exerciseData = undefined
+      if (newItem.exercise_library_item_id) {
+        const { data: exercise } = await supabase
+          .from('exercises')
+          .select('id, name, primary_muscle, equipment')
+          .eq('id', newItem.exercise_library_item_id)
+          .single()
+
+        if (exercise) {
+          exerciseData = {
+            id: exercise.id,
+            name: exercise.name,
+            primaryMuscle: exercise.primary_muscle,
+            equipment: exercise.equipment,
+          }
+        }
       }
 
       // Convert back to frontend format
@@ -380,12 +412,7 @@ export function useCreateWorkoutItem() {
         notes: newItem.notes,
         createdAt: newItem.created_at,
         updatedAt: newItem.updated_at,
-        exercise: newItem.exercises ? {
-          id: newItem.exercises.id,
-          name: newItem.exercises.name,
-          primaryMuscle: newItem.exercises.primary_muscle,
-          equipment: newItem.exercises.equipment,
-        } : undefined,
+        exercise: exerciseData,
       }
     },
     onSuccess: (_, variables) => {
