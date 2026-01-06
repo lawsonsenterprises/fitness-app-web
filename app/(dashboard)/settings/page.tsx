@@ -136,6 +136,26 @@ export default function ProfileSettingsPage() {
 
       if (profileError) throw profileError
 
+      // Refetch profile to confirm changes
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (updatedProfile) {
+        reset({
+          firstName: updatedProfile.first_name || user?.user_metadata?.first_name || '',
+          lastName: updatedProfile.last_name || user?.user_metadata?.last_name || '',
+          email: user?.email || '',
+          businessName: updatedProfile.business_name || '',
+          bio: updatedProfile.bio || '',
+          credentials: updatedProfile.qualifications?.join(', ') || '',
+          websiteUrl: updatedProfile.website_url || '',
+          instagramHandle: updatedProfile.social_links?.instagram || '',
+        })
+      }
+
       toast.success('Profile updated', {
         description: 'Your changes have been saved.',
       })

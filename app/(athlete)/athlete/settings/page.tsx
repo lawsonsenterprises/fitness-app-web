@@ -91,6 +91,23 @@ export default function AthleteProfileSettingsPage() {
 
       if (profileError) throw profileError
 
+      // Refetch profile to confirm changes
+      const { data: updatedProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+
+      if (updatedProfile) {
+        setProfile({
+          firstName: updatedProfile.first_name || user?.user_metadata?.first_name || '',
+          lastName: updatedProfile.last_name || user?.user_metadata?.last_name || '',
+          email: user?.email || '',
+          dateOfBirth: updatedProfile.date_of_birth || '',
+          height: updatedProfile.height?.toString() || '',
+        })
+      }
+
       toast.success('Profile updated', {
         description: 'Your changes have been saved.',
       })
