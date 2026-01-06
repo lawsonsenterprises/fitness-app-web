@@ -339,37 +339,27 @@ export function useCreateWorkoutItem() {
         rpeUpper = data.rpeTarget
       }
 
-      const insertData = {
-        user_id: user.id,
-        programme_day_id: data.programmeDayId,
-        exercise_library_item_id: data.exerciseId,
-        sort_order: nextSortOrder,
-        target_sets: data.sets,
-        target_reps_lower: repsLower,
-        target_reps_upper: repsUpper,
-        target_rest_seconds: data.restSeconds || 90,
-        target_rpe_lower: rpeLower,
-        target_rpe_upper: rpeUpper,
-        notes: data.notes || null,
-      }
-
-      console.log('Inserting workout item:', insertData)
-
       const { data: newItem, error } = await supabase
         .from('workout_items')
-        .insert(insertData)
+        .insert({
+          user_id: user.id,
+          programme_day_id: data.programmeDayId,
+          exercise_library_item_id: data.exerciseId,
+          sort_order: nextSortOrder,
+          target_sets: data.sets,
+          target_reps_lower: repsLower,
+          target_reps_upper: repsUpper,
+          target_rest_seconds: data.restSeconds || 90,
+          target_rpe_lower: rpeLower,
+          target_rpe_upper: rpeUpper,
+          notes: data.notes || null,
+        })
         .select('*')
         .single()
 
       if (error) {
         console.error('Error creating workout item:', error)
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-        throw new Error(`Failed to create workout item: ${error.message}`)
+        throw new Error('Failed to create workout item')
       }
 
       // Fetch the exercise details separately
