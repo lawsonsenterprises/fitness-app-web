@@ -200,22 +200,24 @@ export default function ProgrammeBuilderPage() {
               return (
                 <div
                   key={dayNumber}
-                  className="rounded-lg border border-border bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-md"
+                  className="flex flex-col rounded-lg border border-border bg-card p-4 transition-all hover:border-foreground/20 hover:shadow-md"
                 >
                   <h3 className="mb-2 font-semibold">{dayName}</h3>
 
-                  {dayData ? (
-                    <>
-                      {dayData.dayName && (
-                        <p className="mb-2 text-sm text-muted-foreground">{dayData.dayName}</p>
-                      )}
-                      <p className="mb-4 text-sm text-muted-foreground">
-                        0 exercises
-                      </p>
-                    </>
-                  ) : (
-                    <p className="mb-4 text-sm text-muted-foreground">No session</p>
-                  )}
+                  <div className="mb-4 flex-1">
+                    {dayData ? (
+                      <>
+                        {dayData.dayName && (
+                          <p className="mb-2 text-sm text-muted-foreground">{dayData.dayName}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground">
+                          0 exercises
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No session</p>
+                    )}
+                  </div>
 
                   <Button
                     variant="outline"
