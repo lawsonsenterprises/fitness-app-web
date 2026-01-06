@@ -34,10 +34,10 @@ export default function ProgrammeBuilderPage() {
 
   const handleSave = useCallback(async () => {
     // Sessions are saved automatically when edited in DayEditorModal
-    // This just clears the unsaved changes indicator
     setHasUnsavedChanges(false)
     toast.success('Programme saved')
-  }, [])
+    router.push('/athlete/training/programmes')
+  }, [router])
 
   const handleCopyWeek = () => {
     const weekDays = programmeDays.filter(d => d.weekNumber === selectedWeek)
