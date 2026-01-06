@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Save, Copy, Clipboard, Trash2 } from 'lucide-react'
-import { useUserProgramme, useUpdateUserProgramme } from '@/hooks/athlete'
+import { useUserProgramme } from '@/hooks/athlete'
 import { useProgrammeDays, useWorkoutItems } from '@/hooks/use-programme-details'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -24,7 +24,6 @@ export default function ProgrammeBuilderPage() {
 
   const { data: programme, isLoading } = useUserProgramme(programmeId)
   const { data: programmeDays = [] } = useProgrammeDays(programmeId)
-  const updateMutation = useUpdateUserProgramme()
 
   const [selectedWeek, setSelectedWeek] = useState(1)
   const [editingDay, setEditingDay] = useState<{ week: number; day: number } | null>(null)
@@ -34,18 +33,11 @@ export default function ProgrammeBuilderPage() {
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
   const handleSave = useCallback(async () => {
-    try {
-      await updateMutation.mutateAsync({
-        programmeId,
-        // Additional fields can be saved here
-      })
-      setHasUnsavedChanges(false)
-      toast.success('Programme saved')
-    } catch (error) {
-      console.error('Error saving programme:', error)
-      toast.error('Failed to save programme')
-    }
-  }, [programmeId, updateMutation])
+    // Sessions are saved automatically when edited in DayEditorModal
+    // This just clears the unsaved changes indicator
+    setHasUnsavedChanges(false)
+    toast.success('Programme saved')
+  }, [])
 
   const handleCopyWeek = () => {
     const weekDays = programmeDays.filter(d => d.weekNumber === selectedWeek)
@@ -138,9 +130,9 @@ export default function ProgrammeBuilderPage() {
                 {hasUnsavedChanges && (
                   <span className="text-sm text-muted-foreground">Unsaved changes</span>
                 )}
-                <Button onClick={handleSave} disabled={updateMutation.isPending}>
+                <Button onClick={handleSave}>
                   <Save className="mr-2 h-4 w-4" />
-                  {updateMutation.isPending ? 'Saving...' : 'Save'}
+                  Save
                 </Button>
               </div>
             </div>
