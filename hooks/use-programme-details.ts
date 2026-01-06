@@ -217,7 +217,7 @@ export function useWorkoutItems(programmeDayId: string) {
         .from('workout_items')
         .select(`
           *,
-          exercises (
+          exercises!workout_items_exercise_library_item_id_fkey (
             id,
             name,
             primary_muscle,
@@ -225,33 +225,47 @@ export function useWorkoutItems(programmeDayId: string) {
           )
         `)
         .eq('programme_day_id', programmeDayId)
-        .order('order_index', { ascending: true })
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
+        .order('sort_order', { ascending: true })
 
       if (error) {
         console.error('Error fetching workout items:', error)
         return []
       }
 
-      return (data || []).map(row => ({
-        id: row.id,
-        programmeDayId: row.programme_day_id,
-        exerciseId: row.exercise_id,
-        orderIndex: row.order_index,
-        sets: row.sets,
-        reps: row.reps,
-        targetWeightKg: row.target_weight_kg,
-        restSeconds: row.rest_seconds,
-        rpeTarget: row.rpe_target,
-        notes: row.notes,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
-        exercise: row.exercises ? {
-          id: row.exercises.id,
-          name: row.exercises.name,
-          primaryMuscle: row.exercises.primary_muscle,
-          equipment: row.exercises.equipment,
-        } : undefined,
-      }))
+      return (data || []).map(row => {
+        // Convert reps back to string format
+        let reps = ''
+        if (row.target_reps_lower !== null && row.target_reps_upper !== null) {
+          reps = row.target_reps_lower === row.target_reps_upper
+            ? row.target_reps_lower.toString()
+            : `${row.target_reps_lower}-${row.target_reps_upper}`
+        }
+
+        // Convert RPE to single value (use upper for display)
+        const rpeTarget = row.target_rpe_upper
+
+        return {
+          id: row.id,
+          programmeDayId: row.programme_day_id,
+          exerciseId: row.exercise_library_item_id,
+          orderIndex: row.sort_order,
+          sets: row.target_sets || 0,
+          reps,
+          targetWeightKg: null, // Not stored in this schema
+          restSeconds: row.target_rest_seconds || 0,
+          rpeTarget,
+          notes: row.notes,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          exercise: row.exercises ? {
+            id: row.exercises.id,
+            name: row.exercises.name,
+            primaryMuscle: row.exercises.primary_muscle,
+            equipment: row.exercises.equipment,
+          } : undefined,
+        }
+      })
     },
     enabled: !!programmeDayId,
   })
@@ -273,34 +287,65 @@ export function useCreateWorkoutItem() {
 
   return useMutation({
     mutationFn: async (data: CreateWorkoutItemData) => {
-      // Get the current max order_index
+      // Get current user for user_id
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        throw new Error('Authentication required')
+      }
+
+      // Get the current max sort_order
       const { data: existingItems } = await supabase
         .from('workout_items')
-        .select('order_index')
+        .select('sort_order')
         .eq('programme_day_id', data.programmeDayId)
-        .order('order_index', { ascending: false })
+        .order('sort_order', { ascending: false })
         .limit(1)
 
-      const nextOrderIndex = existingItems && existingItems.length > 0
-        ? (existingItems[0].order_index + 1)
+      const nextSortOrder = existingItems && existingItems.length > 0
+        ? (existingItems[0].sort_order + 1)
         : 0
+
+      // Parse reps string into lower/upper bounds
+      let repsLower = null
+      let repsUpper = null
+      if (data.reps) {
+        const repsMatch = data.reps.match(/^(\d+)-(\d+)$/)
+        if (repsMatch) {
+          repsLower = parseInt(repsMatch[1])
+          repsUpper = parseInt(repsMatch[2])
+        } else if (/^\d+$/.test(data.reps)) {
+          const repsNum = parseInt(data.reps)
+          repsLower = repsNum
+          repsUpper = repsNum
+        }
+      }
+
+      // Parse RPE into lower/upper bounds
+      let rpeLower = null
+      let rpeUpper = null
+      if (data.rpeTarget) {
+        rpeLower = data.rpeTarget
+        rpeUpper = data.rpeTarget
+      }
 
       const { data: newItem, error } = await supabase
         .from('workout_items')
         .insert({
+          user_id: user.id,
           programme_day_id: data.programmeDayId,
-          exercise_id: data.exerciseId,
-          order_index: nextOrderIndex,
-          sets: data.sets,
-          reps: data.reps,
-          target_weight_kg: data.targetWeightKg || null,
-          rest_seconds: data.restSeconds || 90,
-          rpe_target: data.rpeTarget || null,
+          exercise_library_item_id: data.exerciseId,
+          sort_order: nextSortOrder,
+          target_sets: data.sets,
+          target_reps_lower: repsLower,
+          target_reps_upper: repsUpper,
+          target_rest_seconds: data.restSeconds || 90,
+          target_rpe_lower: rpeLower,
+          target_rpe_upper: rpeUpper,
           notes: data.notes || null,
         })
         .select(`
           *,
-          exercises (
+          exercises!workout_items_exercise_library_item_id_fkey (
             id,
             name,
             primary_muscle,
@@ -314,16 +359,24 @@ export function useCreateWorkoutItem() {
         throw new Error('Failed to create workout item')
       }
 
+      // Convert back to frontend format
+      let reps = ''
+      if (newItem.target_reps_lower !== null && newItem.target_reps_upper !== null) {
+        reps = newItem.target_reps_lower === newItem.target_reps_upper
+          ? newItem.target_reps_lower.toString()
+          : `${newItem.target_reps_lower}-${newItem.target_reps_upper}`
+      }
+
       return {
         id: newItem.id,
         programmeDayId: newItem.programme_day_id,
-        exerciseId: newItem.exercise_id,
-        orderIndex: newItem.order_index,
-        sets: newItem.sets,
-        reps: newItem.reps,
-        targetWeightKg: newItem.target_weight_kg,
-        restSeconds: newItem.rest_seconds,
-        rpeTarget: newItem.rpe_target,
+        exerciseId: newItem.exercise_library_item_id,
+        orderIndex: newItem.sort_order,
+        sets: newItem.target_sets || 0,
+        reps,
+        targetWeightKg: null,
+        restSeconds: newItem.target_rest_seconds || 0,
+        rpeTarget: newItem.target_rpe_upper,
         notes: newItem.notes,
         createdAt: newItem.created_at,
         updatedAt: newItem.updated_at,
@@ -359,13 +412,34 @@ export function useUpdateWorkoutItem() {
   return useMutation({
     mutationFn: async (data: UpdateWorkoutItemData) => {
       const updateData: Record<string, unknown> = {}
-      if (data.sets !== undefined) updateData.sets = data.sets
-      if (data.reps !== undefined) updateData.reps = data.reps
-      if (data.targetWeightKg !== undefined) updateData.target_weight_kg = data.targetWeightKg
-      if (data.restSeconds !== undefined) updateData.rest_seconds = data.restSeconds
-      if (data.rpeTarget !== undefined) updateData.rpe_target = data.rpeTarget
+
+      if (data.sets !== undefined) updateData.target_sets = data.sets
+
+      if (data.reps !== undefined) {
+        // Parse reps string into lower/upper bounds
+        const repsMatch = data.reps.match(/^(\d+)-(\d+)$/)
+        if (repsMatch) {
+          updateData.target_reps_lower = parseInt(repsMatch[1])
+          updateData.target_reps_upper = parseInt(repsMatch[2])
+        } else if (/^\d+$/.test(data.reps)) {
+          const repsNum = parseInt(data.reps)
+          updateData.target_reps_lower = repsNum
+          updateData.target_reps_upper = repsNum
+        } else {
+          updateData.target_reps_lower = null
+          updateData.target_reps_upper = null
+        }
+      }
+
+      if (data.restSeconds !== undefined) updateData.target_rest_seconds = data.restSeconds
+
+      if (data.rpeTarget !== undefined) {
+        updateData.target_rpe_lower = data.rpeTarget
+        updateData.target_rpe_upper = data.rpeTarget
+      }
+
       if (data.notes !== undefined) updateData.notes = data.notes
-      if (data.orderIndex !== undefined) updateData.order_index = data.orderIndex
+      if (data.orderIndex !== undefined) updateData.sort_order = data.orderIndex
 
       const { error } = await supabase
         .from('workout_items')
@@ -414,7 +488,7 @@ export function useReorderWorkoutItems() {
       const updates = items.map(item =>
         supabase
           .from('workout_items')
-          .update({ order_index: item.orderIndex })
+          .update({ sort_order: item.orderIndex })
           .eq('id', item.id)
       )
 
