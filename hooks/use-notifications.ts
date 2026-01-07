@@ -1,10 +1,26 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { Notification, PaginatedResponse } from '@/types'
+import { createClient } from '@/lib/supabase/client'
+import type { Notification, NotificationRow, PaginatedResponse } from '@/types'
 
-// TODO: Implement notifications table in Supabase
-// Currently no notifications system exists in the database
+const supabase = createClient()
+
+// Transform database row to Notification interface
+function transformNotification(row: NotificationRow): Notification {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    type: row.type as Notification['type'],
+    title: row.title,
+    description: row.description,
+    linkUrl: row.link_url,
+    isRead: row.is_read,
+    metadata: row.metadata,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
 
 interface UseNotificationsOptions {
   unreadOnly?: boolean
@@ -15,14 +31,57 @@ interface UseNotificationsOptions {
 async function fetchNotifications(
   options: UseNotificationsOptions = {}
 ): Promise<PaginatedResponse<Notification>> {
-  // No notifications table exists - return empty
-  console.warn('Notifications feature not implemented - no notifications table in database')
+  const { unreadOnly = false, page = 1, pageSize = 20 } = options
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return {
+      data: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 0,
+    }
+  }
+
+  // Build query
+  let query = supabase
+    .from('notifications')
+    .select('*', { count: 'exact' })
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (unreadOnly) {
+    query = query.eq('is_read', false)
+  }
+
+  // Pagination
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query.range(from, to)
+
+  const { data, error, count } = await query
+
+  if (error) {
+    console.error('Error fetching notifications:', error)
+    return {
+      data: [],
+      total: 0,
+      page,
+      pageSize,
+      totalPages: 0,
+    }
+  }
+
+  const notifications = (data || []).map((row) => transformNotification(row as NotificationRow))
+  const total = count || 0
+
   return {
-    data: [],
-    total: 0,
-    page: options.page || 1,
-    pageSize: options.pageSize || 20,
-    totalPages: 0,
+    data: notifications,
+    total,
+    page,
+    pageSize,
+    totalPages: Math.ceil(total / pageSize),
   }
 }
 
@@ -37,8 +96,23 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
 
 // Hook for unread count
 async function fetchUnreadCount(): Promise<number> {
-  // No notifications table exists - return 0
-  return 0
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    return 0
+  }
+
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+
+  if (error) {
+    console.error('Error fetching unread count:', error)
+    return 0
+  }
+
+  return count || 0
 }
 
 export function useUnreadNotificationsCount() {
@@ -51,8 +125,22 @@ export function useUnreadNotificationsCount() {
 }
 
 // Hook for marking notification as read
-async function markAsRead(_notificationId: string): Promise<void> {
-  console.warn('Mark notification as read not implemented - no notifications table in database')
+async function markAsRead(notificationId: string): Promise<void> {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    throw new Error('Authentication required')
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true, updated_at: new Date().toISOString() })
+    .eq('id', notificationId)
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error marking notification as read:', error)
+    throw new Error('Failed to mark notification as read')
+  }
 }
 
 export function useMarkNotificationAsRead() {
@@ -69,7 +157,21 @@ export function useMarkNotificationAsRead() {
 
 // Hook for marking all as read
 async function markAllAsRead(): Promise<void> {
-  console.warn('Mark all notifications as read not implemented - no notifications table in database')
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    throw new Error('Authentication required')
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true, updated_at: new Date().toISOString() })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+
+  if (error) {
+    console.error('Error marking all notifications as read:', error)
+    throw new Error('Failed to mark all notifications as read')
+  }
 }
 
 export function useMarkAllNotificationsAsRead() {
@@ -77,6 +179,37 @@ export function useMarkAllNotificationsAsRead() {
 
   return useMutation({
     mutationFn: markAllAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      queryClient.invalidateQueries({ queryKey: ['notificationsUnreadCount'] })
+    },
+  })
+}
+
+// Hook for deleting a notification
+async function deleteNotification(notificationId: string): Promise<void> {
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) {
+    throw new Error('Authentication required')
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', notificationId)
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error deleting notification:', error)
+    throw new Error('Failed to delete notification')
+  }
+}
+
+export function useDeleteNotification() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: deleteNotification,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] })
       queryClient.invalidateQueries({ queryKey: ['notificationsUnreadCount'] })

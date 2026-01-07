@@ -7,6 +7,8 @@ import {
   UserCheck,
   AlertCircle,
   Clock,
+  Dumbbell,
+  UtensilsCrossed,
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
@@ -38,6 +40,16 @@ const typeConfig = {
     icon: AlertCircle,
     iconColor: 'text-orange-500',
     bgColor: 'bg-orange-500/10',
+  },
+  programme_assigned: {
+    icon: Dumbbell,
+    iconColor: 'text-purple-500',
+    bgColor: 'bg-purple-500/10',
+  },
+  meal_plan_assigned: {
+    icon: UtensilsCrossed,
+    iconColor: 'text-green-500',
+    bgColor: 'bg-green-500/10',
   },
 }
 

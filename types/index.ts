@@ -516,13 +516,28 @@ export interface CoachMessageRow {
 // Notification types
 export interface Notification {
   id: string
-  coachId: string
+  userId: string
   type: NotificationType
   title: string
-  description: string
-  linkUrl?: string
+  description: string | null
+  linkUrl: string | null
   isRead: boolean
+  metadata: Record<string, unknown> | null
   createdAt: string
+  updatedAt: string
+}
+
+export interface NotificationRow {
+  id: string
+  user_id: string
+  type: string
+  title: string
+  description: string | null
+  link_url: string | null
+  is_read: boolean
+  metadata: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
 }
 
 export type NotificationType =
@@ -530,6 +545,8 @@ export type NotificationType =
   | 'message_received'
   | 'client_accepted'
   | 'client_inactive'
+  | 'programme_assigned'
+  | 'meal_plan_assigned'
 
 // Analytics types
 export interface CoachAnalytics {
