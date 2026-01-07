@@ -379,6 +379,8 @@ export function useCurrentProgramme(athleteId?: string) {
 
 // ==================== User Programmes (Athlete Self-Coached) ====================
 
+export type ProgrammeRotationType = 'sequential' | 'weeklyMapped'
+
 export interface UserProgramme {
   id: string
   userId: string
@@ -386,6 +388,7 @@ export interface UserProgramme {
   description: string | null
   durationWeeks: number
   currentWeek: number
+  rotationType: ProgrammeRotationType
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -421,6 +424,7 @@ export function useUserProgrammes() {
         description: row.description || null,
         durationWeeks: row.duration_weeks || 0,
         currentWeek: row.current_week || 1,
+        rotationType: (row.rotation_type || 'weeklyMapped') as ProgrammeRotationType,
         isActive: row.is_active || false,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
@@ -460,6 +464,7 @@ export function useUserProgramme(programmeId: string) {
         description: data.description || null,
         durationWeeks: data.duration_weeks || 0,
         currentWeek: data.current_week || 1,
+        rotationType: (data.rotation_type || 'weeklyMapped') as ProgrammeRotationType,
         isActive: data.is_active || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
@@ -474,6 +479,7 @@ export interface CreateUserProgrammeData {
   name: string
   description?: string
   durationWeeks: number
+  rotationType?: ProgrammeRotationType
 }
 
 export function useCreateUserProgramme() {
@@ -493,6 +499,7 @@ export function useCreateUserProgramme() {
           name: data.name,
           description: data.description || null,
           duration_weeks: data.durationWeeks,
+          rotation_type: data.rotationType || 'weeklyMapped',
           current_week: 1,
           is_active: false,
         })
@@ -511,6 +518,7 @@ export function useCreateUserProgramme() {
         description: newProgramme.description,
         durationWeeks: newProgramme.duration_weeks,
         currentWeek: newProgramme.current_week,
+        rotationType: (newProgramme.rotation_type || 'weeklyMapped') as ProgrammeRotationType,
         isActive: newProgramme.is_active,
         createdAt: newProgramme.created_at,
         updatedAt: newProgramme.updated_at,
@@ -529,6 +537,7 @@ export interface UpdateUserProgrammeData {
   description?: string
   durationWeeks?: number
   currentWeek?: number
+  rotationType?: ProgrammeRotationType
 }
 
 export function useUpdateUserProgramme() {
@@ -546,6 +555,7 @@ export function useUpdateUserProgramme() {
       if (data.description !== undefined) updateData.description = data.description
       if (data.durationWeeks !== undefined) updateData.duration_weeks = data.durationWeeks
       if (data.currentWeek !== undefined) updateData.current_week = data.currentWeek
+      if (data.rotationType !== undefined) updateData.rotation_type = data.rotationType
 
       const { data: updated, error } = await supabase
         .from('programmes')
@@ -567,6 +577,7 @@ export function useUpdateUserProgramme() {
         description: updated.description,
         durationWeeks: updated.duration_weeks,
         currentWeek: updated.current_week,
+        rotationType: (updated.rotation_type || 'weeklyMapped') as ProgrammeRotationType,
         isActive: updated.is_active,
         createdAt: updated.created_at,
         updatedAt: updated.updated_at,
@@ -662,6 +673,7 @@ export function useDuplicateUserProgramme() {
         description: duplicate.description || null,
         durationWeeks: duplicate.duration_weeks || 0,
         currentWeek: duplicate.current_week || 1,
+        rotationType: (duplicate.rotation_type || 'weeklyMapped') as ProgrammeRotationType,
         isActive: duplicate.is_active || false,
         createdAt: duplicate.created_at,
         updatedAt: duplicate.updated_at,

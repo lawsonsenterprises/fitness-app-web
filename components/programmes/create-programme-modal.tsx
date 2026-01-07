@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
-import { useCreateUserProgramme } from '@/hooks/athlete'
+import { useCreateUserProgramme, type ProgrammeRotationType } from '@/hooks/athlete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,10 +18,16 @@ interface CreateProgrammeModalProps {
 export function CreateProgrammeModal({ isOpen, onClose }: CreateProgrammeModalProps) {
   const router = useRouter()
   const createMutation = useCreateUserProgramme()
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    description: string
+    durationWeeks: number
+    rotationType: ProgrammeRotationType
+  }>({
     name: '',
     description: '',
     durationWeeks: 4,
+    rotationType: 'weeklyMapped',
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,12 +48,13 @@ export function CreateProgrammeModal({ isOpen, onClose }: CreateProgrammeModalPr
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         durationWeeks: formData.durationWeeks,
+        rotationType: formData.rotationType,
       })
 
       toast.success('Programme created successfully')
 
       // Reset form
-      setFormData({ name: '', description: '', durationWeeks: 4 })
+      setFormData({ name: '', description: '', durationWeeks: 4, rotationType: 'weeklyMapped' })
 
       // Close modal
       onClose()
@@ -112,6 +119,62 @@ export function CreateProgrammeModal({ isOpen, onClose }: CreateProgrammeModalPr
               rows={3}
               className="mt-1.5"
             />
+          </div>
+
+          {/* Rotation Type */}
+          <div>
+            <Label className="mb-3 block">
+              Programme Type <span className="text-destructive">*</span>
+            </Label>
+            <div className="space-y-3">
+              {/* Weekly Schedule Option */}
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  formData.rotationType === 'weeklyMapped'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="rotationType"
+                  value="weeklyMapped"
+                  checked={formData.rotationType === 'weeklyMapped'}
+                  onChange={(e) => setFormData({ ...formData, rotationType: e.target.value as ProgrammeRotationType })}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium">Weekly Schedule</div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Days assigned to specific weekdays (Mon, Tue, Wed, etc.). Shows today's scheduled workout.
+                  </p>
+                </div>
+              </label>
+
+              {/* Sequential Rotation Option */}
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors ${
+                  formData.rotationType === 'sequential'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="rotationType"
+                  value="sequential"
+                  checked={formData.rotationType === 'sequential'}
+                  onChange={(e) => setFormData({ ...formData, rotationType: e.target.value as ProgrammeRotationType })}
+                  className="mt-0.5"
+                />
+                <div className="flex-1">
+                  <div className="font-medium">Sequential Rotation</div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Goes through days in order (Day 1 → Day 2 → Day 3 → repeat). Next workout is based on last completed session.
+                  </p>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Duration */}
