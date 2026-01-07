@@ -14,14 +14,17 @@ import {
   AlertCircle,
   Key,
   Users,
+  UserPlus,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { useAllCoaches, usePlatformStats } from '@/hooks/admin'
 import { ResetPasswordModal } from '@/components/admin/shared/reset-password-modal'
+import { AddCoachDialog } from '@/components/admin/coaches/add-coach-dialog'
 
 function getInitials(firstName?: string | null, lastName?: string | null, email?: string): string {
   if (firstName && lastName) {
@@ -72,6 +75,7 @@ export default function CoachesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'trial' | 'inactive'>('all')
   const [coachToResetPassword, setCoachToResetPassword] = useState<CoachForReset | null>(null)
+  const [showAddCoachDialog, setShowAddCoachDialog] = useState(false)
 
   const { data: coachesData, isLoading, error } = useAllCoaches({
     search: searchQuery || undefined,
@@ -104,11 +108,20 @@ export default function CoachesPage() {
       <TopBar title="Coaches" />
       <div className="p-6 lg:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
-          <p className="mt-1 text-muted-foreground">
-            Manage all coaches on the platform
-          </p>
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
+            <p className="mt-1 text-muted-foreground">
+              Manage all coaches on the platform
+            </p>
+          </div>
+          <Button
+            onClick={() => setShowAddCoachDialog(true)}
+            className="gap-2 bg-amber-600 hover:bg-amber-700"
+          >
+            <UserPlus className="h-4 w-4" />
+            Add Coach
+          </Button>
         </div>
 
         {/* Stats */}
@@ -303,6 +316,12 @@ export default function CoachesPage() {
             user={coachToResetPassword}
           />
         )}
+
+        {/* Add Coach Dialog */}
+        <AddCoachDialog
+          isOpen={showAddCoachDialog}
+          onClose={() => setShowAddCoachDialog(false)}
+        />
       </div>
     </>
   )

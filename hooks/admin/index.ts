@@ -1269,3 +1269,28 @@ export function usePromoteToSuperAdmin() {
     },
   })
 }
+
+// ============================================================================
+// Coach Invitation Hooks
+// ============================================================================
+
+export function useInviteCoach() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ email, displayName }: { email: string; displayName: string }) => {
+      const { inviteCoach } = await import('@/app/actions/invite-coach')
+      const result = await inviteCoach(email, displayName)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to invite coach')
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['all-coaches'] })
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+    },
+  })
+}
