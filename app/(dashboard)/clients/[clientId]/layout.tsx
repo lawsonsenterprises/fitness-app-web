@@ -49,10 +49,10 @@ export default function ClientDetailLayout({
   }) || tabs[0]
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <TopBar title="Client Details" />
 
-      <div className="border-b border-border bg-card/50">
+      <div className="sticky top-16 z-10 border-b border-border bg-card/95 backdrop-blur-sm lg:top-20">
         <div className="px-4 py-4 lg:px-8">
           {/* Back button and client header */}
           <div className="mb-4">
@@ -133,7 +133,7 @@ export default function ClientDetailLayout({
       </div>
 
       {/* Tab content */}
-      <div className="p-4 lg:p-8">{children}</div>
+      <div className="flex-1 overflow-auto p-4 lg:p-8">{children}</div>
     </div>
   )
 }
