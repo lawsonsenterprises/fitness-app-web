@@ -21,6 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { CreateProgrammeModal } from '@/components/programmes/create-programme-modal'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 export default function ProgrammesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -66,19 +67,15 @@ export default function ProgrammesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Programmes</h1>
-              <p className="mt-2 text-muted-foreground">Create and manage your training programmes</p>
-            </div>
-          </div>
+      <>
+        <TopBar title="My Programmes" />
+        <div className="p-6 lg:p-8">
+          <p className="mb-6 text-muted-foreground">Create and manage your training programmes</p>
           <div className="flex items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-foreground/10 border-t-foreground"></div>
           </div>
         </div>
-      </div>
+      </>
     )
   }
 
@@ -87,28 +84,26 @@ export default function ProgrammesPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-background">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Programmes</h1>
-              <p className="mt-2 text-muted-foreground">
-                {programmes.length === 0
-                  ? 'Create your first training programme'
-                  : `${programmes.length} ${programmes.length === 1 ? 'programme' : 'programmes'}`}
-              </p>
-            </div>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Programme
-            </Button>
-          </div>
+      <TopBar title="My Programmes" />
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between">
+          <p className="text-muted-foreground">
+            {programmes.length === 0
+              ? 'Create your first training programme'
+              : `${programmes.length} ${programmes.length === 1 ? 'programme' : 'programmes'}`}
+          </p>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Programme
+          </Button>
+        </div>
 
-          {/* Active Programme */}
-          {activeProgramme && (
-            <div className="mb-8">
-              <h2 className="mb-4 text-lg font-semibold">Active Programme</h2>
+        {/* Active Programme */}
+        {activeProgramme && (
+          <div className="mb-8">
+            <h2 className="mb-4 text-lg font-semibold">Active Programme</h2>
+            <div className="max-w-2xl">
               <ProgrammeCard
                 programme={activeProgramme}
                 onDelete={handleDelete}
@@ -117,44 +112,44 @@ export default function ProgrammesPage() {
                 isActive={true}
               />
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Inactive Programmes */}
-          {inactiveProgrammes.length > 0 && (
-            <div>
-              <h2 className="mb-4 text-lg font-semibold">All Programmes</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {inactiveProgrammes.map((programme) => (
-                  <ProgrammeCard
-                    key={programme.id}
-                    programme={programme}
-                    onDelete={handleDelete}
-                    onDuplicate={handleDuplicate}
-                    onSetActive={handleSetActive}
-                    isActive={false}
-                  />
-                ))}
-              </div>
+        {/* Inactive Programmes */}
+        {inactiveProgrammes.length > 0 && (
+          <div>
+            <h2 className="mb-4 text-lg font-semibold">All Programmes</h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {inactiveProgrammes.map((programme) => (
+                <ProgrammeCard
+                  key={programme.id}
+                  programme={programme}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onSetActive={handleSetActive}
+                  isActive={false}
+                />
+              ))}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Empty State */}
-          {programmes.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 py-16">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5">
-                <Calendar className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <h3 className="mt-6 text-lg font-semibold">No programmes yet</h3>
-              <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
-                Create your first training programme to start tracking your workouts
-              </p>
-              <Button onClick={() => setShowCreateModal(true)} className="mt-6">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Programme
-              </Button>
+        {/* Empty State */}
+        {programmes.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-muted/20 py-16">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5">
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
-          )}
-        </div>
+            <h3 className="mt-6 text-lg font-semibold">No programmes yet</h3>
+            <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
+              Create your first training programme to start tracking your workouts
+            </p>
+            <Button onClick={() => setShowCreateModal(true)} className="mt-6">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Programme
+            </Button>
+          </div>
+        )}
       </div>
 
       <CreateProgrammeModal

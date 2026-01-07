@@ -22,6 +22,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { useExerciseLibrary, useToggleExerciseFavourite, type ExerciseLibraryItem } from '@/hooks/athlete'
 import { useAuth } from '@/contexts/auth-context'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 // Type alias for page-specific use
 type Exercise = ExerciseLibraryItem
@@ -151,30 +152,32 @@ export default function ExerciseLibraryPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <>
+        <TopBar title="Exercise Library" />
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Exercise Library</h1>
-          <p className="text-muted-foreground mt-1">
+    <>
+      <TopBar title="Exercise Library" />
+      <div className="p-6 lg:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <p className="text-muted-foreground">
             Browse and learn proper form for hundreds of exercises
           </p>
+          <Link
+            href="/athlete/training/exercises/new"
+            className="flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            New Exercise
+          </Link>
         </div>
-        <Link
-          href="/athlete/training/exercises/new"
-          className="flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          New Exercise
-        </Link>
-      </div>
 
       {/* Search and filters */}
       <div className="space-y-4">
@@ -629,6 +632,7 @@ export default function ExerciseLibraryPage() {
           </>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   )
 }
