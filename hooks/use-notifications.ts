@@ -89,8 +89,9 @@ export function useNotifications(options: UseNotificationsOptions = {}) {
   return useQuery({
     queryKey: ['notifications', options],
     queryFn: () => fetchNotifications(options),
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
+    staleTime: 10 * 1000, // Consider fresh for 10 seconds
+    refetchInterval: 30 * 1000, // Poll every 30 seconds
+    refetchOnMount: true,
   })
 }
 
@@ -119,8 +120,9 @@ export function useUnreadNotificationsCount() {
   return useQuery({
     queryKey: ['notificationsUnreadCount'],
     queryFn: fetchUnreadCount,
-    staleTime: 30 * 1000,
-    refetchInterval: 30 * 1000,
+    staleTime: 10 * 1000, // Consider fresh for 10 seconds
+    refetchInterval: 15 * 1000, // Poll every 15 seconds for responsiveness
+    refetchOnMount: true,
   })
 }
 
