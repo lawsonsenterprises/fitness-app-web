@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -72,14 +72,28 @@ function RowActions({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [showEndConfirmation, setShowEndConfirmation] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
   const displayName = getClientDisplayName(client)
+
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.right - 192, // 192px = w-48
+      })
+    }
+    setIsOpen(!isOpen)
+  }
 
   return (
     <>
       <div className="relative">
         <button
-          onClick={() => setIsOpen(!isOpen)}
+          ref={buttonRef}
+          onClick={handleToggle}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -88,7 +102,10 @@ function RowActions({
         {isOpen && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-card py-1 shadow-lg">
+            <div
+              className="fixed z-50 w-48 rounded-xl border border-border bg-card py-1 shadow-lg"
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+            >
               <Link
                 href={`/clients/${client.id}`}
                 className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
@@ -263,7 +280,7 @@ const columns: ColumnDef<Client>[] = [
     ),
     cell: ({ row }) => {
       const startedAt = row.original.startedAt
-      if (!startedAt) return <span className="text-sm text-muted-foreground">Pending</span>
+      if (!startedAt) return <span className="text-sm text-muted-foreground">—</span>
       return (
         <span className="text-sm text-muted-foreground">
           {formatDistanceToNow(new Date(startedAt), { addSuffix: true })}
