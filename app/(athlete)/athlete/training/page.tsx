@@ -38,10 +38,10 @@ const DATE_RANGES = [
 ] as const
 
 // Format workout type for display
-function formatWorkoutType(type: string, workoutName?: string | null): string {
+function formatWorkoutType(type: string, name?: string | null): string {
   // If there's a custom workout name, use it
-  if (workoutName && workoutName.trim()) {
-    return workoutName
+  if (name && name.trim()) {
+    return name
   }
 
   // Special case mappings for common Apple Health workout types
@@ -450,7 +450,7 @@ export default function TrainingPage() {
 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">
-                          {formatWorkoutType(workout.workout_type, workout.name || workout.workout_name)}
+                          {formatWorkoutType(workout.workout_type, workout.name)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {workout.start_time
