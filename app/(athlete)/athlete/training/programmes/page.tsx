@@ -8,6 +8,7 @@ import {
   useDeleteUserProgramme,
   useDuplicateUserProgramme,
   useSetActiveProgramme,
+  type ProgrammeRotationType,
 } from '@/hooks/athlete'
 import { Button } from '@/components/ui/button'
 import {
@@ -171,6 +172,7 @@ interface ProgrammeCardProps {
     description: string | null
     durationWeeks: number
     currentWeek: number
+    rotationType: ProgrammeRotationType
     isActive: boolean
     createdAt: string
     updatedAt: string
@@ -231,13 +233,18 @@ function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive
           </div>
         )}
 
-        {/* Badge */}
-        {isActive && (
-          <Badge variant="default" className="bg-amber-500 text-white">
-            <CheckCircle2 className="mr-1 h-3 w-3" />
-            Active
+        {/* Badges */}
+        <div className="flex flex-wrap gap-2">
+          {isActive && (
+            <Badge variant="default" className="bg-amber-500 text-white">
+              <CheckCircle2 className="mr-1 h-3 w-3" />
+              Active
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-muted-foreground">
+            {programme.rotationType === 'sequential' ? 'Sequential' : 'Weekly Schedule'}
           </Badge>
-        )}
+        </div>
       </Link>
 
       {/* Actions Menu */}
