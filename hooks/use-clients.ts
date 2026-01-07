@@ -78,19 +78,31 @@ async function fetchClients(
 
   const { data, error, count } = await query
 
+  console.log('useClients query result:', { data, error, count, userId: user.id })
+
   if (error) {
     console.error('Error fetching clients:', error)
     return { data: [], total: 0, page, pageSize, totalPages: 0 }
   }
 
   // Generate signed URLs for all avatars in parallel
-  const clientsWithAvatars = await Promise.all(
-    (data || []).map(async (row) => {
+  let clientsWithAvatars: Client[] = []
+  try {
+    clientsWithAvatars = await Promise.all(
+      (data || []).map(async (row) => {
+        const typedRow = row as CoachClientRow
+        const signedUrl = await getSignedAvatarUrl(typedRow.client?.avatar_url)
+        return transformCoachClient(typedRow, signedUrl)
+      })
+    )
+  } catch (avatarError) {
+    console.error('Error generating avatar URLs:', avatarError)
+    // Fall back to clients without signed URLs
+    clientsWithAvatars = (data || []).map((row) => {
       const typedRow = row as CoachClientRow
-      const signedUrl = await getSignedAvatarUrl(typedRow.client?.avatar_url)
-      return transformCoachClient(typedRow, signedUrl)
+      return transformCoachClient(typedRow, null)
     })
-  )
+  }
 
   const total = count || 0
 
