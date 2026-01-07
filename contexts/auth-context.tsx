@@ -62,7 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('roles, display_name, postcode')
+        .select('roles, display_name, first_name, last_name, postcode')
         .eq('id', userId)
         .single()
 
@@ -75,9 +75,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('[AUTH] fetchRoles - setting roles:', userRoles)
       setRoles(userRoles)
 
-      // Set display name from profile
-      if (profile?.display_name) {
-        setDisplayName(profile.display_name)
+      // Set display name from profile (prefer display_name, fall back to first_name)
+      const name = profile?.display_name || profile?.first_name || null
+      if (name) {
+        setDisplayName(name)
       }
 
       // Set postcode from profile

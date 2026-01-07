@@ -32,6 +32,7 @@ export default function ProfileSettingsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [profileInitials, setProfileInitials] = useState<string>('')
   const supabase = createClient()
 
   const {
@@ -69,10 +70,16 @@ export default function ProfileSettingsPage() {
           .single()
 
         if (profile) {
+          const firstName = profile.first_name || user?.user_metadata?.first_name || ''
+          const lastName = profile.last_name || user?.user_metadata?.last_name || ''
           setAvatarUrl(profile.avatar_url || null)
+          setProfileInitials(
+            (firstName?.[0] || '') + (lastName?.[0] || '') ||
+            user?.email?.[0]?.toUpperCase() || ''
+          )
           reset({
-            firstName: profile.first_name || user?.user_metadata?.first_name || '',
-            lastName: profile.last_name || user?.user_metadata?.last_name || '',
+            firstName,
+            lastName,
             email: user?.email || '',
             businessName: profile.business_name || '',
             bio: profile.bio || '',
@@ -82,9 +89,15 @@ export default function ProfileSettingsPage() {
           })
         } else {
           // Use user metadata if no profile exists
+          const firstName = user?.user_metadata?.first_name || ''
+          const lastName = user?.user_metadata?.last_name || ''
+          setProfileInitials(
+            (firstName?.[0] || '') + (lastName?.[0] || '') ||
+            user?.email?.[0]?.toUpperCase() || ''
+          )
           reset({
-            firstName: user?.user_metadata?.first_name || '',
-            lastName: user?.user_metadata?.last_name || '',
+            firstName,
+            lastName,
             email: user?.email || '',
             businessName: '',
             bio: '',
@@ -173,9 +186,6 @@ export default function ProfileSettingsPage() {
     }
   })
 
-  const initials =
-    (user?.user_metadata?.first_name?.[0] || '') +
-    (user?.user_metadata?.last_name?.[0] || '')
 
   if (isLoading) {
     return (
@@ -196,7 +206,7 @@ export default function ProfileSettingsPage() {
 
         <AvatarUpload
           avatarUrl={avatarUrl}
-          initials={initials}
+          initials={profileInitials}
           onUploadComplete={(newAvatarUrl) => {
             setAvatarUrl(newAvatarUrl)
           }}

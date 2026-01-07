@@ -126,7 +126,9 @@ export default function AthleteProfileSettingsPage() {
     }
   }
 
-  const initials = `${profile.firstName[0] || ''}${profile.lastName[0] || ''}`.toUpperCase()
+  const initials =
+    `${profile.firstName[0] || ''}${profile.lastName[0] || ''}`.toUpperCase() ||
+    user?.email?.[0]?.toUpperCase() || ''
 
   if (isFetching) {
     return (
