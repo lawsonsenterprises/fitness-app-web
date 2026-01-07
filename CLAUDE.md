@@ -14,6 +14,13 @@
 - Mark off items sequentially as implementation progresses
 - Never start implementation without a clear plan in place
 
+## Code Quality - Pre-Commit Hook
+- **Pre-commit hook is installed** - automatically runs `npm run build` before every commit
+- This catches TypeScript and ESLint errors BEFORE they reach Vercel
+- The hook will block commits that fail to build
+- If you need to bypass it (emergency only), use `git commit --no-verify`
+- Never push code without running the build check
+
 ## Database Safety - CRITICAL
 - **Supabase database is LIVE** - never run destructive queries
 - **NEVER** execute DELETE, DROP, TRUNCATE, or UPDATE without WHERE clauses

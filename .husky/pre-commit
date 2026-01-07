@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run build to catch TypeScript and ESLint errors
+echo "📦 Building project..."
+npm run build
+
+if [ $? -ne 0 ]; then
+  echo "❌ Build failed. Please fix errors before committing."
+  exit 1
+fi
+
+echo "✅ Pre-commit checks passed"
