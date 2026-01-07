@@ -92,10 +92,12 @@ export default function ClientOverviewPage() {
           <Mail className="h-4 w-4" />
           Send Email
         </Button>
-        <Button variant="outline" size="sm" className="gap-2">
-          <MessageSquare className="h-4 w-4" />
-          Send Message
-        </Button>
+        <Link href={`/clients/${clientId}/messages`}>
+          <Button variant="outline" size="sm" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Send Message
+          </Button>
+        </Link>
         <Button variant="outline" size="sm" className="gap-2">
           <ClipboardList className="h-4 w-4" />
           Add Note

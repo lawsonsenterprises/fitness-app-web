@@ -92,13 +92,10 @@ async function fetchClients(
     return { data: [], total: 0, page, pageSize, totalPages: 0 }
   }
 
-  // Transform clients - use avatar_url directly (signed URLs handled elsewhere)
+  // Transform clients
   const clientsWithAvatars = (data || []).map((row) => {
-    console.log('Raw row from Supabase:', JSON.stringify(row, null, 2))
     const typedRow = row as CoachClientRow
-    const transformed = transformCoachClient(typedRow)
-    console.log('Transformed client:', { id: transformed.id, clientId: transformed.clientId })
-    return transformed
+    return transformCoachClient(typedRow)
   })
 
   const total = count || 0
@@ -122,15 +119,11 @@ export function useClients(options: UseClientsOptions = {}) {
 
 // Hook for fetching a single client
 async function fetchClient(clientRelationshipId: string): Promise<Client | null> {
-  console.log('fetchClient called with:', clientRelationshipId)
-
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     console.error('Auth error:', authError)
     return null
   }
-
-  console.log('Fetching client for coach:', user.id)
 
   const { data, error } = await supabase
     .from('coach_clients')
@@ -148,15 +141,8 @@ async function fetchClient(clientRelationshipId: string): Promise<Client | null>
     .eq('coach_id', user.id)
     .single()
 
-  console.log('fetchClient result:', { data, error, clientRelationshipId })
-
   if (error) {
     console.error('Error fetching client:', error)
-    return null
-  }
-
-  if (!data) {
-    console.error('No data returned for client:', clientRelationshipId)
     return null
   }
 

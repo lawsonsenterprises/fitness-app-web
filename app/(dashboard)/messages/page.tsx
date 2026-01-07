@@ -97,7 +97,7 @@ export default function MessagesPage() {
               return (
                 <Link
                   key={client.id}
-                  href={`/clients/${client.clientId}/messages`}
+                  href={`/clients/${client.id}/messages`}
                   className={cn(
                     'flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-all',
                     'hover:border-amber-500/30 hover:shadow-md',
