@@ -37,6 +37,60 @@ const DATE_RANGES = [
   { id: 'all', label: 'All', days: 365 },
 ] as const
 
+// Format workout type for display
+function formatWorkoutType(type: string, workoutName?: string | null): string {
+  // If there's a custom workout name, use it
+  if (workoutName && workoutName.trim()) {
+    return workoutName
+  }
+
+  // Special case mappings for common Apple Health workout types
+  const specialCases: Record<string, string> = {
+    'walking': 'Walking',
+    'walking.indoor': 'Indoor Walk',
+    'walking.outdoor': 'Outdoor Walk',
+    'running': 'Running',
+    'running.indoor': 'Indoor Run',
+    'running.outdoor': 'Outdoor Run',
+    'cycling': 'Cycling',
+    'cycling.indoor': 'Indoor Cycling',
+    'cycling.outdoor': 'Outdoor Cycling',
+    'strength_training': 'Strength Training',
+    'traditional_strength_training': 'Strength Training',
+    'functional_strength_training': 'Functional Training',
+    'core_training': 'Core Training',
+    'flexibility': 'Flexibility',
+    'yoga': 'Yoga',
+    'pilates': 'Pilates',
+    'swimming': 'Swimming',
+    'swimming.open_water': 'Open Water Swim',
+    'swimming.pool': 'Pool Swim',
+    'hiit': 'HIIT',
+    'elliptical': 'Elliptical',
+    'stair_climbing': 'Stair Climbing',
+    'rowing': 'Rowing',
+    'rowing.indoor': 'Indoor Rowing',
+    'cross_training': 'Cross Training',
+    'mixed_cardio': 'Mixed Cardio',
+    'dance': 'Dance',
+    'cooldown': 'Cooldown',
+    'other': 'Other',
+  }
+
+  // Check for exact match first
+  if (specialCases[type.toLowerCase()]) {
+    return specialCases[type.toLowerCase()]
+  }
+
+  // Generic formatting: replace underscores/dots with spaces and capitalize
+  return type
+    .replace(/_/g, ' ')
+    .replace(/\./g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export default function TrainingPage() {
   const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<'week' | 'prs' | 'healthkit'>('week')
@@ -353,7 +407,7 @@ export default function TrainingPage() {
                     <option value="">All types</option>
                     {workoutTypes.map((type) => (
                       <option key={type} value={type}>
-                        {type}
+                        {formatWorkoutType(type)}
                       </option>
                     ))}
                   </select>
@@ -396,7 +450,7 @@ export default function TrainingPage() {
 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">
-                          {workout.name || workout.workout_type}
+                          {formatWorkoutType(workout.workout_type, workout.name || workout.workout_name)}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {workout.start_time
