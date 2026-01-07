@@ -14,21 +14,12 @@ export function AvatarDropdown() {
   const { user, displayName, signOut, activeRole } = useAuth()
   const pathname = usePathname()
 
-  // Get user initials
-  // DEBUG: Log where initials come from
-  console.log('[AvatarDropdown] Sources:', {
-    displayName,
-    userMetadataFirstName: user?.user_metadata?.first_name,
-    email: user?.email,
-    userMetadata: user?.user_metadata,
-  })
+  // Get user initials from displayName (which is profiles.first_name from auth context)
   const initials = displayName?.[0]?.toUpperCase() ||
-    user?.user_metadata?.first_name?.[0]?.toUpperCase() ||
     user?.email?.[0]?.toUpperCase() || 'U'
 
   // Get display name for menu
   const name = displayName ||
-    user?.user_metadata?.first_name ||
     user?.email?.split('@')[0] ||
     'User'
 
