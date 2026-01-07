@@ -85,7 +85,7 @@ export default function AthleteDashboardPage() {
   return (
     <div className="min-h-screen">
       <TopBar title="Dashboard" />
-      <div className="p-4 lg:p-8">
+      <div className="p-6 lg:p-8">
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-2xl font-semibold tracking-tight">
@@ -125,18 +125,18 @@ export default function AthleteDashboardPage() {
 
                 {/* Readiness Breakdown */}
                 {hasHealthKitData && readinessData && (
-                  <div className="mt-6 grid grid-cols-3 gap-3">
-                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                  <div className="mt-6 grid grid-cols-3 gap-4">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <Zap className="h-4 w-4 mx-auto text-amber-500 mb-1" />
                       <p className="text-xs text-muted-foreground">Strain</p>
                       <p className="text-lg font-bold">{readinessData.strainPercentage}%</p>
                     </div>
-                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <Heart className="h-4 w-4 mx-auto text-green-500 mb-1" />
                       <p className="text-xs text-muted-foreground">Recovery</p>
                       <p className="text-lg font-bold">{readinessData.recoveryScore}%</p>
                     </div>
-                    <div className="rounded-lg bg-muted/50 p-3 text-center">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <Moon className="h-4 w-4 mx-auto text-indigo-500 mb-1" />
                       <p className="text-xs text-muted-foreground">Sleep</p>
                       <p className="text-lg font-bold">{readinessData.sleepScore}%</p>
@@ -568,28 +568,28 @@ export default function AthleteDashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <Link
                   href="/athlete/check-ins/new"
-                  className="flex flex-col items-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
+                  className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
                 >
                   <ClipboardCheck className="h-6 w-6 text-amber-600" />
                   <span className="text-xs font-medium">Check-in</span>
                 </Link>
                 <Link
                   href="/athlete/nutrition/log"
-                  className="flex flex-col items-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
+                  className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
                 >
                   <UtensilsCrossed className="h-6 w-6 text-green-600" />
                   <span className="text-xs font-medium">Log Meal</span>
                 </Link>
                 <Link
                   href="/athlete/recovery"
-                  className="flex flex-col items-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
+                  className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
                 >
                   <Heart className="h-6 w-6 text-red-600" />
                   <span className="text-xs font-medium">Recovery</span>
                 </Link>
                 <Link
                   href="/athlete/blood-work"
-                  className="flex flex-col items-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
+                  className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted"
                 >
                   <Droplets className="h-6 w-6 text-purple-600" />
                   <span className="text-xs font-medium">Blood Work</span>

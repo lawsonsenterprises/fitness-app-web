@@ -106,35 +106,37 @@ export default function ProgressPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid gap-4 md:grid-cols-4 mb-6"
+          className="grid gap-4 grid-cols-2 md:grid-cols-4 mb-6"
         >
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Scale className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wider">Current</span>
             </div>
-            {weightLoading ? (
-              <div className="flex items-center gap-2">
+            <div className="h-8 flex items-center">
+              {weightLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : hasWeightData ? (
-              <p className="text-2xl font-bold">{currentWeight}kg</p>
-            ) : (
-              <p className="text-2xl font-bold text-muted-foreground">--</p>
-            )}
+              ) : hasWeightData ? (
+                <p className="text-2xl font-bold">{currentWeight}kg</p>
+              ) : (
+                <p className="text-2xl font-bold text-muted-foreground">--</p>
+              )}
+            </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Target className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wider">Target</span>
             </div>
-            <p className="text-2xl font-bold">
-              {goalWeight ? `${goalWeight}kg` : <span className="text-muted-foreground">Not set</span>}
-            </p>
+            <div className="h-8 flex items-center">
+              <p className="text-2xl font-bold">
+                {goalWeight ? `${goalWeight}kg` : <span className="text-muted-foreground">Not set</span>}
+              </p>
+            </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               {weightChange < 0 ? (
                 <TrendingDown className="h-4 w-4 text-green-500" />
@@ -145,41 +147,41 @@ export default function ProgressPage() {
               )}
               <span className="text-xs font-medium uppercase tracking-wider">Change</span>
             </div>
-            {weightLoading ? (
-              <div className="flex items-center gap-2">
+            <div className="h-8 flex items-center">
+              {weightLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : hasWeightData ? (
-              <p className={cn(
-                'text-2xl font-bold',
-                weightChange < 0 ? 'text-green-500' : weightChange > 0 ? 'text-amber-500' : ''
-              )}>
-                {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}kg
-              </p>
-            ) : (
-              <p className="text-2xl font-bold text-muted-foreground">--</p>
-            )}
+              ) : hasWeightData ? (
+                <p className={cn(
+                  'text-2xl font-bold',
+                  weightChange < 0 ? 'text-green-500' : weightChange > 0 ? 'text-amber-500' : ''
+                )}>
+                  {weightChange > 0 ? '+' : ''}{weightChange.toFixed(1)}kg
+                </p>
+              ) : (
+                <p className="text-2xl font-bold text-muted-foreground">--</p>
+              )}
+            </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 text-muted-foreground mb-2">
               <Calendar className="h-4 w-4" />
               <span className="text-xs font-medium uppercase tracking-wider">To Go</span>
             </div>
-            {weightLoading ? (
-              <div className="flex items-center gap-2">
+            <div className="h-8 flex items-center">
+              {weightLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              </div>
-            ) : hasWeightData && toGo !== null ? (
-              <p className={cn(
-                'text-2xl font-bold',
-                toGo <= 0 ? 'text-green-500' : ''
-              )}>
-                {toGo <= 0 ? 'Goal reached!' : `${toGo.toFixed(1)}kg`}
-              </p>
-            ) : (
-              <p className="text-2xl font-bold text-muted-foreground">--</p>
-            )}
+              ) : hasWeightData && toGo !== null ? (
+                <p className={cn(
+                  'text-2xl font-bold',
+                  toGo <= 0 ? 'text-green-500' : ''
+                )}>
+                  {toGo <= 0 ? 'Goal reached!' : `${toGo.toFixed(1)}kg`}
+                </p>
+              ) : (
+                <p className="text-2xl font-bold text-muted-foreground">--</p>
+              )}
+            </div>
           </div>
         </motion.div>
 

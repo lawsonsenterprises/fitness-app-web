@@ -25,7 +25,7 @@ export function DashboardWidget({
   className,
 }: DashboardWidgetProps) {
   const widgetClassName = cn(
-    'group relative block overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:border-foreground/10 hover:shadow-lg',
+    'group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card p-6 transition-all hover:border-foreground/10 hover:shadow-lg',
     href && 'cursor-pointer',
     className
   )
@@ -40,8 +40,8 @@ export function DashboardWidget({
         <Icon className="h-6 w-6 text-foreground" />
       </div>
 
-      {/* Content */}
-      <div className="relative">
+      {/* Content - flex-1 to fill remaining space */}
+      <div className="relative flex-1">
         <p className="text-sm font-medium text-muted-foreground">{title}</p>
         <div className="mt-1 flex items-baseline gap-2">
           <span className="text-3xl font-semibold tracking-tight">{value}</span>

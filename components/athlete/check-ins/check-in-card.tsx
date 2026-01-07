@@ -88,7 +88,7 @@ export function CheckInCard({
       {/* Metrics grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4">
         {/* Weight */}
-        <div className="rounded-lg bg-emerald-500/10 p-3">
+        <div className="flex h-full min-h-[88px] flex-col rounded-lg bg-emerald-500/10 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Scale className="h-4 w-4 text-emerald-500" />
             <span className="text-xs text-muted-foreground">Weight</span>
@@ -97,16 +97,20 @@ export function CheckInCard({
             <span className="text-xl font-bold">{checkIn.weight}</span>
             <span className="text-sm text-muted-foreground">{checkIn.weightUnit || 'kg'}</span>
           </div>
-          {weightTrend && (
-            <div className={cn('flex items-center gap-1 mt-1 text-xs', weightTrend.color)}>
-              <weightTrend.Icon className="h-3 w-3" />
-              {weightTrend.label}{Math.abs(checkIn.weightChange!).toFixed(1)}kg
-            </div>
-          )}
+          <div className={cn('flex items-center gap-1 mt-auto pt-1 text-xs', weightTrend?.color || 'text-muted-foreground')}>
+            {weightTrend ? (
+              <>
+                <weightTrend.Icon className="h-3 w-3" />
+                {weightTrend.label}{Math.abs(checkIn.weightChange!).toFixed(1)}kg
+              </>
+            ) : (
+              <span>&nbsp;</span>
+            )}
+          </div>
         </div>
 
         {/* Steps */}
-        <div className="rounded-lg bg-blue-500/10 p-3">
+        <div className="flex h-full min-h-[88px] flex-col rounded-lg bg-blue-500/10 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Footprints className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-muted-foreground">Avg Steps</span>
@@ -114,13 +118,13 @@ export function CheckInCard({
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-bold">{avgSteps.toLocaleString()}</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground mt-auto pt-1">
             {checkIn.steps.length} days tracked
           </div>
         </div>
 
         {/* Sleep */}
-        <div className="rounded-lg bg-violet-500/10 p-3">
+        <div className="flex h-full min-h-[88px] flex-col rounded-lg bg-violet-500/10 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Moon className="h-4 w-4 text-violet-500" />
             <span className="text-xs text-muted-foreground">Avg Sleep</span>
@@ -129,14 +133,14 @@ export function CheckInCard({
             <span className="text-xl font-bold">{avgSleep}</span>
             <span className="text-sm text-muted-foreground">hrs</span>
           </div>
-          <div className="text-xs text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground mt-auto pt-1">
             {checkIn.sleep.length} nights tracked
           </div>
         </div>
 
         {/* Supplements */}
         {checkIn.supplementCompliance !== undefined && (
-          <div className="rounded-lg bg-amber-500/10 p-3">
+          <div className="flex h-full min-h-[88px] flex-col rounded-lg bg-amber-500/10 p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Pill className="h-4 w-4 text-amber-500" />
               <span className="text-xs text-muted-foreground">Supplements</span>
@@ -145,7 +149,7 @@ export function CheckInCard({
               <span className="text-xl font-bold">{checkIn.supplementCompliance}</span>
               <span className="text-sm text-muted-foreground">%</span>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">
+            <div className="text-xs text-muted-foreground mt-auto pt-1">
               compliance
             </div>
           </div>

@@ -47,7 +47,7 @@ export default function AthleteSettingsLayout({
   const pathname = usePathname()
 
   return (
-    <div className="p-4 lg:p-8">
+    <div className="p-6 lg:p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Settings</h1>
         <p className="mt-1 text-muted-foreground">

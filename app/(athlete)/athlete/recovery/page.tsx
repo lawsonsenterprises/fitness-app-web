@@ -114,7 +114,7 @@ export default function RecoveryPage() {
           className="grid gap-6 lg:grid-cols-3 mb-6"
         >
           {/* Readiness Gauge */}
-          <div className="rounded-xl border border-border bg-card p-6 lg:row-span-2">
+          <div className="rounded-xl border border-border bg-card p-6">
             <h2 className="text-lg font-semibold mb-4">Today&apos;s Readiness</h2>
             <ReadinessGauge score={readinessData?.recoveryScore || 0} />
 
@@ -156,7 +156,7 @@ export default function RecoveryPage() {
           </div>
 
           {/* Recovery Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:col-span-2">
+          <div className="grid gap-4 grid-cols-2 lg:col-span-2">
             <RecoveryCard
               icon={Activity}
               label="Current HRV"
@@ -192,51 +192,56 @@ export default function RecoveryPage() {
               subtext={sleepResult?.stats?.sleepBank && sleepResult.stats.sleepBank >= 0 ? 'Surplus' : 'Debt'}
             />
           </div>
-
-          {/* Additional Metrics */}
-          {recoveryResult?.data && recoveryResult.data.length > 0 && (
-            <div className="grid gap-4 md:grid-cols-3 lg:col-span-2">
-              {recoveryResult.data[recoveryResult.data.length - 1]?.respiratory_rate != null && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Wind className="h-4 w-4" />
-                    <span className="text-xs font-medium tracking-wider">Respiratory Rate</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate!)}
-                    <span className="text-sm text-muted-foreground font-normal"> br/min</span>
-                  </p>
-                </div>
-              )}
-              {recoveryResult.data[recoveryResult.data.length - 1]?.oxygen_saturation != null && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Droplets className="h-4 w-4 text-blue-500" />
-                    <span className="text-xs font-medium tracking-wider">SpO2</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {Math.round(recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation!)}
-                    <span className="text-sm text-muted-foreground font-normal">%</span>
-                  </p>
-                </div>
-              )}
-              {recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== null &&
-               recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== 0 && (
-                <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                    <Thermometer className="h-4 w-4 text-orange-500" />
-                    <span className="text-xs font-medium tracking-wider">Wrist Temp</span>
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {recoveryResult.data[recoveryResult.data.length - 1].wrist_temperature! > 0 ? '+' : ''}
-                    {recoveryResult.data[recoveryResult.data.length - 1].wrist_temperature?.toFixed(1)}
-                    <span className="text-sm text-muted-foreground font-normal">°C</span>
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
         </motion.div>
+
+        {/* Additional Metrics */}
+        {recoveryResult?.data && recoveryResult.data.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="grid gap-4 grid-cols-2 md:grid-cols-3 mb-6"
+          >
+            {recoveryResult.data[recoveryResult.data.length - 1]?.respiratory_rate != null && (
+              <div className="flex flex-col rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Wind className="h-4 w-4" />
+                  <span className="text-xs font-medium tracking-wider">Respiratory Rate</span>
+                </div>
+                <p className="text-2xl font-bold mt-auto">
+                  {Math.round(recoveryResult.data[recoveryResult.data.length - 1].respiratory_rate!)}
+                  <span className="text-sm text-muted-foreground font-normal"> br/min</span>
+                </p>
+              </div>
+            )}
+            {recoveryResult.data[recoveryResult.data.length - 1]?.oxygen_saturation != null && (
+              <div className="flex flex-col rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Droplets className="h-4 w-4 text-blue-500" />
+                  <span className="text-xs font-medium tracking-wider">SpO2</span>
+                </div>
+                <p className="text-2xl font-bold mt-auto">
+                  {Math.round(recoveryResult.data[recoveryResult.data.length - 1].oxygen_saturation!)}
+                  <span className="text-sm text-muted-foreground font-normal">%</span>
+                </p>
+              </div>
+            )}
+            {recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== null &&
+             recoveryResult.data[recoveryResult.data.length - 1]?.wrist_temperature !== 0 && (
+              <div className="flex flex-col rounded-xl border border-border bg-card p-4">
+                <div className="flex items-center gap-2 text-muted-foreground mb-2">
+                  <Thermometer className="h-4 w-4 text-orange-500" />
+                  <span className="text-xs font-medium tracking-wider">Wrist Temp</span>
+                </div>
+                <p className="text-2xl font-bold mt-auto">
+                  {recoveryResult.data[recoveryResult.data.length - 1].wrist_temperature! > 0 ? '+' : ''}
+                  {recoveryResult.data[recoveryResult.data.length - 1].wrist_temperature?.toFixed(1)}
+                  <span className="text-sm text-muted-foreground font-normal">°C</span>
+                </p>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Strain vs Recovery Alert */}
         {strainResult?.alerts && strainResult.alerts.length > 0 && (
@@ -500,7 +505,7 @@ function RecoveryCard({ icon: Icon, label, value, unit, status, trend, subtext }
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className={cn('p-2 rounded-lg', statusColors[status])}>
           <Icon className="h-5 w-5" />
@@ -517,9 +522,7 @@ function RecoveryCard({ icon: Icon, label, value, unit, status, trend, subtext }
       <p className="text-2xl font-bold mt-1">
         {value}{unit}
       </p>
-      {subtext && (
-        <p className="text-xs text-muted-foreground mt-1">{subtext}</p>
-      )}
+      <p className="text-xs text-muted-foreground mt-auto pt-1">{subtext || '\u00A0'}</p>
     </div>
   )
 }
