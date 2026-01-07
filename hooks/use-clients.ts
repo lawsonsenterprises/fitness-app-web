@@ -94,8 +94,11 @@ async function fetchClients(
 
   // Transform clients - use avatar_url directly (signed URLs handled elsewhere)
   const clientsWithAvatars = (data || []).map((row) => {
+    console.log('Raw row from Supabase:', JSON.stringify(row, null, 2))
     const typedRow = row as CoachClientRow
-    return transformCoachClient(typedRow)
+    const transformed = transformCoachClient(typedRow)
+    console.log('Transformed client:', { id: transformed.id, clientId: transformed.clientId })
+    return transformed
   })
 
   const total = count || 0
