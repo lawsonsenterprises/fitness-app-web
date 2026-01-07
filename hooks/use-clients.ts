@@ -437,3 +437,31 @@ export async function getCoachClientIds(): Promise<string[]> {
 
   return (data || []).map(row => row.client_id)
 }
+
+// Hook for inviting a new client (not yet signed up)
+interface InviteNewClientData {
+  email: string
+  name: string
+  message?: string
+}
+
+export function useInviteNewClient() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ email, name, message }: InviteNewClientData) => {
+      const { inviteClient } = await import('@/app/actions/invite-client')
+      const result = await inviteClient(email, name, message)
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to invite client')
+      }
+
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-client-invites'] })
+    },
+  })
+}

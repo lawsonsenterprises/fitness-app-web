@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { ROUTES } from '@/lib/constants'
 import { type UserRole } from '@/lib/roles'
-import { applyPendingInvite } from '@/app/actions/apply-pending-invite'
+import { applyPendingInvite, applyPendingClientInvites } from '@/app/actions/apply-pending-invite'
 
 async function handleCallback(request: Request) {
   const { origin } = new URL(request.url)
@@ -49,6 +49,12 @@ async function handleCallback(request: Request) {
         const inviteResult = await applyPendingInvite(userId, userEmail)
         if (inviteResult.applied) {
           console.log(`Applied pending invite roles to OAuth user: ${userEmail}`)
+        }
+
+        // Also check for pending client invites from coaches
+        const clientInviteResult = await applyPendingClientInvites(userId, userEmail)
+        if (clientInviteResult.coachesLinked > 0) {
+          console.log(`Linked ${clientInviteResult.coachesLinked} coach(es) to new athlete: ${userEmail}`)
         }
       }
 

@@ -135,3 +135,71 @@ export async function applyPendingInvite(
     }
   }
 }
+
+/**
+ * Applies any pending client invites for a newly signed up athlete.
+ * Creates coach_clients relationships for any coaches who invited this email.
+ */
+export async function applyPendingClientInvites(
+  userId: string,
+  email: string
+): Promise<{ success: boolean; coachesLinked: number }> {
+  try {
+    if (!email) {
+      return { success: true, coachesLinked: 0 }
+    }
+
+    const adminClient = createAdminClient()
+
+    // Find any pending client invites for this email
+    const { data: pendingInvites, error: fetchError } = await adminClient
+      .from('pending_client_invites')
+      .select('id, coach_id, name')
+      .eq('email', email.toLowerCase())
+
+    if (fetchError) {
+      console.error('Error fetching pending client invites:', fetchError)
+      return { success: false, coachesLinked: 0 }
+    }
+
+    if (!pendingInvites || pendingInvites.length === 0) {
+      return { success: true, coachesLinked: 0 }
+    }
+
+    console.log(`Found ${pendingInvites.length} pending client invite(s) for ${email}`)
+
+    let coachesLinked = 0
+
+    for (const invite of pendingInvites) {
+      // Create coach-client relationship
+      const { error: insertError } = await adminClient
+        .from('coach_clients')
+        .insert({
+          coach_id: invite.coach_id,
+          client_id: userId,
+          status: 'pending',
+          check_in_frequency: 7,
+        })
+
+      if (insertError) {
+        console.error(`Error creating coach-client relationship for coach ${invite.coach_id}:`, insertError)
+        continue
+      }
+
+      // Delete the pending invite
+      await adminClient
+        .from('pending_client_invites')
+        .delete()
+        .eq('id', invite.id)
+
+      coachesLinked++
+    }
+
+    console.log(`Successfully linked ${coachesLinked} coach(es) to new athlete ${userId}`)
+
+    return { success: true, coachesLinked }
+  } catch (error) {
+    console.error('Error applying pending client invites:', error)
+    return { success: false, coachesLinked: 0 }
+  }
+}
