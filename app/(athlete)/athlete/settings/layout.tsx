@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { User, Bell, Shield, Target, HelpCircle } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { TopBar } from '@/components/dashboard/top-bar'
 
 const settingsNav = [
   {
@@ -47,65 +48,68 @@ export default function AthleteSettingsLayout({
   const pathname = usePathname()
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Settings</h1>
-        <p className="mt-1 text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
+    <div className="min-h-screen">
+      <TopBar title="Settings" />
 
-      <div className="flex flex-col gap-8 lg:flex-row">
-        {/* Settings navigation */}
-        <nav className="w-full shrink-0 lg:w-64">
-          <div className="rounded-xl border border-border bg-card p-2">
-            {settingsNav.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
+      <div className="p-4 lg:p-8">
+        <div className="mb-8">
+          <p className="text-muted-foreground">
+            Manage your account settings and preferences
+          </p>
+        </div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
-                    isActive
-                      ? 'bg-foreground text-background'
-                      : 'hover:bg-muted'
-                  )}
-                >
-                  <Icon
+        <div className="flex flex-col gap-8 lg:flex-row">
+          {/* Settings navigation */}
+          <nav className="w-full shrink-0 lg:w-64">
+            <div className="rounded-xl border border-border bg-card p-2">
+              {settingsNav.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
                     className={cn(
-                      'h-5 w-5 shrink-0',
-                      isActive ? 'text-amber-400' : 'text-muted-foreground'
+                      'group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors',
+                      isActive
+                        ? 'bg-foreground text-background'
+                        : 'hover:bg-muted'
                     )}
-                  />
-                  <div className="min-w-0">
-                    <p
+                  >
+                    <Icon
                       className={cn(
-                        'text-sm font-medium',
-                        !isActive && 'text-foreground'
+                        'h-5 w-5 shrink-0',
+                        isActive ? 'text-amber-400' : 'text-muted-foreground'
                       )}
-                    >
-                      {item.name}
-                    </p>
-                    <p
-                      className={cn(
-                        'text-xs truncate',
-                        isActive ? 'text-background/70' : 'text-muted-foreground'
-                      )}
-                    >
-                      {item.description}
-                    </p>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </nav>
+                    />
+                    <div className="min-w-0">
+                      <p
+                        className={cn(
+                          'text-sm font-medium',
+                          !isActive && 'text-foreground'
+                        )}
+                      >
+                        {item.name}
+                      </p>
+                      <p
+                        className={cn(
+                          'text-xs truncate',
+                          isActive ? 'text-background/70' : 'text-muted-foreground'
+                        )}
+                      >
+                        {item.description}
+                      </p>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </nav>
 
-        {/* Settings content */}
-        <main className="min-w-0 flex-1">{children}</main>
+          {/* Settings content */}
+          <main className="min-w-0 flex-1">{children}</main>
+        </div>
       </div>
     </div>
   )
