@@ -6,15 +6,23 @@ import type { Client, ClientStatus, CoachClientRow, PaginatedResponse } from '@/
 
 const supabase = createClient()
 
+// Convert storage path to API route URL
+function getAvatarApiUrl(avatarPath: string | null | undefined): string | null {
+  if (!avatarPath) return null
+  // Strip 'avatars/' prefix if present since the API route adds it
+  const path = avatarPath.startsWith('avatars/') ? avatarPath.slice(8) : avatarPath
+  return `/api/avatar/${path}`
+}
+
 // Transform database row to Client interface
-function transformCoachClient(row: CoachClientRow, signedAvatarUrl?: string | null): Client {
+function transformCoachClient(row: CoachClientRow): Client {
   return {
     id: row.id,
     coachId: row.coach_id,
     clientId: row.client_id,
     displayName: row.client?.display_name ?? null,
     email: row.client?.contact_email ?? null,
-    avatarUrl: signedAvatarUrl ?? null,
+    avatarUrl: getAvatarApiUrl(row.client?.avatar_url),
     status: row.status ?? 'pending',
     checkInFrequency: row.check_in_frequency,
     nextCheckInDue: row.next_check_in_due,
@@ -87,7 +95,7 @@ async function fetchClients(
   // Transform clients - use avatar_url directly (signed URLs handled elsewhere)
   const clientsWithAvatars = (data || []).map((row) => {
     const typedRow = row as CoachClientRow
-    return transformCoachClient(typedRow, typedRow.client?.avatar_url ?? null)
+    return transformCoachClient(typedRow)
   })
 
   const total = count || 0
@@ -139,7 +147,7 @@ async function fetchClient(clientRelationshipId: string): Promise<Client | null>
   }
 
   const typedData = data as CoachClientRow
-  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
+  return transformCoachClient(typedData)
 }
 
 export function useClient(clientRelationshipId: string) {
@@ -184,7 +192,7 @@ async function fetchClientByProfileId(profileId: string): Promise<Client | null>
   }
 
   const typedData = data as CoachClientRow
-  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
+  return transformCoachClient(typedData)
 }
 
 export function useClientByProfileId(profileId: string) {
@@ -248,7 +256,7 @@ async function inviteClient(data: InviteClientData): Promise<Client> {
   }
 
   const typedData = newRelationship as CoachClientRow
-  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
+  return transformCoachClient(typedData)
 }
 
 export function useInviteClient() {
@@ -316,7 +324,7 @@ async function updateClientStatus(data: UpdateClientStatusData): Promise<Client>
   }
 
   const typedData = updated as CoachClientRow
-  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
+  return transformCoachClient(typedData)
 }
 
 export function useUpdateClientStatus() {
@@ -380,7 +388,7 @@ async function updateClient(data: UpdateClientData): Promise<Client> {
   }
 
   const typedData = updated as CoachClientRow
-  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
+  return transformCoachClient(typedData)
 }
 
 export function useUpdateClient() {

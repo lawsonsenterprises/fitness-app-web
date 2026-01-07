@@ -3,6 +3,13 @@ import { createClient } from '@/lib/supabase/client'
 
 const supabase = createClient()
 
+// Convert storage path to API route URL
+function getAvatarApiUrl(avatarPath: string | null | undefined): string | null {
+  if (!avatarPath) return null
+  const path = avatarPath.startsWith('avatars/') ? avatarPath.slice(8) : avatarPath
+  return `/api/avatar/${path}`
+}
+
 // ============================================================================
 // Blood Work Hooks
 // ============================================================================
@@ -1384,16 +1391,13 @@ export function useCoachRelationship(athleteId?: string) {
       // Handle coach data - could be array or single object from Supabase
       const coachData = Array.isArray(data.coach) ? data.coach[0] : data.coach
 
-      // Use avatar_url directly
-      const signedAvatarUrl = coachData?.avatar_url ?? null
-
       return {
         id: data.id,
         coachId: data.coach_id,
         coach: coachData ? {
           id: coachData.id,
           displayName: coachData.display_name,
-          avatarUrl: signedAvatarUrl,
+          avatarUrl: getAvatarApiUrl(coachData.avatar_url),
           email: coachData.email,
         } : null,
         status: data.status,
@@ -1841,10 +1845,9 @@ export function usePendingCoachInvitations(athleteId?: string) {
         return []
       }
 
-      // Transform invitations - use avatar_url directly
+      // Transform invitations
       const invitationsWithSignedUrls = (data || []).map((item) => {
           const coachData = Array.isArray(item.coach) ? item.coach[0] : item.coach
-          const signedAvatarUrl = coachData?.avatar_url ?? null
 
           return {
             id: item.id,
@@ -1852,7 +1855,7 @@ export function usePendingCoachInvitations(athleteId?: string) {
             coach: coachData ? {
               id: coachData.id,
               displayName: coachData.display_name,
-              avatarUrl: signedAvatarUrl,
+              avatarUrl: getAvatarApiUrl(coachData.avatar_url),
               email: coachData.email,
             } : null,
             createdAt: item.created_at,
