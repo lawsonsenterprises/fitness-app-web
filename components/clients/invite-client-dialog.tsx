@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/form'
 import { cn } from '@/lib/utils'
 import { useInviteClient } from '@/hooks/use-clients'
-import { createClient } from '@/lib/supabase/client'
+import { searchAthleteByEmail } from '@/app/actions/search-athlete'
 
 const searchSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -46,7 +46,6 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
   const [foundProfile, setFoundProfile] = useState<FoundProfile | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const inviteClient = useInviteClient()
-  const supabase = createClient()
 
   const form = useForm<SearchFormData>({
     resolver: zodResolver(searchSchema),
@@ -61,32 +60,21 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
     setFoundProfile(null)
 
     try {
-      // Search for profile by email (check both email and contact_email fields)
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('id, display_name, avatar_url, contact_email, email')
-        .or(`email.eq.${data.email},contact_email.eq.${data.email}`)
+      // Use server action to search (bypasses RLS)
+      const result = await searchAthleteByEmail(data.email)
 
-      if (error || !profiles || profiles.length === 0) {
-        setSearchError('No user found with this email. They need to sign up first.')
+      if (!result.success || !result.profile) {
+        setSearchError(result.error || 'No user found with this email.')
         return
       }
 
-      const profile = profiles[0]
-
-      // Check if user has athlete role
-      const { data: fullProfile } = await supabase
-        .from('profiles')
-        .select('roles')
-        .eq('id', profile.id)
-        .single()
-
-      if (!fullProfile?.roles?.includes('athlete')) {
-        setSearchError('This user is not registered as an athlete.')
-        return
-      }
-
-      setFoundProfile(profile)
+      setFoundProfile({
+        id: result.profile.id,
+        display_name: result.profile.display_name,
+        avatar_url: result.profile.avatar_url,
+        contact_email: result.profile.email,
+        email: result.profile.email,
+      })
     } catch {
       setSearchError('Failed to search for user. Please try again.')
     } finally {
