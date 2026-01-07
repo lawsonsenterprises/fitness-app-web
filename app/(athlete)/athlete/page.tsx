@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
 import { ReadinessGauge } from '@/components/athlete/readiness-gauge'
 import { WeatherWidget } from '@/components/athlete/weather-widget'
+import { PendingCoachInvitations } from '@/components/athlete/pending-coach-invitations'
 import { useAthleteDashboard, useCurrentProgramme, useTodaysReadiness, useWeeklyActivity, useHealthKitWorkouts, useUserDietaryProfile } from '@/hooks/athlete'
 import { TopBar } from '@/components/dashboard/top-bar'
 
@@ -94,6 +95,11 @@ export default function AthleteDashboardPage() {
           <p className="mt-1 text-muted-foreground">
             Here&apos;s how you&apos;re doing today
           </p>
+        </div>
+
+        {/* Pending Coach Invitations */}
+        <div className="mb-6">
+          <PendingCoachInvitations />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-12">

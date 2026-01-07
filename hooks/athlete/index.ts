@@ -1795,3 +1795,115 @@ export function useToggleExerciseFavourite() {
     },
   })
 }
+
+// ============================================================================
+// Pending Coach Invitations
+// ============================================================================
+
+export interface PendingCoachInvitation {
+  id: string
+  coachId: string
+  coach: {
+    id: string
+    displayName: string | null
+    avatarUrl: string | null
+    email: string | null
+  } | null
+  createdAt: string
+}
+
+export function usePendingCoachInvitations(athleteId?: string) {
+  return useQuery({
+    queryKey: ['pending-coach-invitations', athleteId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('coach_clients')
+        .select(`
+          id,
+          coach_id,
+          created_at,
+          coach:profiles!coach_clients_coach_id_fkey(
+            id,
+            display_name,
+            avatar_url,
+            email
+          )
+        `)
+        .eq('client_id', athleteId!)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching pending coach invitations:', error)
+        return []
+      }
+
+      return (data || []).map(item => {
+        const coachData = Array.isArray(item.coach) ? item.coach[0] : item.coach
+        return {
+          id: item.id,
+          coachId: item.coach_id,
+          coach: coachData ? {
+            id: coachData.id,
+            displayName: coachData.display_name,
+            avatarUrl: coachData.avatar_url,
+            email: coachData.email,
+          } : null,
+          createdAt: item.created_at,
+        } as PendingCoachInvitation
+      })
+    },
+    enabled: !!athleteId,
+  })
+}
+
+export function useAcceptCoachInvitation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await supabase
+        .from('coach_clients')
+        .update({
+          status: 'active',
+          started_at: new Date().toISOString(),
+        })
+        .eq('id', invitationId)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-coach-invitations'] })
+      queryClient.invalidateQueries({ queryKey: ['coach-relationship'] })
+    },
+  })
+}
+
+export function useDeclineCoachInvitation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { error } = await supabase
+        .from('coach_clients')
+        .update({
+          status: 'cancelled',
+          ended_at: new Date().toISOString(),
+        })
+        .eq('id', invitationId)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+
+      return { success: true }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-coach-invitations'] })
+    },
+  })
+}
