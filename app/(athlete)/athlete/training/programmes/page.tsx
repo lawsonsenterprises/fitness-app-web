@@ -184,8 +184,17 @@ interface ProgrammeCardProps {
 }
 
 function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive }: ProgrammeCardProps) {
-  const isRollingProgramme = !programme.durationWeeks || programme.durationWeeks === 0
-  const progress = isRollingProgramme ? 0 : Math.round((programme.currentWeek / programme.durationWeeks) * 100)
+  const hasFixedDuration = programme.durationWeeks && programme.durationWeeks > 0
+  const progress = hasFixedDuration ? Math.round((programme.currentWeek / programme.durationWeeks) * 100) : 0
+
+  // Determine schedule display text
+  const getScheduleText = () => {
+    if (hasFixedDuration) {
+      return `Week ${programme.currentWeek}/${programme.durationWeeks}`
+    }
+    // For programmes without fixed duration, show "Ongoing"
+    return 'Ongoing'
+  }
 
   return (
     <div className="group relative overflow-hidden rounded-lg border border-border bg-card transition-all hover:border-foreground/20 hover:shadow-md">
@@ -208,14 +217,12 @@ function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive
         </div>
 
         {/* Stats */}
-        <div className="mb-4 grid grid-cols-2 gap-4">
+        <div className="mb-4 flex items-center gap-4">
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">
-              {isRollingProgramme ? 'Rolling programme' : `Week ${programme.currentWeek}/${programme.durationWeeks}`}
-            </span>
+            <span className="text-muted-foreground">{getScheduleText()}</span>
           </div>
-          {!isRollingProgramme && (
+          {hasFixedDuration && (
             <div className="flex items-center gap-2 text-sm">
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <span className="text-muted-foreground">{progress}% complete</span>
@@ -224,7 +231,7 @@ function ProgrammeCard({ programme, onDelete, onDuplicate, onSetActive, isActive
         </div>
 
         {/* Progress Bar (only for fixed-duration programmes) */}
-        {!isRollingProgramme && (
+        {hasFixedDuration && (
           <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-muted">
             <div
               className="h-full bg-foreground transition-all"

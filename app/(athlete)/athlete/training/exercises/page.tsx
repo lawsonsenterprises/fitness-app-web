@@ -361,15 +361,15 @@ export default function ExerciseLibraryPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             onClick={() => setSelectedExercise(exercise)}
-            className="group rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-blue-500/50 transition-all"
+            className="group flex flex-col rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-blue-500/50 transition-all"
           >
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h3 className="font-semibold group-hover:text-blue-500 transition-colors">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold group-hover:text-blue-500 transition-colors truncate">
                   {exercise.name}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
                   <span
                     className="px-2 py-0.5 rounded-full text-xs font-medium text-white"
                     style={{ backgroundColor: getMuscleColour(exercise.muscleGroup) }}
@@ -398,7 +398,7 @@ export default function ExerciseLibraryPage() {
                   e.stopPropagation()
                   toggleFavourite(exercise.id)
                 }}
-                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                className="p-2 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
               >
                 <Heart
                   className={cn(
@@ -411,13 +411,13 @@ export default function ExerciseLibraryPage() {
               </button>
             </div>
 
-            {/* Description */}
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+            {/* Description - flex-1 to fill remaining space */}
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
               {exercise.description}
             </p>
 
-            {/* Meta */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            {/* Meta - always at bottom */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">
                   <Dumbbell className="h-3 w-3" />
