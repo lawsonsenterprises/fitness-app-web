@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { getSignedAvatarUrl } from '@/lib/storage-utils'
+import { getSignedAvatarUrl } from '@/app/actions/get-signed-avatar-url'
 
 const supabase = createClient()
 
