@@ -5,15 +5,21 @@ const supabase = createClient()
 /**
  * Generate a signed URL for an avatar stored in Supabase storage.
  * Returns null if the path is empty or if there's an error.
+ *
+ * Note: avatar_url in the database is stored as "avatars/filename.jpg"
+ * but createSignedUrl expects just "filename.jpg" since we specify the bucket.
  */
 export async function getSignedAvatarUrl(
   avatarPath: string | null | undefined
 ): Promise<string | null> {
   if (!avatarPath) return null
 
+  // Strip the bucket prefix if present
+  const path = avatarPath.replace('avatars/', '')
+
   const { data } = await supabase.storage
     .from('avatars')
-    .createSignedUrl(avatarPath, 3600) // 1 hour expiry
+    .createSignedUrl(path, 3600) // 1 hour expiry
 
   return data?.signedUrl ?? null
 }

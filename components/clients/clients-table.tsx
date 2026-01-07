@@ -268,7 +268,7 @@ const columns: ColumnDef<Client>[] = [
         className="flex items-center gap-1 text-left"
         onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Started
+        Active Since
         {column.getIsSorted() === 'asc' ? (
           <ArrowUp className="h-3 w-3" />
         ) : column.getIsSorted() === 'desc' ? (
