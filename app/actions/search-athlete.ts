@@ -74,12 +74,23 @@ export async function searchAthleteByEmail(email: string): Promise<SearchAthlete
       }
     }
 
+    // Convert avatar_url storage path to public URL if it exists
+    let avatarPublicUrl: string | null = null
+    if (foundProfile.avatar_url) {
+      // avatar_url is stored as "avatars/filename.jpg" - extract the path
+      const path = foundProfile.avatar_url.replace('avatars/', '')
+      const { data: urlData } = adminClient.storage
+        .from('avatars')
+        .getPublicUrl(path)
+      avatarPublicUrl = urlData?.publicUrl || null
+    }
+
     return {
       success: true,
       profile: {
         id: foundProfile.id,
         display_name: foundProfile.display_name,
-        avatar_url: foundProfile.avatar_url,
+        avatar_url: avatarPublicUrl,
         email: foundProfile.contact_email || foundProfile.email,
       },
     }
