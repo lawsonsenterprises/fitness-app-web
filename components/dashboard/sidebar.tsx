@@ -8,8 +8,6 @@ import {
   ClipboardCheck,
   Dumbbell,
   UtensilsCrossed,
-  MessageCircle,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -21,30 +19,23 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { ROUTES } from '@/lib/constants'
 import { RoleSwitcher } from '@/components/auth/role-switcher'
-import { useUnreadCount } from '@/hooks/use-messages'
 
+// Navigation items (Messages and Settings removed - now in header)
 const navigation = [
-  { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard, showBadge: false },
-  { name: 'Clients', href: ROUTES.CLIENTS, icon: Users, showBadge: false },
-  { name: 'Check-ins', href: ROUTES.CHECK_INS, icon: ClipboardCheck, showBadge: false },
-  { name: 'Programmes', href: ROUTES.PROGRAMMES, icon: Dumbbell, showBadge: false },
-  { name: 'Meal Plans', href: ROUTES.MEAL_PLANS, icon: UtensilsCrossed, showBadge: false },
-  { name: 'Messages', href: ROUTES.MESSAGES, icon: MessageCircle, showBadge: true },
-]
-
-const secondaryNavigation = [
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard },
+  { name: 'Clients', href: ROUTES.CLIENTS, icon: Users },
+  { name: 'Check-ins', href: ROUTES.CHECK_INS, icon: ClipboardCheck },
+  { name: 'Programmes', href: ROUTES.PROGRAMMES, icon: Dumbbell },
+  { name: 'Meal Plans', href: ROUTES.MEAL_PLANS, icon: UtensilsCrossed },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
   const { signOut, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
-  const { data: unreadData } = useUnreadCount()
 
   const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Coach'
   const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
-  const unreadCount = unreadData?.total || 0
 
   return (
     <>
@@ -87,7 +78,6 @@ export function Sidebar() {
           <ul className="space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              const showBadge = item.showBadge && unreadCount > 0
               return (
                 <li key={item.name}>
                   <Link
@@ -101,64 +91,20 @@ export function Sidebar() {
                     )}
                     title={collapsed ? item.name : undefined}
                   >
-                    <div className="relative">
-                      <item.icon
-                        className={cn(
-                          'h-5 w-5 shrink-0 transition-colors',
-                          isActive
-                            ? 'text-amber-500'
-                            : 'text-muted-foreground group-hover:text-foreground'
-                        )}
-                      />
-                      {showBadge && collapsed && (
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
+                    <item.icon
+                      className={cn(
+                        'h-5 w-5 shrink-0 transition-colors',
+                        isActive
+                          ? 'text-amber-500'
+                          : 'text-muted-foreground group-hover:text-foreground'
                       )}
-                    </div>
-                    {!collapsed && (
-                      <span className="flex flex-1 items-center justify-between">
-                        {item.name}
-                        {showBadge && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                            {unreadCount > 99 ? '99+' : unreadCount}
-                          </span>
-                        )}
-                      </span>
-                    )}
+                    />
+                    {!collapsed && <span>{item.name}</span>}
                   </Link>
                 </li>
               )
             })}
           </ul>
-
-          {/* Secondary navigation */}
-          <div className="mt-6 border-t border-border pt-6">
-            <ul className="space-y-1">
-              {secondaryNavigation.map((item) => {
-                const isActive = pathname === item.href
-                return (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                        isActive
-                          ? 'bg-muted text-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                        collapsed && 'justify-center px-2'
-                      )}
-                      title={collapsed ? item.name : undefined}
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span>{item.name}</span>}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-
         </nav>
 
         {/* User section */}
@@ -210,7 +156,6 @@ export function Sidebar() {
         <div className="flex items-center justify-around py-2">
           {navigation.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-            const showBadge = item.showBadge && unreadCount > 0
             return (
               <Link
                 key={item.name}
@@ -222,19 +167,12 @@ export function Sidebar() {
                     : 'text-muted-foreground'
                 )}
               >
-                <div className="relative">
-                  <item.icon
-                    className={cn(
-                      'h-5 w-5',
-                      isActive && 'text-amber-500'
-                    )}
-                  />
-                  {showBadge && (
-                    <span className="absolute -right-1.5 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
+                <item.icon
+                  className={cn(
+                    'h-5 w-5',
+                    isActive && 'text-amber-500'
                   )}
-                </div>
+                />
                 <span>{item.name}</span>
               </Link>
             )

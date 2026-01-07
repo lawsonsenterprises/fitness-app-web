@@ -9,8 +9,6 @@ import {
   ClipboardCheck,
   TrendingUp,
   Heart,
-  MessageSquare,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -25,16 +23,15 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/auth-context'
 import { RoleSwitcher } from '@/components/auth/role-switcher'
-import { useUnreadCount } from '@/hooks/use-messages'
 
 interface NavigationItem {
   name: string
   href?: string
-  icon: any
-  showBadge?: boolean
-  items?: { name: string; href: string; icon: any }[]
+  icon: React.ComponentType<{ className?: string }>
+  items?: { name: string; href: string; icon: React.ComponentType<{ className?: string }> }[]
 }
 
+// Navigation items (Messages and Settings removed - now in header)
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/athlete', icon: LayoutDashboard },
   {
@@ -51,11 +48,6 @@ const navigation: NavigationItem[] = [
   { name: 'Check-ins', href: '/athlete/check-ins', icon: ClipboardCheck },
   { name: 'Progress', href: '/athlete/progress', icon: TrendingUp },
   { name: 'Recovery', href: '/athlete/recovery', icon: Heart },
-  { name: 'Messages', href: '/athlete/messages', icon: MessageSquare, showBadge: true },
-]
-
-const secondaryNavigation = [
-  { name: 'Settings', href: '/athlete/settings', icon: Settings },
 ]
 
 export function AthleteSidebar() {
@@ -63,11 +55,9 @@ export function AthleteSidebar() {
   const { signOut, user } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Training']))
-  const { data: unreadData } = useUnreadCount()
 
   const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'
   const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
-  const unreadCount = unreadData?.total || 0
 
   const toggleExpanded = (itemName: string) => {
     setExpandedItems((prev) => {
@@ -241,80 +231,32 @@ export function AthleteSidebar() {
                     </div>
                   ) : (
                     // Regular item without sub-items
-                    (() => {
-                      const showBadge = item.showBadge && unreadCount > 0
-                      return (
-                        <Link
-                          href={item.href!}
-                          className={cn(
-                            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                            isActive
-                              ? 'bg-foreground text-background'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                            collapsed && 'justify-center px-2'
-                          )}
-                          title={collapsed ? item.name : undefined}
-                        >
-                          <div className="relative">
-                            <item.icon
-                              className={cn(
-                                'h-5 w-5 shrink-0 transition-colors',
-                                isActive
-                                  ? 'text-amber-500'
-                                  : 'text-muted-foreground group-hover:text-foreground'
-                              )}
-                            />
-                            {showBadge && collapsed && (
-                              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                {unreadCount > 9 ? '9+' : unreadCount}
-                              </span>
-                            )}
-                          </div>
-                          {!collapsed && (
-                            <span className="flex flex-1 items-center justify-between">
-                              {item.name}
-                              {showBadge && (
-                                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-bold text-white">
-                                  {unreadCount > 99 ? '99+' : unreadCount}
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </Link>
-                      )
-                    })()
-                  )}
-                </li>
-              )
-            })}
-          </ul>
-
-          {/* Secondary navigation */}
-          <div className="mt-6 border-t border-border pt-6">
-            <ul className="space-y-1">
-              {secondaryNavigation.map((item) => {
-                const isActive = pathname.startsWith(item.href)
-                return (
-                  <li key={item.name}>
                     <Link
-                      href={item.href}
+                      href={item.href!}
                       className={cn(
                         'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                         isActive
-                          ? 'bg-muted text-foreground'
+                          ? 'bg-foreground text-background'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         collapsed && 'justify-center px-2'
                       )}
                       title={collapsed ? item.name : undefined}
                     >
-                      <item.icon className="h-5 w-5 shrink-0" />
+                      <item.icon
+                        className={cn(
+                          'h-5 w-5 shrink-0 transition-colors',
+                          isActive
+                            ? 'text-amber-500'
+                            : 'text-muted-foreground group-hover:text-foreground'
+                        )}
+                      />
                       {!collapsed && <span>{item.name}</span>}
                     </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
         </nav>
 
         {/* User section */}

@@ -12,11 +12,8 @@ import {
   ClipboardCheck,
   Dumbbell,
   UtensilsCrossed,
-  Settings,
-  LogOut,
   TrendingUp,
   Heart,
-  MessageSquare,
   Droplets,
   UserCircle,
   CreditCard,
@@ -27,18 +24,18 @@ import {
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { NotificationDropdown } from '@/components/notifications/notification-dropdown'
-import { useAuth } from '@/contexts/auth-context'
+import { MessagesButton } from '@/components/messages/messages-button'
+import { AvatarDropdown } from '@/components/user/avatar-dropdown'
 import { RoleSwitcher } from '@/components/auth/role-switcher'
 import { ROUTES } from '@/lib/constants'
 
-// Navigation items per role
+// Navigation items per role (Settings and Messages removed - now in header)
 const coachNavigation = [
   { name: 'Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard },
   { name: 'Clients', href: ROUTES.CLIENTS, icon: Users },
   { name: 'Check-ins', href: ROUTES.CHECK_INS, icon: ClipboardCheck },
   { name: 'Programmes', href: ROUTES.PROGRAMMES, icon: Dumbbell },
   { name: 'Meal Plans', href: ROUTES.MEAL_PLANS, icon: UtensilsCrossed },
-  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 const athleteNavigation = [
@@ -49,8 +46,6 @@ const athleteNavigation = [
   { name: 'Check-ins', href: '/athlete/check-ins', icon: ClipboardCheck },
   { name: 'Progress', href: '/athlete/progress', icon: TrendingUp },
   { name: 'Recovery', href: '/athlete/recovery', icon: Heart },
-  { name: 'Messages', href: '/athlete/messages', icon: MessageSquare },
-  { name: 'Settings', href: '/athlete/settings', icon: Settings },
 ]
 
 const adminNavigation = [
@@ -66,7 +61,6 @@ interface TopBarProps {
 }
 
 export function TopBar({ title }: TopBarProps) {
-  const { user, signOut } = useAuth()
   const pathname = usePathname()
   const [searchFocused, setSearchFocused] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -86,10 +80,6 @@ export function TopBar({ title }: TopBarProps) {
     if (pathname.startsWith('/admin')) return 'Search coaches, athletes...'
     return 'Search clients, programmes...'
   }
-
-  // Get user initials for avatar
-  const initials = user?.user_metadata?.first_name?.[0]?.toUpperCase() ||
-    user?.email?.[0]?.toUpperCase() || 'U'
 
   const isActive = (href: string) => {
     if (href === '/athlete' || href === '/admin' || href === ROUTES.DASHBOARD) {
@@ -125,8 +115,8 @@ export function TopBar({ title }: TopBarProps) {
         </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-3">
-        {/* Search */}
+      <div className="flex items-center gap-2">
+        {/* Search - hidden on mobile */}
         <div
           className={cn(
             'relative hidden transition-all duration-200 md:block',
@@ -147,13 +137,14 @@ export function TopBar({ title }: TopBarProps) {
           />
         </div>
 
+        {/* Messages */}
+        <MessagesButton />
+
         {/* Notifications */}
         <NotificationDropdown />
 
-        {/* User avatar */}
-        <button className="flex h-10 w-10 items-center justify-center rounded-lg bg-foreground text-sm font-medium text-background transition-opacity hover:opacity-90">
-          {initials}
-        </button>
+        {/* User avatar dropdown */}
+        <AvatarDropdown />
       </div>
     </header>
 
@@ -219,24 +210,6 @@ export function TopBar({ title }: TopBarProps) {
                 })}
               </ul>
             </nav>
-
-            {/* User section */}
-            <div className="border-t border-border p-4">
-              <div className="rounded-lg bg-muted/50 px-3 py-2 mb-3">
-                <p className="text-sm font-medium">
-                  {user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'User'}
-                </p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
-              </div>
-
-              <button
-                onClick={() => signOut()}
-                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-              >
-                <LogOut className="h-5 w-5" />
-                <span>Sign out</span>
-              </button>
-            </div>
           </div>
         </>
       )}
