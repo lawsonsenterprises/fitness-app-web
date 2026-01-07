@@ -11,8 +11,10 @@ interface InviteCoachResult {
 
 export async function inviteCoach(
   email: string,
-  displayName: string
+  firstName: string,
+  lastName: string
 ): Promise<InviteCoachResult> {
+  const displayName = `${firstName} ${lastName}`.trim()
   try {
     // First verify the current user is an admin
     const supabase = await createClient()
@@ -86,6 +88,8 @@ export async function inviteCoach(
     // Create new user with invite
     const { data: newUser, error: createError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: {
+        first_name: firstName,
+        last_name: lastName,
         display_name: displayName,
         full_name: displayName,
         force_password_change: true,
@@ -106,6 +110,8 @@ export async function inviteCoach(
       .from('profiles')
       .upsert({
         id: newUser.user.id,
+        first_name: firstName,
+        last_name: lastName,
         display_name: displayName,
         contact_email: email,
         email: email,

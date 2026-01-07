@@ -52,7 +52,8 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
 
   // Invite form state
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteName, setInviteName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
 
   const { data: searchResults, isLoading: isSearching } = useSearchUsersForPromotion(searchQuery)
   const promoteToAdmin = usePromoteToAdmin()
@@ -79,10 +80,10 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
   }
 
   const handleInvite = async () => {
-    if (!inviteEmail || !inviteName) return
+    if (!inviteEmail || !firstName) return
 
     try {
-      await inviteAdmin.mutateAsync({ email: inviteEmail, displayName: inviteName })
+      await inviteAdmin.mutateAsync({ email: inviteEmail, firstName, lastName })
       setSuccessMessage(`An invite has been sent to ${inviteEmail}. They will have admin access once they accept.`)
       setShowSuccess(true)
       toast.success('Admin invited', {
@@ -106,7 +107,8 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
     setShowSuccess(false)
     setSuccessMessage('')
     setInviteEmail('')
-    setInviteName('')
+    setFirstName('')
+    setLastName('')
   }
 
   const isLoading = promoteToAdmin.isPending || inviteAdmin.isPending
@@ -323,20 +325,36 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
             ) : (
               /* Invite New Tab */
               <div className="space-y-6">
-                {/* Name input */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium">
-                    Full name
-                  </label>
-                  <Input
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    placeholder="John Smith"
-                    className={cn(
-                      'h-12 rounded-lg border-border bg-background',
-                      'focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
-                    )}
-                  />
+                {/* Name inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      First name
+                    </label>
+                    <Input
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className={cn(
+                        'h-12 rounded-lg border-border bg-background',
+                        'focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Last name
+                    </label>
+                    <Input
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Smith"
+                      className={cn(
+                        'h-12 rounded-lg border-border bg-background',
+                        'focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20'
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Email input */}
@@ -360,7 +378,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                 </div>
 
                 {/* Warning box */}
-                {inviteEmail && inviteName && (
+                {inviteEmail && firstName && (
                   <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="mt-0.5 h-5 w-5 text-red-500 shrink-0" />
@@ -369,7 +387,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                           Invite as admin?
                         </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                          <strong>{inviteName}</strong> ({inviteEmail}) will receive an email invitation and have full admin access once they accept.
+                          <strong>{firstName} {lastName}</strong> ({inviteEmail}) will receive an email invitation and have full admin access once they accept.
                         </p>
                       </div>
                     </div>
@@ -443,7 +461,7 @@ export function AddAdminDialog({ isOpen, onClose }: AddAdminDialogProps) {
                   <Button
                     type="button"
                     onClick={handleInvite}
-                    disabled={!inviteEmail || !inviteName || isLoading}
+                    disabled={!inviteEmail || !firstName || isLoading}
                     className={cn(
                       'group relative flex-1 overflow-hidden bg-red-600 text-white',
                       'hover:bg-red-700',

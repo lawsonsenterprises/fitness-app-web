@@ -16,17 +16,18 @@ interface AddCoachDialogProps {
 
 export function AddCoachDialog({ isOpen, onClose }: AddCoachDialogProps) {
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteName, setInviteName] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [showSuccess, setShowSuccess] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
 
   const inviteCoach = useInviteCoach()
 
   const handleInvite = async () => {
-    if (!inviteEmail || !inviteName) return
+    if (!inviteEmail || !firstName) return
 
     try {
-      await inviteCoach.mutateAsync({ email: inviteEmail, displayName: inviteName })
+      await inviteCoach.mutateAsync({ email: inviteEmail, firstName, lastName })
       setSuccessMessage(`An invite has been sent to ${inviteEmail}. They will have coach access once they accept.`)
       setShowSuccess(true)
       toast.success('Coach invited', {
@@ -47,7 +48,8 @@ export function AddCoachDialog({ isOpen, onClose }: AddCoachDialogProps) {
     setShowSuccess(false)
     setSuccessMessage('')
     setInviteEmail('')
-    setInviteName('')
+    setFirstName('')
+    setLastName('')
   }
 
   const isLoading = inviteCoach.isPending
@@ -101,20 +103,36 @@ export function AddCoachDialog({ isOpen, onClose }: AddCoachDialogProps) {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Name input */}
-                <div>
-                  <label className="mb-2 block text-sm font-medium">
-                    Full name
-                  </label>
-                  <Input
-                    value={inviteName}
-                    onChange={(e) => setInviteName(e.target.value)}
-                    placeholder="John Smith"
-                    className={cn(
-                      'h-12 rounded-lg border-border bg-background',
-                      'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
-                    )}
-                  />
+                {/* Name inputs */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      First name
+                    </label>
+                    <Input
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="John"
+                      className={cn(
+                        'h-12 rounded-lg border-border bg-background',
+                        'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
+                      )}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium">
+                      Last name
+                    </label>
+                    <Input
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Smith"
+                      className={cn(
+                        'h-12 rounded-lg border-border bg-background',
+                        'focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20'
+                      )}
+                    />
+                  </div>
                 </div>
 
                 {/* Email input */}
@@ -183,7 +201,7 @@ export function AddCoachDialog({ isOpen, onClose }: AddCoachDialogProps) {
                 <Button
                   type="button"
                   onClick={handleInvite}
-                  disabled={!inviteEmail || !inviteName || isLoading}
+                  disabled={!inviteEmail || !firstName || isLoading}
                   className={cn(
                     'group relative flex-1 overflow-hidden bg-amber-600 text-white',
                     'hover:bg-amber-700',
