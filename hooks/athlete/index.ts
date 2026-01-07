@@ -1579,7 +1579,29 @@ export function useWeeklySchedule(athleteId?: string) {
       const startDate = startOfWeek.toISOString().split('T')[0]
       const endDate = endOfWeek.toISOString().split('T')[0]
 
-      // Get sessions for this week
+      // Check for active programme with weeklyMapped rotation
+      const { data: activeProgramme } = await supabase
+        .from('programmes')
+        .select('id, name, rotation_type')
+        .eq('user_id', athleteId!)
+        .eq('is_active', true)
+        .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
+        .single()
+
+      // If user has active weeklyMapped programme, show programme days
+      let programmeDays: { weekday: number; name: string; id: string }[] = []
+      if (activeProgramme?.rotation_type === 'weeklyMapped') {
+        const { data: days } = await supabase
+          .from('programme_days')
+          .select('id, weekday, name')
+          .eq('programme_id', activeProgramme.id)
+          .or('is_soft_deleted.is.null,is_soft_deleted.eq.false')
+          .order('weekday', { ascending: true })
+
+        programmeDays = days || []
+      }
+
+      // Get actual sessions for this week (for completion status)
       const { data: sessions, error } = await supabase
         .from('training_sessions')
         .select('*')
@@ -1590,33 +1612,46 @@ export function useWeeklySchedule(athleteId?: string) {
 
       if (error) {
         console.error('Error fetching weekly schedule:', error)
-        return []
       }
 
       // Build weekly schedule
-      const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
       const todayIndex = (today.getDay() + 6) % 7 // Convert to Monday = 0
 
-      return days.map((day, index) => {
+      return dayNames.map((day, index) => {
+        const dayNumber = index + 1 // 1 = Monday, 7 = Sunday
         const dayDate = new Date(startOfWeek)
         dayDate.setDate(startOfWeek.getDate() + index)
         const dateStr = dayDate.toISOString().split('T')[0]
 
+        // Check for programme day on this weekday
+        const programmeDay = programmeDays.find(d => d.weekday === dayNumber)
+
+        // Check for actual session on this date
         const session = sessions?.find(s => s.date === dateStr)
 
+        // Determine status and name
         let status: 'completed' | 'current' | 'upcoming' | 'rest' = 'rest'
-        if (session) {
-          if (session.status === 'completed') {
+        let sessionName = 'Rest'
+
+        if (programmeDay) {
+          // Has a scheduled programme day
+          sessionName = programmeDay.name || 'Workout'
+
+          if (session?.status === 'completed') {
             status = 'completed'
           } else if (index === todayIndex) {
             status = 'current'
           } else if (index > todayIndex) {
             status = 'upcoming'
           } else {
-            status = 'completed'
+            // Past day that wasn't completed
+            status = 'rest'
           }
-        } else if (index === todayIndex) {
-          status = 'rest'
+        } else if (session) {
+          // Has a session but no programme day (ad-hoc workout)
+          sessionName = session.notes || 'Workout'
+          status = session.status === 'completed' ? 'completed' : 'current'
         }
 
         const durationMins = session?.duration_seconds ? Math.round(session.duration_seconds / 60) : null
@@ -1624,10 +1659,11 @@ export function useWeeklySchedule(athleteId?: string) {
         return {
           day,
           date: dateStr,
-          name: session?.notes || 'Rest',
+          name: sessionName,
           status,
           duration: durationMins ? `${durationMins} min` : '-',
           session,
+          programmeDayId: programmeDay?.id,
         }
       })
     },
