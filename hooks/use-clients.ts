@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { getSignedAvatarUrl } from '@/lib/storage-utils'
 import type { Client, ClientStatus, CoachClientRow, PaginatedResponse } from '@/types'
 
 const supabase = createClient()
@@ -24,17 +25,6 @@ function transformCoachClient(row: CoachClientRow, signedAvatarUrl?: string | nu
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
-}
-
-// Generate signed URL for avatar
-async function getSignedAvatarUrl(avatarPath: string | null | undefined): Promise<string | null> {
-  if (!avatarPath) return null
-
-  const { data } = await supabase.storage
-    .from('avatars')
-    .createSignedUrl(avatarPath, 3600) // 1 hour expiry
-
-  return data?.signedUrl ?? null
 }
 
 interface UseClientsOptions {

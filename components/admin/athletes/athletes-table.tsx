@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import {
@@ -58,6 +58,8 @@ export function AthletesTable({
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
 
   // Filter and sort
   const filteredAthletes = useMemo(() => {
@@ -115,6 +117,22 @@ export function AthletesTable({
     ) : (
       <ChevronDown className="h-4 w-4" />
     )
+  }
+
+  const handleToggleMenu = (athleteId: string) => {
+    if (openMenuId === athleteId) {
+      setOpenMenuId(null)
+    } else {
+      const button = buttonRefs.current[athleteId]
+      if (button) {
+        const rect = button.getBoundingClientRect()
+        setMenuPosition({
+          top: rect.bottom + 4,
+          left: rect.right - 160, // 160px = w-40
+        })
+      }
+      setOpenMenuId(athleteId)
+    }
   }
 
   return (
@@ -290,18 +308,25 @@ export function AthletesTable({
                 <td className="p-4 text-right">
                   <div className="relative">
                     <button
-                      onClick={() => setOpenMenuId(openMenuId === athlete.id ? null : athlete.id)}
+                      ref={(el) => { buttonRefs.current[athlete.id] = el }}
+                      onClick={() => handleToggleMenu(athlete.id)}
                       className="p-2 rounded-lg hover:bg-muted transition-colors"
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </button>
 
                     {openMenuId === athlete.id && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="absolute right-0 top-full mt-1 z-50 w-40 rounded-xl border border-border bg-card shadow-lg py-1"
-                      >
+                      <>
+                        <div
+                          className="fixed inset-0 z-40"
+                          onClick={() => setOpenMenuId(null)}
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="fixed z-50 w-40 rounded-xl border border-border bg-card shadow-lg py-1"
+                          style={{ top: menuPosition.top, left: menuPosition.left }}
+                        >
                         <button
                           onClick={() => {
                             onViewAthlete(athlete.id)
@@ -332,7 +357,8 @@ export function AthletesTable({
                           <Mail className="h-4 w-4" />
                           Send Email
                         </button>
-                      </motion.div>
+                        </motion.div>
+                      </>
                     )}
                   </div>
                 </td>

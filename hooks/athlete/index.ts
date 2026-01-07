@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
+import { getSignedAvatarUrl } from '@/lib/storage-utils'
 
 const supabase = createClient()
 
@@ -1384,13 +1385,18 @@ export function useCoachRelationship(athleteId?: string) {
       // Handle coach data - could be array or single object from Supabase
       const coachData = Array.isArray(data.coach) ? data.coach[0] : data.coach
 
+      // Generate signed URL for coach avatar
+      const signedAvatarUrl = coachData?.avatar_url
+        ? await getSignedAvatarUrl(coachData.avatar_url)
+        : null
+
       return {
         id: data.id,
         coachId: data.coach_id,
         coach: coachData ? {
           id: coachData.id,
           displayName: coachData.display_name,
-          avatarUrl: coachData.avatar_url,
+          avatarUrl: signedAvatarUrl,
           email: coachData.email,
         } : null,
         status: data.status,
@@ -1838,20 +1844,29 @@ export function usePendingCoachInvitations(athleteId?: string) {
         return []
       }
 
-      return (data || []).map(item => {
-        const coachData = Array.isArray(item.coach) ? item.coach[0] : item.coach
-        return {
-          id: item.id,
-          coachId: item.coach_id,
-          coach: coachData ? {
-            id: coachData.id,
-            displayName: coachData.display_name,
-            avatarUrl: coachData.avatar_url,
-            email: coachData.email,
-          } : null,
-          createdAt: item.created_at,
-        } as PendingCoachInvitation
-      })
+      // Generate signed URLs for all coach avatars in parallel
+      const invitationsWithSignedUrls = await Promise.all(
+        (data || []).map(async (item) => {
+          const coachData = Array.isArray(item.coach) ? item.coach[0] : item.coach
+          const signedAvatarUrl = coachData?.avatar_url
+            ? await getSignedAvatarUrl(coachData.avatar_url)
+            : null
+
+          return {
+            id: item.id,
+            coachId: item.coach_id,
+            coach: coachData ? {
+              id: coachData.id,
+              displayName: coachData.display_name,
+              avatarUrl: signedAvatarUrl,
+              email: coachData.email,
+            } : null,
+            createdAt: item.created_at,
+          } as PendingCoachInvitation
+        })
+      )
+
+      return invitationsWithSignedUrls
     },
     enabled: !!athleteId,
   })

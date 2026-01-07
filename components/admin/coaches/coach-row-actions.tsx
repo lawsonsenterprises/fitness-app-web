@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MoreHorizontal,
@@ -39,24 +39,19 @@ export function CoachRowActions({
   onResetPassword,
 }: CoachRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
-  // Close on click outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.right - 192, // 192px = w-48
+      })
     }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isOpen])
+    setIsOpen(!isOpen)
+  }
 
   const handleAction = (action: () => void) => {
     action()
@@ -104,9 +99,10 @@ export function CoachRowActions({
   ]
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative">
       <motion.button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={cn(
@@ -119,13 +115,19 @@ export function CoachRowActions({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-1 z-50 w-48 rounded-xl border border-border bg-card shadow-lg py-1"
-          >
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-50 w-48 rounded-xl border border-border bg-card shadow-lg py-1"
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+            >
             {actions.map((action) => (
               <button
                 key={action.label}
@@ -139,7 +141,8 @@ export function CoachRowActions({
                 {action.label}
               </button>
             ))}
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>
