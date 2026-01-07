@@ -119,11 +119,15 @@ export function useClients(options: UseClientsOptions = {}) {
 
 // Hook for fetching a single client
 async function fetchClient(clientRelationshipId: string): Promise<Client | null> {
+  console.log('fetchClient called with:', clientRelationshipId)
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     console.error('Auth error:', authError)
     return null
   }
+
+  console.log('Fetching client for coach:', user.id)
 
   const { data, error } = await supabase
     .from('coach_clients')
@@ -141,8 +145,15 @@ async function fetchClient(clientRelationshipId: string): Promise<Client | null>
     .eq('coach_id', user.id)
     .single()
 
+  console.log('fetchClient result:', { data, error, clientRelationshipId })
+
   if (error) {
     console.error('Error fetching client:', error)
+    return null
+  }
+
+  if (!data) {
+    console.error('No data returned for client:', clientRelationshipId)
     return null
   }
 
