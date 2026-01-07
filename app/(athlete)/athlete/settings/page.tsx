@@ -39,9 +39,19 @@ export default function AthleteProfileSettingsPage() {
           .eq('id', user.id)
           .single()
 
+        // Parse display_name if first_name/last_name not set
+        let firstName = data?.first_name || user?.user_metadata?.first_name || ''
+        let lastName = data?.last_name || user?.user_metadata?.last_name || ''
+
+        if (!firstName && data?.display_name) {
+          const parts = data.display_name.split(' ')
+          firstName = parts[0] || ''
+          lastName = parts.slice(1).join(' ') || ''
+        }
+
         setProfile({
-          firstName: data?.first_name || user?.user_metadata?.first_name || '',
-          lastName: data?.last_name || user?.user_metadata?.last_name || '',
+          firstName,
+          lastName,
           email: user?.email || '',
           dateOfBirth: data?.date_of_birth || '',
           height: data?.height?.toString() || '',

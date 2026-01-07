@@ -75,8 +75,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.log('[AUTH] fetchRoles - setting roles:', userRoles)
       setRoles(userRoles)
 
-      // Set display name from profile (prefer first_name over display_name for consistency)
-      const name = profile?.first_name || profile?.display_name || null
+      // Set display name from profile
+      // If first_name exists, use it; otherwise parse display_name
+      let name = profile?.first_name || null
+      if (!name && profile?.display_name) {
+        // Parse first name from display_name (e.g., "Test Coach" -> "Test")
+        name = profile.display_name.split(' ')[0] || null
+      }
       if (name) {
         setDisplayName(name)
       }

@@ -70,8 +70,17 @@ export default function ProfileSettingsPage() {
           .single()
 
         if (profile) {
-          const firstName = profile.first_name || user?.user_metadata?.first_name || ''
-          const lastName = profile.last_name || user?.user_metadata?.last_name || ''
+          // Parse display_name if first_name/last_name not set
+          let firstName = profile.first_name || user?.user_metadata?.first_name || ''
+          let lastName = profile.last_name || user?.user_metadata?.last_name || ''
+
+          // Fall back to display_name if first/last name empty
+          if (!firstName && profile.display_name) {
+            const parts = profile.display_name.split(' ')
+            firstName = parts[0] || ''
+            lastName = parts.slice(1).join(' ') || ''
+          }
+
           setAvatarUrl(profile.avatar_url || null)
           setProfileInitials(
             (firstName?.[0] || '') + (lastName?.[0] || '') ||
