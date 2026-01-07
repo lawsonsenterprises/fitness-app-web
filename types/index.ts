@@ -542,7 +542,6 @@ export interface NotificationRow {
 
 export type NotificationType =
   | 'check_in_submitted'
-  | 'message_received'
   | 'client_accepted'
   | 'client_inactive'
   | 'programme_assigned'

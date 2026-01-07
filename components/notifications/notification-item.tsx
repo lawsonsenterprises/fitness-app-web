@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import {
   ClipboardCheck,
-  MessageSquare,
   UserCheck,
   AlertCircle,
   Clock,
@@ -25,11 +24,6 @@ const typeConfig = {
     icon: ClipboardCheck,
     iconColor: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
-  },
-  message_received: {
-    icon: MessageSquare,
-    iconColor: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
   },
   client_accepted: {
     icon: UserCheck,
