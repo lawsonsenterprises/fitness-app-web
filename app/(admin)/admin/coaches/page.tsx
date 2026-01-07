@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import {
-  Users,
   Search,
   Mail,
   Calendar,
@@ -14,11 +13,11 @@ import {
   Loader2,
   AlertCircle,
   Key,
+  Users,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TopBar } from '@/components/dashboard/top-bar'
 import { useAllCoaches, usePlatformStats } from '@/hooks/admin'
@@ -105,17 +104,11 @@ export default function CoachesPage() {
       <TopBar title="Coaches" />
       <div className="p-6 lg:p-8">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage all coaches on the platform
-            </p>
-          </div>
-          <Button className="gap-2 bg-red-600 hover:bg-red-700">
-            <Users className="h-4 w-4" />
-            Add Coach
-          </Button>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">Coaches</h1>
+          <p className="mt-1 text-muted-foreground">
+            Manage all coaches on the platform
+          </p>
         </div>
 
         {/* Stats */}
