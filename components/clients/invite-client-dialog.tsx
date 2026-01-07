@@ -32,6 +32,7 @@ interface FoundProfile {
   display_name: string | null
   avatar_url: string | null
   contact_email: string | null
+  email: string | null
 }
 
 interface InviteClientDialogProps {
@@ -60,17 +61,18 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
     setFoundProfile(null)
 
     try {
-      // Search for profile by email
-      const { data: profile, error } = await supabase
+      // Search for profile by email (check both email and contact_email fields)
+      const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, contact_email')
-        .eq('contact_email', data.email)
-        .single()
+        .select('id, display_name, avatar_url, contact_email, email')
+        .or(`email.eq.${data.email},contact_email.eq.${data.email}`)
 
-      if (error || !profile) {
+      if (error || !profiles || profiles.length === 0) {
         setSearchError('No user found with this email. They need to sign up first.')
         return
       }
+
+      const profile = profiles[0]
 
       // Check if user has athlete role
       const { data: fullProfile } = await supabase
@@ -101,7 +103,7 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
       })
       setShowSuccess(true)
       toast.success('Client added successfully', {
-        description: `${foundProfile.display_name || foundProfile.contact_email} has been added as your client.`,
+        description: `${foundProfile.display_name || foundProfile.contact_email || foundProfile.email} has been added as your client.`,
       })
       setTimeout(() => {
         handleClose()
@@ -240,7 +242,7 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
                         />
                       ) : (
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-foreground to-foreground/80 text-lg font-semibold text-background">
-                          {(foundProfile.display_name || foundProfile.contact_email || '?')[0].toUpperCase()}
+                          {(foundProfile.display_name || foundProfile.contact_email || foundProfile.email || '?')[0].toUpperCase()}
                         </div>
                       )}
                       <div className="flex-1">
@@ -248,7 +250,7 @@ export function InviteClientDialog({ open, onOpenChange }: InviteClientDialogPro
                           {foundProfile.display_name || 'No name set'}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {foundProfile.contact_email}
+                          {foundProfile.contact_email || foundProfile.email}
                         </p>
                       </div>
                     </div>
