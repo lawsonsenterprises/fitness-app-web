@@ -67,6 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         .single()
 
       console.log('[AUTH] fetchRoles - profile data:', profile)
+      console.log('[AUTH] fetchRoles - display_name:', profile?.display_name, 'first_name:', profile?.first_name)
 
       const userRoles = (profile?.roles && Array.isArray(profile.roles) && profile.roles.length > 0)
         ? (profile.roles as UserRole[])
@@ -77,6 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       // Set display name from profile (prefer display_name, fall back to first_name)
       const name = profile?.display_name || profile?.first_name || null
+      console.log('[AUTH] fetchRoles - computed displayName:', name)
       if (name) {
         setDisplayName(name)
       }

@@ -15,6 +15,13 @@ export function AvatarDropdown() {
   const pathname = usePathname()
 
   // Get user initials
+  // DEBUG: Log where initials come from
+  console.log('[AvatarDropdown] Sources:', {
+    displayName,
+    userMetadataFirstName: user?.user_metadata?.first_name,
+    email: user?.email,
+    userMetadata: user?.user_metadata,
+  })
   const initials = displayName?.[0]?.toUpperCase() ||
     user?.user_metadata?.first_name?.[0]?.toUpperCase() ||
     user?.email?.[0]?.toUpperCase() || 'U'
