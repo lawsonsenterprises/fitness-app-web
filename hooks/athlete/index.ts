@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { getSignedAvatarUrl } from '@/app/actions/get-signed-avatar-url'
 
 const supabase = createClient()
 
@@ -1385,10 +1384,8 @@ export function useCoachRelationship(athleteId?: string) {
       // Handle coach data - could be array or single object from Supabase
       const coachData = Array.isArray(data.coach) ? data.coach[0] : data.coach
 
-      // Generate signed URL for coach avatar
-      const signedAvatarUrl = coachData?.avatar_url
-        ? await getSignedAvatarUrl(coachData.avatar_url)
-        : null
+      // Use avatar_url directly
+      const signedAvatarUrl = coachData?.avatar_url ?? null
 
       return {
         id: data.id,
@@ -1844,13 +1841,10 @@ export function usePendingCoachInvitations(athleteId?: string) {
         return []
       }
 
-      // Generate signed URLs for all coach avatars in parallel
-      const invitationsWithSignedUrls = await Promise.all(
-        (data || []).map(async (item) => {
+      // Transform invitations - use avatar_url directly
+      const invitationsWithSignedUrls = (data || []).map((item) => {
           const coachData = Array.isArray(item.coach) ? item.coach[0] : item.coach
-          const signedAvatarUrl = coachData?.avatar_url
-            ? await getSignedAvatarUrl(coachData.avatar_url)
-            : null
+          const signedAvatarUrl = coachData?.avatar_url ?? null
 
           return {
             id: item.id,
@@ -1864,7 +1858,6 @@ export function usePendingCoachInvitations(athleteId?: string) {
             createdAt: item.created_at,
           } as PendingCoachInvitation
         })
-      )
 
       return invitationsWithSignedUrls
     },

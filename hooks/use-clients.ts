@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { getSignedAvatarUrl } from '@/app/actions/get-signed-avatar-url'
 import type { Client, ClientStatus, CoachClientRow, PaginatedResponse } from '@/types'
 
 const supabase = createClient()
@@ -85,24 +84,11 @@ async function fetchClients(
     return { data: [], total: 0, page, pageSize, totalPages: 0 }
   }
 
-  // Generate signed URLs for all avatars in parallel
-  let clientsWithAvatars: Client[] = []
-  try {
-    clientsWithAvatars = await Promise.all(
-      (data || []).map(async (row) => {
-        const typedRow = row as CoachClientRow
-        const signedUrl = await getSignedAvatarUrl(typedRow.client?.avatar_url)
-        return transformCoachClient(typedRow, signedUrl)
-      })
-    )
-  } catch (avatarError) {
-    console.error('Error generating avatar URLs:', avatarError)
-    // Fall back to clients without signed URLs
-    clientsWithAvatars = (data || []).map((row) => {
-      const typedRow = row as CoachClientRow
-      return transformCoachClient(typedRow, null)
-    })
-  }
+  // Transform clients - use avatar_url directly (signed URLs handled elsewhere)
+  const clientsWithAvatars = (data || []).map((row) => {
+    const typedRow = row as CoachClientRow
+    return transformCoachClient(typedRow, typedRow.client?.avatar_url ?? null)
+  })
 
   const total = count || 0
 
@@ -153,8 +139,7 @@ async function fetchClient(clientRelationshipId: string): Promise<Client | null>
   }
 
   const typedData = data as CoachClientRow
-  const signedUrl = await getSignedAvatarUrl(typedData.client?.avatar_url)
-  return transformCoachClient(typedData, signedUrl)
+  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
 }
 
 export function useClient(clientRelationshipId: string) {
@@ -199,8 +184,7 @@ async function fetchClientByProfileId(profileId: string): Promise<Client | null>
   }
 
   const typedData = data as CoachClientRow
-  const signedUrl = await getSignedAvatarUrl(typedData.client?.avatar_url)
-  return transformCoachClient(typedData, signedUrl)
+  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
 }
 
 export function useClientByProfileId(profileId: string) {
@@ -264,8 +248,7 @@ async function inviteClient(data: InviteClientData): Promise<Client> {
   }
 
   const typedData = newRelationship as CoachClientRow
-  const signedUrl = await getSignedAvatarUrl(typedData.client?.avatar_url)
-  return transformCoachClient(typedData, signedUrl)
+  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
 }
 
 export function useInviteClient() {
@@ -333,8 +316,7 @@ async function updateClientStatus(data: UpdateClientStatusData): Promise<Client>
   }
 
   const typedData = updated as CoachClientRow
-  const signedUrl = await getSignedAvatarUrl(typedData.client?.avatar_url)
-  return transformCoachClient(typedData, signedUrl)
+  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
 }
 
 export function useUpdateClientStatus() {
@@ -398,8 +380,7 @@ async function updateClient(data: UpdateClientData): Promise<Client> {
   }
 
   const typedData = updated as CoachClientRow
-  const signedUrl = await getSignedAvatarUrl(typedData.client?.avatar_url)
-  return transformCoachClient(typedData, signedUrl)
+  return transformCoachClient(typedData, typedData.client?.avatar_url ?? null)
 }
 
 export function useUpdateClient() {
