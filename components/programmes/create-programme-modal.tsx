@@ -146,7 +146,7 @@ export function CreateProgrammeModal({ isOpen, onClose }: CreateProgrammeModalPr
                 <div className="flex-1">
                   <div className="font-medium">Weekly Schedule</div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Days assigned to specific weekdays (Mon, Tue, Wed, etc.). Shows today's scheduled workout.
+                    Days assigned to specific weekdays (Mon, Tue, Wed, etc.). Shows today&apos;s scheduled workout.
                   </p>
                 </div>
               </label>
