@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Target,
   Scale,
@@ -19,6 +19,8 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/contexts/auth-context'
+import { createClient } from '@/lib/supabase/client'
 
 const goalTypes = [
   { id: 'cut', label: 'Cut', icon: TrendingDown, description: 'Lose body fat while preserving muscle' },
@@ -34,26 +36,88 @@ const activityLevels = [
   { id: 'extreme', label: 'Extremely Active', multiplier: 1.9, description: 'Physical job + training' },
 ]
 
+interface FormData {
+  currentWeight: number
+  goalWeight: number
+  height: number
+  age: number
+  sex: string
+  goalType: string
+  activityLevel: string
+  trainingDaysPerWeek: number
+  trainingDayCalories: number
+  trainingDayProtein: number
+  trainingDayCarbs: number
+  trainingDayFat: number
+  restDayCalories: number
+  restDayProtein: number
+  restDayCarbs: number
+  restDayFat: number
+}
+
+const defaultFormData: FormData = {
+  currentWeight: 70,
+  goalWeight: 70,
+  height: 175,
+  age: 30,
+  sex: 'male',
+  goalType: 'maintain',
+  activityLevel: 'moderate',
+  trainingDaysPerWeek: 4,
+  trainingDayCalories: 2400,
+  trainingDayProtein: 180,
+  trainingDayCarbs: 250,
+  trainingDayFat: 70,
+  restDayCalories: 2000,
+  restDayProtein: 180,
+  restDayCarbs: 150,
+  restDayFat: 75,
+}
+
 export default function GoalsSettingsPage() {
+  const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    currentWeight: 76.2,
-    goalWeight: 74,
-    height: 180,
-    age: 32,
-    sex: 'male',
-    goalType: 'cut',
-    activityLevel: 'moderate',
-    trainingDaysPerWeek: 4,
-    trainingDayCalories: 2400,
-    trainingDayProtein: 180,
-    trainingDayCarbs: 250,
-    trainingDayFat: 70,
-    restDayCalories: 2000,
-    restDayProtein: 180,
-    restDayCarbs: 150,
-    restDayFat: 75,
-  })
+  const [isFetching, setIsFetching] = useState(true)
+  const [formData, setFormData] = useState<FormData>(defaultFormData)
+  const supabase = createClient()
+
+  // Fetch existing goals on mount
+  useEffect(() => {
+    async function fetchGoals() {
+      if (!user?.id) {
+        setIsFetching(false)
+        return
+      }
+
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('fitness_goals, height, date_of_birth')
+          .eq('id', user.id)
+          .single()
+
+        if (profile) {
+          const goals = profile.fitness_goals as Partial<FormData> | null
+          const age = profile.date_of_birth
+            ? Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+            : defaultFormData.age
+
+          setFormData({
+            ...defaultFormData,
+            height: profile.height || defaultFormData.height,
+            age,
+            ...goals,
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching goals:', error)
+      } finally {
+        setIsFetching(false)
+      }
+    }
+
+    fetchGoals()
+  }, [user?.id, supabase])
 
   const calculateTDEE = () => {
     // Mifflin-St Jeor Equation
@@ -66,11 +130,41 @@ export default function GoalsSettingsPage() {
   }
 
   const handleSave = async () => {
+    if (!user?.id) {
+      toast.error('You must be logged in to save goals')
+      return
+    }
+
     setIsLoading(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          fitness_goals: {
+            currentWeight: formData.currentWeight,
+            goalWeight: formData.goalWeight,
+            sex: formData.sex,
+            goalType: formData.goalType,
+            activityLevel: formData.activityLevel,
+            trainingDaysPerWeek: formData.trainingDaysPerWeek,
+            trainingDayCalories: formData.trainingDayCalories,
+            trainingDayProtein: formData.trainingDayProtein,
+            trainingDayCarbs: formData.trainingDayCarbs,
+            trainingDayFat: formData.trainingDayFat,
+            restDayCalories: formData.restDayCalories,
+            restDayProtein: formData.restDayProtein,
+            restDayCarbs: formData.restDayCarbs,
+            restDayFat: formData.restDayFat,
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+
+      if (error) throw error
+
       toast.success('Goals saved successfully')
-    } catch {
+    } catch (error) {
+      console.error('Error saving goals:', error)
       toast.error('Failed to save goals')
     } finally {
       setIsLoading(false)
@@ -78,6 +172,14 @@ export default function GoalsSettingsPage() {
   }
 
   const tdee = calculateTDEE()
+
+  if (isFetching) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -101,7 +203,7 @@ export default function GoalsSettingsPage() {
                 type="number"
                 step="0.1"
                 value={formData.currentWeight}
-                onChange={(e) => setFormData({ ...formData, currentWeight: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, currentWeight: parseFloat(e.target.value) || 0 })}
               />
             </div>
             <div>
@@ -110,7 +212,7 @@ export default function GoalsSettingsPage() {
                 type="number"
                 step="0.1"
                 value={formData.goalWeight}
-                onChange={(e) => setFormData({ ...formData, goalWeight: parseFloat(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, goalWeight: parseFloat(e.target.value) || 0 })}
               />
             </div>
             <div>
@@ -118,16 +220,18 @@ export default function GoalsSettingsPage() {
               <Input
                 type="number"
                 value={formData.height}
-                onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) || 0 })}
               />
+              <p className="text-xs text-muted-foreground mt-1">Update in Profile settings for permanent change</p>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Age</label>
               <Input
                 type="number"
                 value={formData.age}
-                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) })}
+                onChange={(e) => setFormData({ ...formData, age: parseInt(e.target.value) || 0 })}
               />
+              <p className="text-xs text-muted-foreground mt-1">Calculated from date of birth if set</p>
             </div>
           </div>
         </motion.div>
@@ -211,7 +315,7 @@ export default function GoalsSettingsPage() {
               min="0"
               max="7"
               value={formData.trainingDaysPerWeek}
-              onChange={(e) => setFormData({ ...formData, trainingDaysPerWeek: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, trainingDaysPerWeek: parseInt(e.target.value) || 0 })}
               className="max-w-xs"
             />
           </div>
@@ -257,7 +361,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.trainingDayCalories}
-                  onChange={(e) => setFormData({ ...formData, trainingDayCalories: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, trainingDayCalories: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -265,7 +369,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.trainingDayProtein}
-                  onChange={(e) => setFormData({ ...formData, trainingDayProtein: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, trainingDayProtein: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -273,7 +377,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.trainingDayCarbs}
-                  onChange={(e) => setFormData({ ...formData, trainingDayCarbs: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, trainingDayCarbs: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -281,7 +385,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.trainingDayFat}
-                  onChange={(e) => setFormData({ ...formData, trainingDayFat: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, trainingDayFat: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>
@@ -296,7 +400,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.restDayCalories}
-                  onChange={(e) => setFormData({ ...formData, restDayCalories: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, restDayCalories: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -304,7 +408,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.restDayProtein}
-                  onChange={(e) => setFormData({ ...formData, restDayProtein: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, restDayProtein: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -312,7 +416,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.restDayCarbs}
-                  onChange={(e) => setFormData({ ...formData, restDayCarbs: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, restDayCarbs: parseInt(e.target.value) || 0 })}
                 />
               </div>
               <div>
@@ -320,7 +424,7 @@ export default function GoalsSettingsPage() {
                 <Input
                   type="number"
                   value={formData.restDayFat}
-                  onChange={(e) => setFormData({ ...formData, restDayFat: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, restDayFat: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>
