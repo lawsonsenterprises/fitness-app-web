@@ -52,11 +52,12 @@ const navigation: NavigationItem[] = [
 
 export function AthleteSidebar() {
   const pathname = usePathname()
-  const { signOut, user } = useAuth()
+  const { signOut, user, displayName } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['Training']))
 
-  const rawName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Athlete'
+  // Use displayName from auth context (sourced from profiles.first_name)
+  const rawName = displayName || user?.email?.split('@')[0] || 'Athlete'
   const userName = rawName.charAt(0).toUpperCase() + rawName.slice(1)
 
   const toggleExpanded = (itemName: string) => {
